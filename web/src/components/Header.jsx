@@ -1,4 +1,4 @@
-import { ChartBarIcon, MoonIcon, SunIcon } from '@phosphor-icons/react';
+import { CalendarBlankIcon, ChartBarIcon, GavelIcon, MoonIcon, StorefrontIcon, SunIcon, UserIcon, WrenchIcon } from '@phosphor-icons/react';
 import { useState } from 'react';
 import SearchForm from './SearchForm.jsx';
 
@@ -17,24 +17,47 @@ function useTheme() {
   return [theme, toggle];
 }
 
-export default function Header({ onHome, onSearch, compact, current }) {
+const NAV = [
+  { id: 'profile', label: 'Profile', icon: UserIcon },
+  { id: 'bazaar', label: 'Bazaar', icon: StorefrontIcon },
+  { id: 'auctions', label: 'Auctions', icon: GavelIcon },
+  { id: 'calendar', label: 'Mayor & events', icon: CalendarBlankIcon },
+  { id: 'tools', label: 'Tools', icon: WrenchIcon },
+];
+
+export default function Header({ onHome, onSearch, onPage, onProfile, page, current, lastPlayer }) {
   const [theme, toggleTheme] = useTheme();
+  const nav = (id) => {
+    if (id !== 'profile') return onPage(id);
+    if (lastPlayer) return onProfile();
+    return onPage('');
+  };
   return (
-    <header className="sticky top-0 z-20 border-b border-line bg-bg/85 backdrop-blur-md">
-      <div className="mx-auto flex h-16 w-full max-w-[1240px] items-center gap-4 px-4 sm:px-6">
-        <button
-          type="button"
-          onClick={onHome}
-          className="flex shrink-0 items-center gap-2 rounded-lg py-1 pr-2 text-left font-semibold tracking-tight"
-        >
+    <header className="sticky top-0 z-30 border-b border-line bg-bg/85 backdrop-blur-md">
+      <div className="mx-auto flex h-16 w-full max-w-[1240px] items-center gap-3 px-4 sm:px-6">
+        <button type="button" onClick={onHome} className="flex shrink-0 items-center gap-2 rounded-lg py-1 pr-2 text-left font-semibold tracking-tight">
           <span className="grid size-8 place-items-center rounded-lg bg-accent text-accent-ink">
             <ChartBarIcon weight="bold" size={17} />
           </span>
-          <span className="hidden sm:inline">Upgrade Advisor</span>
+          <span className="hidden lg:inline">SkyBlock Advisor</span>
         </button>
+        <nav aria-label="Site" className="hidden items-center gap-1 md:flex">
+          {NAV.map(({ id, label, icon: Icon }) => (
+            <button
+              key={id}
+              type="button"
+              onClick={() => nav(id)}
+              aria-current={page === id ? 'page' : undefined}
+              className={`inline-flex h-9 items-center gap-1.5 rounded-lg px-2.5 text-sm transition-colors ${page === id ? 'bg-surface-2 text-text' : 'text-muted hover:text-text'}`}
+            >
+              <Icon size={16} />
+              {label}
+            </button>
+          ))}
+        </nav>
         <div className="ml-auto flex min-w-0 flex-1 items-center justify-end gap-2">
-          {compact && (
-            <div className="w-full max-w-sm">
+          {page && (
+            <div className="w-full max-w-xs">
               <SearchForm onSearch={onSearch} initial={current} size="sm" />
             </div>
           )}
@@ -48,6 +71,20 @@ export default function Header({ onHome, onSearch, compact, current }) {
           </button>
         </div>
       </div>
+      <nav aria-label="Site" className="scroll-x flex gap-1 border-t border-line px-4 py-1.5 md:hidden">
+        {NAV.map(({ id, label, icon: Icon }) => (
+          <button
+            key={id}
+            type="button"
+            onClick={() => nav(id)}
+            aria-current={page === id ? 'page' : undefined}
+            className={`inline-flex h-8 shrink-0 items-center gap-1.5 rounded-lg px-2.5 text-sm ${page === id ? 'bg-surface-2 text-text' : 'text-muted'}`}
+          >
+            <Icon size={15} />
+            {label}
+          </button>
+        ))}
+      </nav>
     </header>
   );
 }

@@ -87,8 +87,24 @@ export function createPriceBook({ bazaarProducts = {}, lowest = {}, items = new 
     return null;
   }
 
+  /**
+   * What an item is worth if sold now: bazaar instant-sell, else lowest BIN.
+   * `exact` skips the level 100 pet listing, for pets below max level.
+   */
+  function value(id, { exact = false } = {}) {
+    if (!id) return null;
+    const product = bazaarProducts[id];
+    if (product) {
+      const unit = product.quick_status?.sellPrice || product.sell_summary?.[0]?.pricePerUnit;
+      if (unit) return unit;
+    }
+    if (!exact && lowest[`${id}@MAX`] !== undefined) return lowest[`${id}@MAX`];
+    return lowest[id] ?? null;
+  }
+
   return {
     price,
+    value,
     name: (id) => items.get(id)?.name ?? null,
     item: (id) => items.get(id) ?? null,
     meta,

@@ -1,8 +1,34 @@
-# SkyBlock Upgrade Advisor
+# SkyBlock Advisor
 
-Type in a Minecraft username and get a list of everything that player could still do to raise their farming fortune and hunting fortune on Hypixel SkyBlock, plus the one-time consumables they haven't eaten yet. Each missing piece has a price taken from the bazaar or the auction house at the time you look.
+An all-in-one Hypixel SkyBlock site. Type in a Minecraft username for the player's full profile and what to upgrade next, priced live from the bazaar and auction house. The bazaar, auction prices, mayor and event calendar, and calculators work without a username.
 
-## What it checks
+## Profile lookup
+
+One lookup loads every tab; each tab's code is fetched the first time you open it.
+
+- **Overview**: SkyBlock level, networth estimate with a breakdown and the most valuable items, skill average, catacombs, slayer XP, magical power, and the fortune summary.
+- **Skills**: every skill with per-player caps (Anita, George's taming offerings, the Galatea foraging cap), cosmetic skills, coop-pooled social XP.
+- **Slayers**: level, XP to next, and boss kills by tier for all six slayers.
+- **Dungeons**: catacombs (with overflow past 50), classes, secrets, and a per-floor table for normal and master mode.
+- **Mining & Foraging**: Heart of the Mountain and of the Forest, powders, forge slots, crystals, glacite corpses, tree gifts and Starlyn bests.
+- **Farming / Hunting / Consumables**: the original upgrade advisor (details below), plus garden, Jacob's contests, shards and the safari.
+- **Collections & Minions**: every collection with coop totals and tier progress, and crafted minions with the next minion slot.
+- **Inventory**: armor, equipment, inventory, loadouts, ender chest, backpacks, vault, bags and both toolkits, searchable, with values.
+- **Accessories**: magical power, power and tuning, the bag by rarity, and every missing accessory or upgrade ranked by coins per magical power.
+- **Pets**: levels, held items, skins, pet score.
+- **Crimson & Rift**: faction reputation, Kuudra tiers, dojo grades and belt, trophy fish, and Rift progress.
+- **Events & Misc**: Chocolate Factory, fairy souls, bestiary, essence, experiments, auction stats, kills, deaths and races.
+
+Networth is an estimate: what base items, pets, sacks and essence would sell for now, plus recombobulators, potato books, gems and pet items. Enchantments, reforges and stars are not added.
+
+## Tools that need no username
+
+- **Bazaar**: every product live, sortable by spread, margin after tax, hourly volume and margin times volume.
+- **Auction prices**: lowest BIN for any item or pet from the latest full scan.
+- **Mayor & events**: current mayor and minister perks, election results or live votes, the SkyBlock date, and countdowns to Jacob's contests, the Dark Auction, Spooky Festival, Season of Jerry and more.
+- **Calculators & links**: XP to any level for skills, catacombs, HOTM and HOTF, slayer XP with boss counts, and a list of the best community sites.
+
+## What the fortune advisor checks
 
 **Farming fortune**
 
@@ -54,7 +80,8 @@ GitHub Pages only serves static files, and a key shipped to the browser is publi
 
 - A small Cloudflare Worker (`worker/`) holds the Hypixel key as a secret. It answers only three lookups (player name, profiles, garden), only for your site's origin, and rate-limits each visitor to 30 calls a minute.
 - The browser fetches bazaar prices straight from Hypixel (no key needed) and runs the same analysis code as the server, from `shared/`.
-- A GitHub Action scans the auction house every 30 minutes and publishes the lowest-BIN snapshot with the site.
+- A GitHub Action scans the auction house every 30 minutes and publishes the lowest-BIN snapshot with the site, along with the item list and the accessory index (Hypixel items plus NEU upgrade lines).
+- The bazaar, election and collections pages read Hypixel's keyless endpoints straight from the browser, so they cost the Worker nothing.
 
 Setup, once:
 
@@ -101,6 +128,7 @@ npm test
 - `server/hypixel.js` talks to the Hypixel and Mojang APIs and caches responses for a couple of minutes.
 - `server/prices.js` (with `shared/prices.js`) reads bazaar instant-buy prices and scans every auction page for the lowest BIN, refreshing every 10 minutes. Pets are priced by type and rarity, preferring level 100 listings.
 - `shared/profile.js` decodes the NBT inventory blobs (armor, wardrobe, ender chest, backpacks, accessory bag, loadouts and the farming toolkit) into a flat item list, and works out pet levels.
+- `shared/stats/` computes everything else on the profile (skills, slayers, dungeons, networth and the rest), with leveling tables from the NotEnoughUpdates repo in `shared/stats/constants.js`. `shared/accessories.js` builds the missing-accessory list and `shared/calendar.js` the SkyBlock calendar.
 - `shared/analyze/` turns that into report rows. The fortune values live in `shared/data/` so they can be updated after a game patch without touching the logic. Everything in `shared/` runs in both Node and the browser.
 - Pet leveling curves and the attribute shard list come from the [NotEnoughUpdates repo](https://github.com/NotEnoughUpdates/NotEnoughUpdates-REPO) at runtime.
 

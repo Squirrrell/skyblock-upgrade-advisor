@@ -31,3 +31,12 @@ export async function getAttributeConstants() {
     return null;
   }
 }
+
+export async function getMiscConstants() {
+  try {
+    return await fetchConstant('misc');
+  } catch (err) {
+    console.warn(`[repo] misc.json unavailable: ${err.message}`);
+    return null;
+  }
+}

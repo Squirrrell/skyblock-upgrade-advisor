@@ -1,45 +1,58 @@
 import { WarningIcon } from '@phosphor-icons/react';
-import { useRef, useState } from 'react';
+import { lazy, Suspense, useRef } from 'react';
 import { load, save } from '../lib/storage.js';
-import BestValue from './BestValue.jsx';
+import { Loading } from '../ui.jsx';
 import ProfileBar from './ProfileBar.jsx';
-import SectionView from './SectionView.jsx';
-import Summary from './Summary.jsx';
 
-const TABS = [
-  { id: 'farming', label: 'Farming' },
-  { id: 'hunting', label: 'Hunting' },
-  { id: 'consumables', label: 'Consumables' },
-];
+// Each tab is its own chunk, fetched the first time it opens.
+const Overview = lazy(() => import('../profile/Overview.jsx'));
+const Skills = lazy(() => import('../profile/Skills.jsx'));
+const Slayers = lazy(() => import('../profile/Slayers.jsx'));
+const Dungeons = lazy(() => import('../profile/Dungeons.jsx'));
+const Mining = lazy(() => import('../profile/Mining.jsx'));
+const Collections = lazy(() => import('../profile/Collections.jsx'));
+const Inventory = lazy(() => import('../profile/Inventory.jsx'));
+const Accessories = lazy(() => import('../profile/Accessories.jsx'));
+const Pets = lazy(() => import('../profile/Pets.jsx'));
+const Advisor = lazy(() => import('../profile/Advisor.jsx'));
+const Crimson = lazy(() => import('../profile/Crimson.jsx'));
+const Misc = lazy(() => import('../profile/Misc.jsx'));
 
 function openCount(section) {
   return section.groups.reduce((n, g) => n + g.items.filter((s) => s.status === 'missing' || s.status === 'partial').length, 0);
 }
 
-export default function Report({ report, refreshing, onRefresh, onPickProfile }) {
-  const [tab, setTab] = useState(() => load('tab', 'farming'));
-  const [hideDone, setHideDone] = useState(() => load('hideDone', false));
-  const [sort, setSort] = useState('default');
+const TABS = [
+  { id: 'overview', label: 'Overview', view: Overview },
+  { id: 'skills', label: 'Skills', view: Skills },
+  { id: 'slayers', label: 'Slayers', view: Slayers },
+  { id: 'dungeons', label: 'Dungeons', view: Dungeons },
+  { id: 'mining', label: 'Mining & Foraging', view: Mining },
+  { id: 'farming', label: 'Farming', view: Advisor, section: 'farming' },
+  { id: 'hunting', label: 'Hunting', view: Advisor, section: 'hunting' },
+  { id: 'consumables', label: 'Consumables', view: Advisor, section: 'consumables' },
+  { id: 'collections', label: 'Collections & Minions', view: Collections },
+  { id: 'inventory', label: 'Inventory', view: Inventory },
+  { id: 'accessories', label: 'Accessories', view: Accessories },
+  { id: 'pets', label: 'Pets', view: Pets },
+  { id: 'crimson', label: 'Crimson & Rift', view: Crimson },
+  { id: 'misc', label: 'Events & Misc', view: Misc },
+];
 
+export default function Report({ report, tab: urlTab, onTab, refreshing, onRefresh, onPickProfile }) {
+  const tabsRef = useRef(null);
   const panelRef = useRef(null);
+  const tab = TABS.find((t) => t.id === (urlTab || load('profileTab', 'overview'))) ?? TABS[0];
 
   const changeTab = (id) => {
-    setTab(id);
-    save('tab', id);
-    // If the user is deep in the old list, start the new one from its top.
+    save('profileTab', id);
+    onTab(id);
+    // If the user is deep in the old tab, start the new one from its top.
     const top = panelRef.current?.getBoundingClientRect().top;
-    if (top != null && top < 0) {
-      window.scrollTo({ top: window.scrollY + top - 140, behavior: 'instant' });
-    }
+    if (top != null && top < 0) window.scrollTo({ top: window.scrollY + top - 170, behavior: 'instant' });
   };
 
-  const section = report.sections[tab] ?? report.sections.farming;
-
-  const jumpTo = (rowId) => {
-    const group = section.groups.find((g) => g.items.some((s) => s.id === rowId));
-    document.getElementById(`group-${section.id}-${group?.id}`)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-  };
-
+  const View = tab.view;
   return (
     <div className={refreshing ? 'opacity-70 transition-opacity' : 'transition-opacity'}>
       <ProfileBar report={report} refreshing={refreshing} onRefresh={onRefresh} onPickProfile={onPickProfile} />
@@ -55,69 +68,40 @@ export default function Report({ report, refreshing, onRefresh, onPickProfile })
         </div>
       )}
 
-      <Summary sections={report.sections} />
-
-      <div className="sticky top-16 z-10 -mx-4 mt-10 border-b border-line bg-bg/90 px-4 backdrop-blur-md sm:-mx-6 sm:px-6">
-        <div className="flex flex-wrap items-center justify-between gap-3 py-3">
-          <div role="tablist" aria-label="Report sections" className="flex gap-1 rounded-lg bg-surface-2 p-1">
-            {TABS.map((t) => {
-              const open = openCount(report.sections[t.id]);
-              const active = t.id === section.id;
-              return (
-                <button
-                  key={t.id}
-                  role="tab"
-                  type="button"
-                  aria-selected={active}
-                  onClick={() => changeTab(t.id)}
-                  className={`inline-flex h-8 items-center gap-2 rounded-md px-3 text-sm font-medium transition-colors ${
-                    active ? 'bg-surface text-text shadow-panel' : 'text-muted hover:text-text'
-                  }`}
-                >
-                  {t.label}
-                  {open > 0 && <span className="font-mono text-xs text-muted tabular">{open}</span>}
-                </button>
-              );
-            })}
-          </div>
-          <div className="flex items-center gap-4 text-sm">
-            <label className="inline-flex cursor-pointer items-center gap-2 text-muted">
-              <input
-                type="checkbox"
-                checked={hideDone}
-                onChange={(e) => {
-                  setHideDone(e.target.checked);
-                  save('hideDone', e.target.checked);
-                }}
-                className="size-4 accent-[var(--accent)]"
-              />
-              Hide finished
-            </label>
-            <label className="inline-flex items-center gap-2 text-muted">
-              Sort
-              <select
-                value={sort}
-                onChange={(e) => setSort(e.target.value)}
-                className="h-8 rounded-md border border-line bg-surface px-2 text-text focus:border-accent focus:outline-none"
+      <div className="sticky top-[105px] z-20 -mx-4 mt-6 border-b border-line bg-bg/90 px-4 backdrop-blur-md sm:-mx-6 sm:px-6 md:top-16">
+        <div ref={tabsRef} role="tablist" aria-label="Profile sections" className="scroll-x -mb-px flex gap-1 py-2">
+          {TABS.map((t) => {
+            const active = t.id === tab.id;
+            const open = t.section ? openCount(report.sections[t.section]) : 0;
+            return (
+              <button
+                key={t.id}
+                role="tab"
+                type="button"
+                aria-selected={active}
+                onClick={() => changeTab(t.id)}
+                className={`inline-flex h-8 shrink-0 items-center gap-1.5 rounded-md px-3 text-sm font-medium whitespace-nowrap transition-colors ${
+                  active ? 'bg-surface-2 text-text' : 'text-muted hover:text-text'
+                }`}
               >
-                <option value="default">By category</option>
-                <option value="gain">Biggest gain</option>
-                <option value="cost">Cheapest first</option>
-              </select>
-            </label>
-          </div>
+                {t.label}
+                {open > 0 && <span className="font-mono text-xs text-muted tabular">{open}</span>}
+              </button>
+            );
+          })}
         </div>
       </div>
 
-      <div ref={panelRef} className="mt-6" role="tabpanel" aria-label={section.title}>
-        <BestValue sectionId={section.id} picks={report.bestValue[section.id]} onJump={jumpTo} />
-        <SectionView section={section} hideDone={hideDone} sort={sort} />
+      <div ref={panelRef} className="mt-6" role="tabpanel" aria-label={tab.label}>
+        <Suspense fallback={<Loading />}>
+          <View report={report} stats={report.stats} sectionId={tab.section} onTab={changeTab} />
+        </Suspense>
       </div>
 
       <footer className="mt-16 max-w-[75ch] text-sm leading-relaxed text-muted">
-        Fortune values follow the community SkyBlock wiki and can lag behind game patches. Rows marked with a question
-        mark depend on data Hypixel does not share, so check them in game. Auction prices are the lowest BIN at the last
-        scan, and items that are usually upgraded in game are shown at their auction price.
+        Numbers come from the Hypixel API and the community SkyBlock wiki, and can lag behind game patches. Networth is an
+        estimate from bazaar and lowest-BIN prices of base items plus recombobulators, potato books, gems and pet items;
+        enchantments, reforges and stars are not counted.
       </footer>
     </div>
   );

@@ -2,9 +2,11 @@
 //   prices.json            lowest BIN per item from a full auction house scan
 //   items.json             item names and Peridot slots from the Hypixel items resource
 //   pets.json, attribute_shards.json   NotEnoughUpdates constants
+//   accessories.json       every accessory and its upgrade line, for the missing-accessory list
 // Usage: node scripts/build-data.mjs <output dir>
 import { mkdir, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
+import { buildAccessoryIndex } from '../shared/accessories.js';
 import { scanAuctionHouse, slimItems } from '../shared/prices.js';
 
 const out = process.argv[2] ?? 'dist/data';
@@ -17,11 +19,12 @@ async function getJson(url) {
 }
 
 const started = Date.now();
-const [scan, itemsRes, pets, attributes] = await Promise.all([
+const [scan, itemsRes, pets, attributes, misc] = await Promise.all([
   scanAuctionHouse((page) => getJson(`https://api.hypixel.net/v2/skyblock/auctions?page=${page}`)),
   getJson('https://api.hypixel.net/v2/resources/skyblock/items'),
   getJson(`${NEU}/pets.json`),
   getJson(`${NEU}/attribute_shards.json`),
+  getJson(`${NEU}/misc.json`).catch(() => ({})),
 ]);
 
 // Rounded prices keep the file small; nobody needs fractions of a coin.
@@ -34,6 +37,7 @@ const files = {
   // Only the fields the analyzers read.
   'pets.json': { pet_rarity_offset: pets.pet_rarity_offset, pet_levels: pets.pet_levels, custom_pet_leveling: pets.custom_pet_leveling },
   'attribute_shards.json': attributes,
+  'accessories.json': buildAccessoryIndex(itemsRes.items ?? [], misc),
 };
 for (const [name, data] of Object.entries(files)) {
   const text = JSON.stringify(data);

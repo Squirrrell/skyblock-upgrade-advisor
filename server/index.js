@@ -4,7 +4,7 @@ import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { ApiError } from '../shared/errors.js';
 import { analyzePlayer } from './report.js';
-import { getPriceBook, startAuctionPolling } from './prices.js';
+import { getDataFile, getPriceBook, startAuctionPolling } from './prices.js';
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
 const dist = join(root, 'dist');
@@ -29,6 +29,17 @@ app.get('/api/price/:id', async (req, res) => {
   try {
     const book = await getPriceBook();
     res.json({ id: req.params.id, price: book.price(req.params.id), meta: book.meta });
+  } catch (err) {
+    sendError(res, err);
+  }
+});
+
+// Item names and the auction snapshot for the bazaar and auction pages.
+app.get('/api/data/:file', async (req, res) => {
+  try {
+    const data = await getDataFile(req.params.file);
+    if (!data) return res.status(404).json({ error: 'Not found' });
+    res.set('Cache-Control', 'public, max-age=300').json(data);
   } catch (err) {
     sendError(res, err);
   }

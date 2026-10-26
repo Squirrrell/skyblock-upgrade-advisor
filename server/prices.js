@@ -1,6 +1,6 @@
 // Live prices for the Node server: bazaar instant-buy prices plus lowest BIN
 // from a full auction house scan, refreshed in the background.
-import { createPriceBook, scanAuctionHouse } from '../shared/prices.js';
+import { createPriceBook, scanAuctionHouse, slimItems } from '../shared/prices.js';
 import { getAuctionPage, getBazaar, getItemsResource } from './hypixel.js';
 
 const AUCTION_REFRESH_MS = 10 * 60_000;
@@ -65,4 +65,18 @@ export async function getPriceBook() {
       auctionPages: auctions.pages,
     },
   });
+}
+
+/** The same files the static build publishes under data/, for the tools pages. */
+export async function getDataFile(name) {
+  if (name === 'prices.json') {
+    const snap = await auctionsReady();
+    return { updatedAt: snap.updatedAt, pages: snap.pages, lowest: snap.lowest };
+  }
+  if (name === 'items.json') return slimItems([...(await loadItems()).values()]);
+  return null;
+}
+
+export async function getItemList() {
+  return [...(await loadItems()).values()];
 }

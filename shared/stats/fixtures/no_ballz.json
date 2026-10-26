@@ -1,0 +1,727 @@
+{
+ "_note": "Trimmed from no_ballz's Lemon profile (Oct 2026), inventory blobs removed.",
+ "player": {
+  "uuid": "1c5b2d98209a470e8057353cbfe42ae4",
+  "name": "No_Ballz"
+ },
+ "profiles": [
+  {
+   "profile_id": "02da0bbf-2ae3-4710-8fd9-af5184ccbaa6",
+   "cute_name": "Lemon",
+   "selected": true,
+   "banking": {
+    "balance": 27606000
+   },
+   "community_upgrades": {
+    "upgrade_states": [
+     {
+      "upgrade": "minion_slots",
+      "tier": 1
+     },
+     {
+      "upgrade": "minion_slots",
+      "tier": 2
+     },
+     {
+      "upgrade": "minion_slots",
+      "tier": 3
+     },
+     {
+      "upgrade": "minion_slots",
+      "tier": 4
+     }
+    ]
+   },
+   "members": {
+    "1c5b2d98209a470e8057353cbfe42ae4": {
+     "player_data": {
+      "experience": {
+       "SKILL_FARMING": 20564422.708566155,
+       "SKILL_FORAGING": 56193753.88559972,
+       "SKILL_MINING": 1178303.881514973,
+       "SKILL_ALCHEMY": 13280,
+       "SKILL_COMBAT": 33417402.50875793,
+       "SKILL_ENCHANTING": 70402537.14148638,
+       "SKILL_FISHING": 277440.78055000055,
+       "SKILL_SOCIAL": 9.59,
+       "SKILL_RUNECRAFTING": 33252.52,
+       "SKILL_TAMING": 63081194.0359842,
+       "SKILL_CARPENTRY": 3138160.5974999988,
+       "SKILL_HUNTING": 17765549.47,
+       "SKILL_FORAGING_extra_level_cap": 4
+      },
+      "death_count": 27,
+      "crafted_generators": [
+       "COBBLESTONE_1",
+       "IRON_5",
+       "OAK_8",
+       "OAK_9",
+       "REDSTONE_3",
+       "COBBLESTONE_2",
+       "WHEAT_1"
+      ],
+      "perks": {
+       "permanent_health": 1,
+       "catacombs_boss_luck": 2
+      },
+      "active_effects": [
+       {},
+       {}
+      ],
+      "garden_chips": {
+       "cropshot": 5
+      }
+     },
+     "leveling": {
+      "experience": 18025,
+      "highest_pet_score": 61,
+      "selected_symbol": "GOLDEN_FORAGING_CLOVER"
+     },
+     "profile": {
+      "bank_account": 8275401.04747753,
+      "first_join": 1790604619548,
+      "cookie_buff_active": true
+     },
+     "currencies": {
+      "coin_purse": 182403742.12612528,
+      "motes_purse": 78917,
+      "essence": {
+       "WITHER": {
+        "current": 1718
+       },
+       "SPIDER": {
+        "current": 2887
+       },
+       "UNDEAD": {
+        "current": 8282
+       },
+       "DRAGON": {
+        "current": 355
+       },
+       "GOLD": {
+        "current": 5113
+       },
+       "DIAMOND": {
+        "current": 3935
+       },
+       "ICE": {
+        "current": 3538
+       },
+       "CRIMSON": {
+        "current": 325
+       },
+       "SAFARI": {
+        "current": 0
+       }
+      }
+     },
+     "skill_tree": {
+      "nodes": {
+       "mining": {
+        "mining_speed": 12,
+        "toggle_mining_speed": true,
+        "mining_fortune": 5,
+        "titanium_insanium": 3,
+        "efficient_miner": 13,
+        "precision_mining": 1
+       },
+       "foraging": {
+        "center_of_the_forest": 5,
+        "sweep": 50,
+        "foraging_fortune": 50,
+        "hunters_luck": 36
+       }
+      },
+      "experience": {
+       "foraging": 547000,
+       "mining": 14068.3
+      },
+      "tokens_spent": {
+       "mountain": 5,
+       "forest": 17,
+       "forest_2": 4
+      }
+     },
+     "mining_core": {
+      "powder_mithril": 32570,
+      "powder_mithril_total": 32570,
+      "powder_spent_mithril": 13034,
+      "powder_gemstone": 622,
+      "powder_gemstone_total": 622
+     },
+     "forge": {
+      "forge_processes": {
+       "forge_1": {
+        "1": {
+         "type": "REFINING",
+         "id": "REFINED_TITANIUM",
+         "startTime": 1792255575060,
+         "slot": 1
+        },
+        "2": {
+         "type": "REFINING",
+         "id": "REFINED_TITANIUM",
+         "startTime": 1792255577918,
+         "slot": 2
+        }
+       }
+      }
+     },
+     "accessory_bag_storage": {
+      "tuning": {
+       "slot_0": {
+        "health": 0,
+        "walk_speed": 41
+       }
+      },
+      "highest_magical_power": 418,
+      "selected_power": "sighted",
+      "unlocked_powers": [
+       "sighted",
+       "silky"
+      ],
+      "bag_upgrades_purchased": 5
+     },
+     "jacobs_contest": {
+      "medals_inv": {
+       "bronze": 1,
+       "gold": 0,
+       "silver": 2
+      },
+      "perks": {
+       "personal_bests": true
+      },
+      "unique_brackets": {
+       "bronze": [
+        "MUSHROOM_COLLECTION"
+       ],
+       "gold": [
+        "MUSHROOM_COLLECTION"
+       ],
+       "silver": [
+        "MUSHROOM_COLLECTION",
+        "MELON"
+       ]
+      },
+      "contests": {
+       "519:8_31:MELON": {
+        "collected": 806886,
+        "claimed_medal": "silver"
+       },
+       "521:6_9:MUSHROOM_COLLECTION": {
+        "collected": 254525,
+        "claimed_medal": "gold"
+       },
+       "521:4_8:MUSHROOM_COLLECTION": {
+        "collected": 46697,
+        "claimed_medal": "bronze"
+       },
+       "518:2_28:PUMPKIN": {
+        "collected": 480
+       }
+      },
+      "personal_bests": {
+       "WHEAT": 3200,
+       "MELON": 806886,
+       "MUSHROOM_COLLECTION": 254525
+      }
+     },
+     "garden_player_data": {
+      "copper": 1313,
+      "larva_consumed": 5
+     },
+     "foraging": {
+      "tree_gifts": {
+       "FIG": 1244,
+       "MANGROVE": 2909,
+       "milestone_tier_claimed": {
+        "FIG": 6,
+        "MANGROVE": 7,
+        "HELIX": 6
+       },
+       "HELIX": 1076
+      },
+      "hina": {
+       "tasks": {
+        "tier_claimed": 4
+       }
+      },
+      "fish_family": [
+       "TREE_THE_FISH",
+       "SHRIMP_THE_FISH"
+      ],
+      "starlyn": {
+       "personal_bests": {
+        "FIG_LOG": 143818
+       }
+      },
+      "hunting_toolkit": {
+       "IS_UNLOCKED": true,
+       "IN_USE": {
+        "LASSO": {
+         "0": true
+        }
+       },
+       "LASSO": [
+        {
+         "type": 0,
+         "data": "H4sIAAAAAAAA/+NiYGBk4CzOL81Jyi/NS2HkYOApyc/Pyc4siS+pLEhlYPcI9Qvx9HPnYGDKTGEQdA1zDQoOCXINcfaI93EMDvbnYGApLQXKqCQaGaSZW6Qk65qaGpvomgBJ3cS0ZAPdxKQ0MwtDAyNjA8NEFgbOkszc1OKSxNwCoL0LPjPFxTAAABY8IGeCAAAA"
+        }
+       ],
+       "POCKET_BLACK_HOLE": [
+        {
+         "type": 0,
+         "data": "H4sIAAAAAAAA/+NiYOBgYMpMYZDwdXXxDPWND/B39nYNiXfycXT2jvfw93HlYGApLQUqUDE2NTY2SrE00TVOTU7RNUlNs9C1TDNL1TW1MDdMskg2s7RMNmFh4CzJzE0tLknMLWBgYFzw1/vYaQYAJiS0bGQAAAA="
+        }
+       ]
+      }
+     },
+     "safari": {
+      "milestone_claimed_tiers": {
+       "cavern": 9,
+       "forest": 9,
+       "haunted": 10,
+       "icy": 10
+      },
+      "tickets": {
+       "economy": 31,
+       "first_class": 3,
+       "basic": 4,
+       "premium": 2
+      },
+      "biome_captures": {
+       "cavern": 653,
+       "forest": 688,
+       "haunted": 805,
+       "icy": 764
+      },
+      "discovered_critters": [
+       "HIDEONWALL",
+       "FLITTER",
+       "SOLSNATCHER"
+      ]
+     },
+     "dungeons": {
+      "dungeon_types": {
+       "catacombs": {
+        "tier_completions": {
+         "0": 8,
+         "1": 6,
+         "2": 12,
+         "3": 20,
+         "4": 10,
+         "5": 104,
+         "6": 60,
+         "7": 106,
+         "total": 326
+        },
+        "best_score": {
+         "0": 204,
+         "1": 304,
+         "2": 305,
+         "3": 305,
+         "4": 305,
+         "5": 305,
+         "6": 318,
+         "7": 308,
+         "best": 318
+        },
+        "fastest_time": {
+         "0": 141099,
+         "1": 104584,
+         "7": 291288,
+         "best": 104584
+        },
+        "fastest_time_s_plus": {
+         "1": 244353,
+         "5": 136467,
+         "7": 291288,
+         "best": 136467
+        },
+        "times_played": {
+         "0": 9,
+         "1": 7,
+         "2": 14,
+         "3": 22,
+         "4": 11,
+         "5": 111,
+         "6": 64,
+         "7": 120,
+         "total": 358
+        },
+        "mobs_killed": {
+         "7": 11234,
+         "total": 37262
+        },
+        "watcher_kills": {
+         "7": 113,
+         "total": 339
+        },
+        "experience": 6243609.0352880005,
+        "highest_tier_completed": 7
+       },
+       "master_catacombs": {
+        "tier_completions": {}
+       }
+      },
+      "player_classes": {
+       "healer": {
+        "experience": 3922734.438773685
+       },
+       "mage": {
+        "experience": 1104308.9723218903
+       },
+       "berserk": {
+        "experience": 1054379.821430284
+       },
+       "archer": {
+        "experience": 861016.5765071498
+       },
+       "tank": {
+        "experience": 430114.8692506235
+       }
+      },
+      "secrets": 4094,
+      "selected_dungeon_class": "healer",
+      "dungeon_journal": {
+       "unlocked_journals": [
+        "a"
+       ]
+      }
+     },
+     "pets_data": {
+      "autopet": {},
+      "pets": [
+       {
+        "type": "RABBIT",
+        "tier": "EPIC",
+        "exp": 19350134,
+        "active": true,
+        "heldItem": "YELLOW_BANDANA",
+        "candyUsed": 0
+       },
+       {
+        "type": "HEDGEHOG",
+        "tier": "LEGENDARY",
+        "exp": 9966609,
+        "active": false,
+        "heldItem": "GREEN_BANDANA",
+        "candyUsed": 0
+       },
+       {
+        "type": "GUARDIAN",
+        "tier": "EPIC",
+        "exp": 85292648,
+        "active": false,
+        "heldItem": null,
+        "candyUsed": 0
+       },
+       {
+        "type": "SPIRIT",
+        "tier": "LEGENDARY",
+        "exp": 0,
+        "active": false,
+        "heldItem": null,
+        "candyUsed": 0
+       }
+      ]
+     },
+     "nether_island_player_data": {
+      "kuudra_completed_tiers": {},
+      "selected_faction": "mages",
+      "last_minibosses_killed": [
+       "BLADESOUL",
+       "MAGE_OUTLAW"
+      ],
+      "mages_reputation": 510,
+      "mages_reputation_highest": 510,
+      "matriarch": {
+       "pearls_collected": 3
+      },
+      "dojo": {
+       "dojo_points_mob_kb": 750,
+       "dojo_time_mob_kb": 120000,
+       "dojo_points_wall_jump": 738,
+       "dojo_time_wall_jump": 162800
+      }
+     },
+     "experimentation": {
+      "pairings": {
+       "best_score_0": 5,
+       "claims_0": 5,
+       "best_score_5": 8,
+       "claims_5": 8
+      },
+      "simon": {
+       "best_score_1": 15,
+       "claims_1": 9
+      },
+      "numbers": {
+       "best_score_2": 22,
+       "claims_2": 18
+      },
+      "serums_drank": 3
+     },
+     "bestiary": {
+      "kills": {
+       "graveyard_zombie_1": 323,
+       "last_killed_mob": "pest_worm_1",
+       "random_slime_8": 151,
+       "unburried_zombie_30": 1067
+      },
+      "milestone": {
+       "last_claimed_milestone": 151
+      }
+     },
+     "quests": {
+      "trapper_quest": {
+       "pelt_count": 252
+      }
+     },
+     "player_stats": {
+      "pets": {
+       "total_exp_gained": 258923385.9
+      },
+      "end_island": {
+       "special_zealot_loot_collected": 347
+      },
+      "candy_collected": {
+       "total": 270
+      },
+      "gifts": {
+       "total_received": 1186,
+       "total_given": 738
+      },
+      "highest_critical_damage": 8034128.56,
+      "highest_damage": 8034128.56,
+      "auctions": {
+       "bids": 113,
+       "highest_bid": 51900000,
+       "won": 93,
+       "gold_spent": 365970130,
+       "created": 85,
+       "fees": 1320774,
+       "completed": 75,
+       "gold_earned": 84089489
+      },
+      "kills": {
+       "total": 40000,
+       "zealot_enderman_55": 12000,
+       "graveyard_zombie_1": 323
+      },
+      "deaths": {
+       "total": 40,
+       "livid_clone_1": 12
+      },
+      "items_fished": {
+       "total": 10
+      },
+      "shard_combat_hunts": 3704,
+      "unique_shards": 49,
+      "shard_fishing_hunts": 1284,
+      "shard_forest_hunts": 2607,
+      "shard_salt_hunts": 544,
+      "sea_creature_kills": 37,
+      "races": {
+       "end_race_best_time": 15739,
+       "rift_race_best_time": 34079,
+       "dungeon_hub": {}
+      },
+      "rift": {
+       "visits": 26,
+       "lifetime_motes_earned": 113435
+      }
+     },
+     "inventory": {
+      "sacks_counts": {
+       "ENDER_PEARL": 640,
+       "BONE": 594,
+       "STRING": 143
+      }
+     },
+     "fairy_soul": {
+      "unspent_souls": 11,
+      "total_collected": 101,
+      "fairy_exchanges": 18
+     },
+     "attributes": {
+      "stacks": {
+       "nocturnal_animal": 96,
+       "bucket_lover": 24
+      }
+     },
+     "shards": {
+      "fused": 821,
+      "owned": [
+       {
+        "type": "CRICKET",
+        "amount_owned": 6
+       },
+       {
+        "type": "RAT",
+        "amount_owned": 2
+       },
+       {
+        "type": "BRUISER",
+        "amount_owned": 19
+       }
+      ]
+     },
+     "trophy_fish": {
+      "total_caught": 1,
+      "blobfish": 1,
+      "blobfish_bronze": 1,
+      "last_caught": "blobfish/bronze"
+     },
+     "slayer": {
+      "slayer_bosses": {
+       "zombie": {
+        "xp": 20230,
+        "boss_kills_tier_0": 1,
+        "boss_kills_tier_1": 1,
+        "boss_kills_tier_2": 2,
+        "boss_kills_tier_3": 40
+       },
+       "spider": {
+        "xp": 20230,
+        "boss_kills_tier_3": 40
+       },
+       "wolf": {
+        "xp": 20255,
+        "boss_kills_tier_3": 40
+       },
+       "enderman": {
+        "xp": 250,
+        "boss_kills_tier_0": 15,
+        "boss_kills_tier_1": 7
+       },
+       "vampire": {},
+       "blaze": {}
+      }
+     },
+     "collection": {
+      "ICE": 181472,
+      "WHEAT": 44832,
+      "MUSHROOM_COLLECTION": 6531957,
+      "CARROT_ITEM": 181661
+     },
+     "rift": {
+      "enigma": {
+       "found_souls": [
+        "A",
+        "B",
+        "C"
+       ]
+      },
+      "gallery": {
+       "secured_trophies": [
+        {
+         "type": "wyldly_supreme"
+        },
+        {
+         "type": "mirrored"
+        }
+       ]
+      },
+      "dead_cats": {
+       "found_cats": [
+        "first",
+        "second",
+        "third",
+        "fourth"
+       ],
+       "unlocked_pet": true
+      },
+      "wither_cage": {
+       "killed_eyes": [
+        "a",
+        "b",
+        "c"
+       ]
+      },
+      "lifetime_purchased_boundaries": [
+       "west_village",
+       "black_lagoon",
+       "mirrorverse"
+      ]
+     },
+     "events": {
+      "easter": {
+       "rabbits": {
+        "collected_locations": {
+         "hub": [
+          "a",
+          "b"
+         ]
+        },
+        "collected_eggs": {
+         "dinner": 1
+        },
+        "bruce": 1,
+        "fergie": 2,
+        "cassidy": 3
+       },
+       "employees": {
+        "rabbit_bro": 180,
+        "rabbit_cousin": 180
+       },
+       "time_tower": {
+        "level": 11
+       },
+       "rabbit_hitmen": {
+        "rabbit_hitmen_slots": 5
+       },
+       "total_chocolate": 11973437117,
+       "rabbit_barn_capacity_level": 106,
+       "chocolate_level": 4,
+       "chocolate_since_prestige": 5942757464,
+       "chocolate": 20106610,
+       "click_upgrades": 2,
+       "chocolate_multiplier_upgrades": 12,
+       "rabbit_rarity_upgrades": 13
+      }
+     },
+     "item_data": {
+      "soulflow": 1753
+     }
+    },
+    "8cc83a87d5a046828bfb0bb80761f42d": {
+     "player_data": {
+      "experience": {
+       "SKILL_SOCIAL": 120.5
+      },
+      "crafted_generators": [
+       "COBBLESTONE_1",
+       "WHEAT_2",
+       "CACTUS_1"
+      ]
+     },
+     "collection": {
+      "WHEAT": 1000,
+      "COBBLESTONE": 5000
+     }
+    }
+   }
+  }
+ ],
+ "garden": {
+  "garden_experience": 53267,
+  "unlocked_plots_ids": [
+   "beginner_1",
+   "beginner_2",
+   "advanced_3"
+  ],
+  "commission_data": {
+   "total_completed": 139,
+   "unique_npcs_served": 60
+  },
+  "crop_upgrade_levels": {
+   "MELON": 6,
+   "MUSHROOM_COLLECTION": 7
+  },
+  "resources_collected": {
+   "MELON": 186273040,
+   "MUSHROOM_COLLECTION": 15998501
+  }
+ }
+}

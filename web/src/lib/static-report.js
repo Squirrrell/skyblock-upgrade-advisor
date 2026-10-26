@@ -26,8 +26,12 @@ async function getJson(url, { signal, label }) {
 let staticData = null;
 function loadStatic(signal) {
   staticData ??= Promise.all(
-    ['prices', 'items', 'pets', 'attribute_shards'].map((name) =>
-      getJson(`${DATA}/${name}.json`, { signal, label: 'the price snapshot' }),
+    ['prices', 'items', 'pets', 'attribute_shards', 'accessories'].map((name) =>
+      getJson(`${DATA}/${name}.json`, { signal, label: 'the price snapshot' }).catch((err) => {
+        // Older deploys have no accessory index; the rest of the report still works.
+        if (name === 'accessories' && err.name !== 'AbortError') return null;
+        throw err;
+      }),
     ),
   ).catch((err) => {
     staticData = null;
@@ -56,7 +60,7 @@ export async function fetchStaticReport(name, wantedProfile, { signal } = {}) {
   if (!profiles?.length) throw new ReportError(`${player.name} has never played SkyBlock.`, { code: 'NO_PROFILES' });
 
   const profile = pickProfile(profiles, wantedProfile);
-  const [gardenRes, [[prices, items, pets, attributes], bz]] = await Promise.all([
+  const [gardenRes, [[prices, items, pets, attributes, accessories], bz]] = await Promise.all([
     getJson(`${PROXY}/garden/${profile.profile_id}`, { signal, label: 'the lookup proxy' }).catch((err) => {
       if (err.name === 'AbortError') throw err;
       return null;
@@ -72,7 +76,7 @@ export async function fetchStaticReport(name, wantedProfile, { signal } = {}) {
   });
 
   try {
-    return buildReport({ player, profiles, profile, garden: gardenRes?.garden ?? null, book, petConstants: pets, attrConstants: attributes });
+    return buildReport({ player, profiles, profile, garden: gardenRes?.garden ?? null, book, petConstants: pets, attrConstants: attributes, accessoryIndex: accessories });
   } catch (err) {
     throw new ReportError(err.message, { status: err.status, code: err.code });
   }

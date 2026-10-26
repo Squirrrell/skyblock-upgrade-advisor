@@ -7,7 +7,6 @@ import {
   LightbulbIcon,
   QuestionIcon,
 } from '@phosphor-icons/react';
-import { AnimatePresence, motion } from 'motion/react';
 import { useState } from 'react';
 import { coins, num } from '../lib/format.js';
 
@@ -96,15 +95,8 @@ export default function SourceRow({ item }) {
         </div>
       </div>
 
-      <AnimatePresence initial={false}>
-        {open && hasLines && (
-          <motion.div
-            initial={{ opacity: 0, y: -4 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -4 }}
-            transition={{ duration: 0.18 }}
-            className="mb-4 ml-9 rounded-lg bg-surface-2 p-3"
-          >
+      {open && hasLines && (
+          <div className="fade-in mb-4 ml-9 rounded-lg bg-surface-2 p-3">
             <table className="w-full text-sm">
               <thead className="sr-only">
                 <tr>
@@ -131,9 +123,8 @@ export default function SourceRow({ item }) {
                 ))}
               </tbody>
             </table>
-          </motion.div>
+          </div>
         )}
-      </AnimatePresence>
     </li>
   );
 }

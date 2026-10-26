@@ -17,6 +17,14 @@
   --warn: #8f6210;
   --danger: #b0443a;
   --shadow: 0 1px 2px #1d2a3314, 0 8px 24px #1d2a330d;
+  --r-common: #4b5563;
+  --r-uncommon: #1f8f37;
+  --r-rare: #2f5be0;
+  --r-epic: #8e2bab;
+  --r-legendary: #b06a00;
+  --r-mythic: #c4329f;
+  --r-divine: #0e8597;
+  --r-special: #c43a3a;
 }
 
 [data-theme='dark'] {
@@ -32,6 +40,14 @@
   --warn: #d6a446;
   --danger: #e0715f;
   --shadow: 0 1px 2px #0006, 0 8px 24px #0004;
+  --r-common: #c9ccd1;
+  --r-uncommon: #5ed65e;
+  --r-rare: #7b97ff;
+  --r-epic: #c86ae0;
+  --r-legendary: #f5a623;
+  --r-mythic: #ff73e6;
+  --r-divine: #4fd8e8;
+  --r-special: #ff6a6a;
 }
 
 @theme inline {
@@ -97,4 +113,41 @@ body {
   .skeleton {
     animation: shimmer 1.6s linear infinite;
   }
+}
+
+.r-common { color: var(--r-common); }
+.r-uncommon { color: var(--r-uncommon); }
+.r-rare { color: var(--r-rare); }
+.r-epic { color: var(--r-epic); }
+.r-legendary { color: var(--r-legendary); }
+.r-mythic { color: var(--r-mythic); }
+.r-divine { color: var(--r-divine); }
+.r-special { color: var(--r-special); }
+
+/* Gentle entrance for panels, replacing the motion library. */
+@media (prefers-reduced-motion: no-preference) {
+  .fade-in {
+    animation: fade-in 0.35s cubic-bezier(0.16, 1, 0.3, 1) both;
+  }
+}
+
+@keyframes fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+}
+
+.scroll-x {
+  overflow-x: auto;
+  scrollbar-width: thin;
+}
+
+.scroll-x::-webkit-scrollbar {
+  height: 6px;
+}
+
+.scroll-x::-webkit-scrollbar-thumb {
+  background: var(--line);
+  border-radius: 3px;
 }

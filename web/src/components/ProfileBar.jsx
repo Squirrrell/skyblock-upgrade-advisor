@@ -19,7 +19,19 @@ export default function ProfileBar({ report, refreshing, onRefresh, onPickProfil
         <div className="min-w-0">
           <h1 className="truncate text-2xl font-semibold tracking-tight">{player.name}</h1>
           <p className="mt-0.5 text-sm text-muted">
+            {report.stats && <span className="mr-2 font-mono text-accent tabular">SB {report.stats.overview.sbLevel}</span>}
             Prices from the bazaar {ago(prices.bazaarUpdatedAt)}, auction house {ago(prices.auctionsUpdatedAt)}
+          </p>
+          <p className="mt-1 flex flex-wrap gap-x-3 text-xs">
+            {[
+              ['SkyCrypt', `https://sky.shiiyu.moe/stats/${player.name}/${profile.name}`],
+              ['Elite', `https://elitebot.dev/@${player.name}/${profile.name}`],
+              ['Plancke', `https://plancke.io/hypixel/player/stats/${player.name}`],
+            ].map(([label, href]) => (
+              <a key={label} href={href} target="_blank" rel="noreferrer" className="text-muted underline-offset-2 hover:text-accent hover:underline">
+                {label}
+              </a>
+            ))}
           </p>
         </div>
       </div>

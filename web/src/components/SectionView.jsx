@@ -1,4 +1,3 @@
-import { motion } from 'motion/react';
 import { useMemo } from 'react';
 import SourceRow from './SourceRow.jsx';
 
@@ -33,13 +32,11 @@ export default function SectionView({ section, hideDone, sort }) {
   return (
     <div className="flex flex-col gap-6">
       {groups.map((g, i) => (
-        <motion.section
+        <section
           key={g.id}
           id={`group-${section.id}-${g.id}`}
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.35, delay: Math.min(i, 6) * 0.04, ease: [0.16, 1, 0.3, 1] }}
-          className="rounded-xl border border-line bg-surface px-5 shadow-panel sm:px-6"
+          style={{ animationDelay: `${Math.min(i, 6) * 40}ms` }}
+          className="fade-in rounded-xl border border-line bg-surface px-5 shadow-panel sm:px-6"
           aria-labelledby={`title-${section.id}-${g.id}`}
         >
           <header className="border-b border-line py-4">
@@ -53,7 +50,7 @@ export default function SectionView({ section, hideDone, sort }) {
               <SourceRow key={item.id} item={item} />
             ))}
           </ul>
-        </motion.section>
+        </section>
       ))}
     </div>
   );

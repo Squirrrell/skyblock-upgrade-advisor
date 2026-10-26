@@ -1,7 +1,7 @@
 // Turns a raw Hypixel profile member into something the analyzers can query:
 // a flat list of every item the player owns, their pets with levels, and
 // skill levels.
-import { decodeInventory } from './nbt.js';
+import { decodeInventory, decodeNbtBase64 } from './nbt.js';
 
 export const RARITIES = ['COMMON', 'UNCOMMON', 'RARE', 'EPIC', 'LEGENDARY', 'MYTHIC', 'DIVINE', 'SPECIAL', 'VERY_SPECIAL'];
 
@@ -63,10 +63,13 @@ function normalizeItem(raw, location) {
       petInfo = null;
     }
   }
+  const display = raw.tag.display?.Name;
   return {
     id: extra.id,
     uuid: extra.uuid ?? null,
-    name: stripColor(raw.tag.display?.Name ?? extra.id),
+    // Toolkit items carry no display name, so fall back to a readable id.
+    name: display ? stripColor(display).trim() : prettyName(extra.id),
+    hasDisplayName: Boolean(display),
     location,
     count: raw.Count ?? 1,
     rarity: itemRarity(lore),
@@ -81,6 +84,23 @@ function normalizeItem(raw, location) {
     petInfo,
     extra,
   };
+}
+
+const prettyName = (id) => String(id).toLowerCase().replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
+
+/**
+ * Farming and hunting toolkit slots hold one bare item compound (its
+ * ExtraAttributes) instead of an inventory list, so wrap it as an item.
+ */
+function decodeToolkitSlot(data) {
+  const list = decodeInventory(data);
+  if (list.length) return list;
+  try {
+    const root = decodeNbtBase64(data);
+    return root?.id ? [{ Count: 1, tag: { ExtraAttributes: root } }] : [];
+  } catch {
+    return [];
+  }
 }
 
 // Inventory fields that hold a single encoded blob.
@@ -112,8 +132,8 @@ function findBlobs(node, path, out) {
 
 export function collectItems(member) {
   const items = [];
-  const push = (blob, location) => {
-    for (const raw of decodeInventory(blob)) {
+  const push = (blob, location, decode = decodeInventory) => {
+    for (const raw of decode(blob)) {
       const item = normalizeItem(raw, location);
       if (item) items.push(item);
     }
@@ -128,7 +148,12 @@ export function collectItems(member) {
   const extra = [];
   findBlobs(member.loadout, 'loadout', extra);
   findBlobs(member.garden_player_data?.farming_toolkit, 'toolkit', extra);
-  for (const { path, data } of extra) push(data, path.startsWith('toolkit') ? 'Farming toolkit' : 'Loadout');
+  findBlobs(member.foraging?.hunting_toolkit, 'hunting', extra);
+  const where = { toolkit: 'Farming toolkit', hunting: 'Hunting toolkit', loadout: 'Loadout' };
+  for (const { path, data } of extra) {
+    const kind = path.split('.')[0];
+    push(data, where[kind], kind === 'loadout' ? decodeInventory : decodeToolkitSlot);
+  }
 
   return items;
 }

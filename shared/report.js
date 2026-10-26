@@ -5,6 +5,8 @@ import { analyzeFarming } from './analyze/farming.js';
 import { analyzeHunting } from './analyze/hunting.js';
 import { ApiError } from './errors.js';
 import { collectItems, collectPets } from './profile.js';
+import { buildStats } from './stats/index.js';
+import { missingAccessories } from './accessories.js';
 
 export function pickProfile(profiles, wanted) {
   if (wanted) {
@@ -42,7 +44,7 @@ function bestValue(section) {
   return picks.sort((a, b) => a.perPoint - b.perPoint).slice(0, 8);
 }
 
-export function buildReport({ player, profiles, profile, garden, book, petConstants, attrConstants }) {
+export function buildReport({ player, profiles, profile, garden, book, petConstants, attrConstants, accessoryIndex = null }) {
   const member = profile.members?.[player.uuid];
   if (!member) throw new ApiError(404, 'Could not find this player in the selected profile.');
 
@@ -60,12 +62,15 @@ export function buildReport({ player, profiles, profile, garden, book, petConsta
   const farming = analyzeFarming(ctx);
   const hunting = analyzeHunting(ctx);
   const consumables = analyzeConsumables(ctx);
+  const stats = buildStats(ctx);
+  stats.accessories.missing = missingAccessories(ctx.items, accessoryIndex, book);
 
   return {
     player,
     profile: { id: profile.profile_id, name: profile.cute_name, gameMode: profile.game_mode ?? 'normal' },
     profiles: profiles.map((p) => ({ id: p.profile_id, name: p.cute_name, selected: Boolean(p.selected), gameMode: p.game_mode ?? 'normal' })),
     sections: { farming, hunting, consumables },
+    stats,
     bestValue: { farming: bestValue(farming), hunting: bestValue(hunting) },
     warnings: apiWarnings(member, profile),
     prices: book.meta,

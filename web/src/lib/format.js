@@ -26,3 +26,34 @@ export function ago(ts) {
   if (m < 60) return `${m} min ago`;
   return `${Math.round(m / 60)} h ago`;
 }
+
+/** 104584 ms -> "1:44" */
+export function duration(ms) {
+  if (ms == null) return '-';
+  const total = Math.round(ms / 1000);
+  const h = Math.floor(total / 3600);
+  const m = Math.floor((total % 3600) / 60);
+  const s = String(total % 60).padStart(2, '0');
+  return h ? `${h}:${String(m).padStart(2, '0')}:${s}` : `${m}:${s}`;
+}
+
+export function date(ts) {
+  if (!ts) return '-';
+  return new Date(ts).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
+}
+
+/** Whole numbers with separators: 1234567 -> "1,234,567" */
+export const int = (n) => (n == null ? '-' : Math.round(n).toLocaleString('en-US'));
+
+/** Time until a future timestamp: "2 h 5 min", "14 min", "now". */
+export function until(ts, now = Date.now()) {
+  const s = Math.round((ts - now) / 1000);
+  if (s <= 0) return 'now';
+  const d = Math.floor(s / 86400);
+  const h = Math.floor((s % 86400) / 3600);
+  const m = Math.floor((s % 3600) / 60);
+  if (d) return `${d} d ${h} h`;
+  if (h) return `${h} h ${m} min`;
+  if (m) return `${m} min`;
+  return `${s}s`;
+}
