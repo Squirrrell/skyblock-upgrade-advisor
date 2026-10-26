@@ -472,19 +472,23 @@ function petsGroup(ctx) {
   // Pet item on the best pet.
   if (best) {
     const level = gardenLevel(ctx.garden?.garden_experience ?? 0);
-    const baseValue = best.value;
+    // Relics scale base pet stats, not fortune from perks.
+    const baseValue = best.def.baseStat != null ? (best.def.baseStat * best.value) / best.def.values[best.pet.tier] : best.value;
     const itemValue = (pi) =>
       pi.kind === 'garden' ? Math.min(pi.cap, pi.perGardenLevel * level) : pi.kind === 'flat' ? pi.value : baseValue * pi.value;
     const options = PET_ITEMS.map((pi) => ({ ...pi, gives: itemValue(pi) })).sort((a, b) => b.gives - a.gives);
     const held = options.find((o) => o.id === best.pet.heldItem);
     const ideal = options[0];
+    // A held item we have no fortune value for may still be a deliberate choice.
+    const unrated = best.pet.heldItem && !held;
     rows.push(
       source({
         id: 'pet-item',
         name: 'Pet item',
+        status: unrated ? 'unknown' : undefined,
         current: held?.gives ?? 0,
         max: ideal.gives,
-        detail: `${best.def.name} holds ${held ? held.name : best.pet.heldItem ? prettyId(best.pet.heldItem) : 'nothing'}. Best option here: ${ideal.name} (+${round(ideal.gives)}).`,
+        detail: `${best.def.name} holds ${held ? held.name : best.pet.heldItem ? prettyId(best.pet.heldItem) : 'nothing'}${unrated ? ', which this tool has no fortune value for' : ''}. Best fortune option: ${ideal.name} (+${round(ideal.gives)}).`,
         action: held?.id === ideal.id ? null : `Give your ${best.def.name} a ${ideal.name}`,
         cost: held?.id === ideal.id ? null : priceLines(book, [{ id: ideal.id, qty: 1 }]),
       }),

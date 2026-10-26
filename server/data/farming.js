@@ -47,7 +47,8 @@ export const EQUIPMENT_MAX_VISITORS = 2500;
 // Pets. `value` is fortune at max level for that rarity; the analyzer scales
 // linearly with level. Conditional pets are listed but not counted in totals.
 export const FARMING_PETS = [
-  { type: 'ROSE_DRAGON', name: 'Rose Dragon', values: { LEGENDARY: 336.7 }, note: 'Level 200 with maxed crop milestones and other farming pets' },
+  // Only +40 of the Rose Dragon's fortune is a base stat that relics can boost.
+  { type: 'ROSE_DRAGON', name: 'Rose Dragon', values: { LEGENDARY: 336.7 }, baseStat: 40, note: 'Assumes maxed crop milestones and other farming pets' },
   { type: 'ELEPHANT', name: 'Elephant', values: { LEGENDARY: 150, MYTHIC: 200 } },
   { type: 'MOOSHROOM_COW', name: 'Mooshroom Cow', values: { COMMON: 100, UNCOMMON: 100, RARE: 100, EPIC: 100, LEGENDARY: 100 }, note: 'Plus more from Strength' },
   { type: 'CHICKEN', name: 'Chicken', values: { COMMON: 50, UNCOMMON: 50, RARE: 50, EPIC: 50, LEGENDARY: 50 } },

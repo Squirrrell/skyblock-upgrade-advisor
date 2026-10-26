@@ -42,7 +42,7 @@ function gearGroup(ctx) {
       current: cloak?.rarity === 'MYTHIC' ? 30 : 0,
       max: 30,
       detail: cloak
-        ? `You own a ${prettyId(cloak.rarity ?? 'common')} one. It reaches +30 at Mythic with Attribute Stacks milestone XXX.`
+        ? `Yours is ${prettyId(cloak.rarity ?? 'common')}. It reaches +30 at Mythic with Attribute Stacks milestone XXX.`
         : 'Not owned. Get it from David Hunterbrough on Galatea.',
       action: cloak ? 'Upgrade it by raising your Attribute Stacks milestone' : 'Start the hunting quest line on Galatea',
       costNote: 'Not tradeable',
@@ -60,7 +60,7 @@ function gearGroup(ctx) {
       max: 30,
       condition: 'Critter Safari only',
       detail: belt
-        ? `You own a ${prettyId(belt.rarity ?? 'common')} one. It reaches +30 at Mythic with the Haunted and Cavern biome milestones.`
+        ? `Yours is ${prettyId(belt.rarity ?? 'common')}. It reaches +30 at Mythic with the Haunted and Cavern biome milestones.`
         : 'Not owned',
       action: belt ? 'Raise your biome milestones' : 'Unlock it through Critter Safari biome milestones',
       costNote: 'Not tradeable',
@@ -146,7 +146,8 @@ function otherGroup(ctx) {
   const { member, pets, book } = ctx;
   const rows = [];
 
-  const luck = deepFind(member.skill_tree, 'hunters_luck') ?? deepFind(member.foraging_core, 'hunters_luck');
+  // A missing key under an existing skill tree just means the perk is level 0.
+  const luck = deepFind(member.skill_tree, 'hunters_luck') ?? (member.skill_tree?.nodes ? 0 : undefined);
   rows.push(
     source({
       id: 'hunters-luck',
@@ -190,7 +191,8 @@ function otherGroup(ctx) {
     }),
   );
 
-  const hotspot = deepFind(member.player_data?.perks, 'hunting_hotspot');
+  const perks = member.player_data?.perks;
+  const hotspot = perks && typeof perks === 'object' ? perks.hunting_hotspot ?? 0 : undefined;
   rows.push(
     source({
       id: 'hotspot',
