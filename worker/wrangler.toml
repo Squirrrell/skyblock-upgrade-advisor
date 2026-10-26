@@ -1,0 +1,19 @@
+name = "skyblock-advisor-proxy"
+main = "src/index.js"
+compatibility_date = "2026-10-01"
+
+[vars]
+# Sites allowed to call the proxy. Add your custom domain here if you use one.
+ALLOWED_ORIGINS = "https://squirrrell.github.io,http://localhost:5173,http://localhost:4173"
+
+# 30 lookups per minute per visitor IP. Each profile load makes 3 calls.
+[[ratelimits]]
+name = "LIMITER"
+namespace_id = "1001"
+
+  [ratelimits.simple]
+  limit = 30
+  period = 60
+
+# The API key is a secret, never put it in this file:
+#   npx wrangler secret put HYPIXEL_API_KEY

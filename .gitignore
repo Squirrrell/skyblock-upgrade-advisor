@@ -5,3 +5,7 @@ dist/
 *.log
 .DS_Store
 .claude/
+.dev.vars
+.wrangler/
+worker/.dev.vars
+worker/.wrangler/
