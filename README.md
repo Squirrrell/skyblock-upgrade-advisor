@@ -48,6 +48,44 @@ Open http://localhost:8787.
 
 For development, `npm run dev` starts the API with auto-reload and the Vite dev server on http://localhost:5173.
 
+## Hosting on GitHub Pages
+
+GitHub Pages only serves static files, and a key shipped to the browser is public. So the Pages build splits the work:
+
+- A small Cloudflare Worker (`worker/`) holds the Hypixel key as a secret. It answers only three lookups (player name, profiles, garden), only for your site's origin, and rate-limits each visitor to 30 calls a minute.
+- The browser fetches bazaar prices straight from Hypixel (no key needed) and runs the same analysis code as the server, from `shared/`.
+- A GitHub Action scans the auction house every 30 minutes and publishes the lowest-BIN snapshot with the site.
+
+Setup, once:
+
+1. Deploy the Worker. You need a free Cloudflare account.
+
+   ```bash
+   cd worker
+   npm install
+   npx wrangler login
+   npx wrangler secret put HYPIXEL_API_KEY
+   npx wrangler deploy
+   ```
+
+   Wrangler prints the Worker URL, something like `https://skyblock-advisor-proxy.<you>.workers.dev`.
+2. If your Pages site is not `https://squirrrell.github.io`, change `ALLOWED_ORIGINS` in `worker/wrangler.toml` and deploy again.
+3. In the GitHub repo, add a repository variable `PROXY_URL` set to the Worker URL (Settings, Secrets and variables, Actions, Variables).
+4. Set Settings, Pages, Source to "GitHub Actions", then run the "Deploy to GitHub Pages" workflow.
+
+To renew the key later, run `npx wrangler secret put HYPIXEL_API_KEY` again. Nothing on the site changes. Development keys expire, so for a public site apply for a production key on the Hypixel dashboard.
+
+To try the Pages build locally, put `HYPIXEL_API_KEY=...` in `worker/.dev.vars`, run `npx wrangler dev --port 8791` in `worker/`, then:
+
+```bash
+VITE_BASE=/skyblock-upgrade-advisor/ VITE_PROXY_URL=http://127.0.0.1:8791 npm run build:pages
+```
+```bash
+VITE_BASE=/skyblock-upgrade-advisor/ npm run preview:pages
+```
+
+and open http://localhost:4173/skyblock-upgrade-advisor/. On Git Bash for Windows, prefix both commands with `MSYS_NO_PATHCONV=1`.
+
 ### Offline testing
 
 Set `PROFILE_FIXTURE` to the path of a saved `/v2/skyblock/profiles` response (either the `profiles` array or `{ "profiles": [...], "garden": {...} }`). The server will use it instead of calling Hypixel, so you can work on the UI without a key. Look up the UUID of a member of that profile.
@@ -61,9 +99,9 @@ npm test
 ## How it works
 
 - `server/hypixel.js` talks to the Hypixel and Mojang APIs and caches responses for a couple of minutes.
-- `server/prices.js` reads bazaar instant-buy prices and scans every auction page for the lowest BIN, refreshing every 10 minutes. Pets are priced by type and rarity, preferring level 100 listings.
-- `server/profile.js` decodes the NBT inventory blobs (armor, wardrobe, ender chest, backpacks, accessory bag, loadouts and the farming toolkit) into a flat item list, and works out pet levels.
-- `server/analyze/` turns that into report rows. The fortune values live in `server/data/` so they can be updated after a game patch without touching the logic.
+- `server/prices.js` (with `shared/prices.js`) reads bazaar instant-buy prices and scans every auction page for the lowest BIN, refreshing every 10 minutes. Pets are priced by type and rarity, preferring level 100 listings.
+- `shared/profile.js` decodes the NBT inventory blobs (armor, wardrobe, ender chest, backpacks, accessory bag, loadouts and the farming toolkit) into a flat item list, and works out pet levels.
+- `shared/analyze/` turns that into report rows. The fortune values live in `shared/data/` so they can be updated after a game patch without touching the logic. Everything in `shared/` runs in both Node and the browser.
 - Pet leveling curves and the attribute shard list come from the [NotEnoughUpdates repo](https://github.com/NotEnoughUpdates/NotEnoughUpdates-REPO) at runtime.
 
 ## Limits

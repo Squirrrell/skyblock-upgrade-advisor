@@ -1,0 +1,67 @@
+# Builds the static site and a fresh auction price snapshot, then publishes
+# both to GitHub Pages. Runs on every push to main and every 30 minutes so
+# lowest-BIN prices stay current. Bazaar prices are fetched live in the browser.
+#
+# Needs one repository variable: PROXY_URL, the deployed Cloudflare Worker URL
+# (Settings > Secrets and variables > Actions > Variables).
+name: Deploy to GitHub Pages
+
+on:
+  push:
+    branches: [main]
+  schedule:
+    - cron: '*/30 * * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check the proxy URL is set
+        run: |
+          if [ -z "${{ vars.PROXY_URL }}" ]; then
+            echo "::error::Set the PROXY_URL repository variable to your Cloudflare Worker URL."
+            exit 1
+          fi
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - run: npm ci
+
+      - run: npm test
+
+      - name: Build site and price snapshot
+        run: npm run build:pages
+        env:
+          VITE_BASE: /${{ github.event.repository.name }}/
+          VITE_PROXY_URL: ${{ vars.PROXY_URL }}
+
+      - uses: actions/configure-pages@v5
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: dist
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4
