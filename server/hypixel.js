@@ -1,3 +1,4 @@
+import { readFile } from 'node:fs/promises';
 import { createCache } from './lib/cache.js';
 
 const API = 'https://api.hypixel.net/v2';
@@ -66,7 +67,15 @@ export async function resolvePlayer(input) {
   });
 }
 
+// Offline testing: PROFILE_FIXTURE points at a saved /v2/skyblock/profiles
+// response (an array, or { profiles, garden }) used instead of the live API.
+async function readFixture() {
+  const data = JSON.parse(await readFile(process.env.PROFILE_FIXTURE, 'utf8'));
+  return Array.isArray(data) ? { profiles: data, garden: null } : { profiles: data.profiles ?? [], garden: data.garden ?? null };
+}
+
 export function getProfiles(uuid) {
+  if (process.env.PROFILE_FIXTURE) return readFixture().then((f) => f.profiles);
   return cache.get(`profiles:${uuid}`, 2 * 60_000, async () => {
     const data = await getJson(`${API}/skyblock/profiles?uuid=${uuid}`, {
       headers: { 'API-Key': apiKey() },
@@ -77,6 +86,7 @@ export function getProfiles(uuid) {
 }
 
 export function getGarden(profileId) {
+  if (process.env.PROFILE_FIXTURE) return readFixture().then((f) => f.garden);
   return cache.get(`garden:${profileId}`, 2 * 60_000, async () => {
     const data = await getJson(`${API}/skyblock/garden?profile=${profileId}`, {
       headers: { 'API-Key': apiKey() },
