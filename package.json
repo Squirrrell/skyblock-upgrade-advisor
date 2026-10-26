@@ -13,11 +13,14 @@
     "dev:api": "node --env-file-if-exists=.env --watch server/index.js",
     "dev:web": "vite",
     "build": "vite build",
+    "build:pages": "vite build && node scripts/build-data.mjs dist/data",
+    "preview:pages": "vite preview --port 4173",
     "start": "node --env-file-if-exists=.env server/index.js",
     "test": "node --test"
   },
   "dependencies": {
-    "express": "^5.3.0"
+    "express": "^5.3.0",
+    "fflate": "^0.8.3"
   },
   "devDependencies": {
     "@fontsource-variable/geist": "^5.3.0",

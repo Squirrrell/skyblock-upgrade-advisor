@@ -1,16 +1,11 @@
 import { readFile } from 'node:fs/promises';
+import { ApiError } from '../shared/errors.js';
 import { createCache } from './lib/cache.js';
 
 const API = 'https://api.hypixel.net/v2';
 const cache = createCache();
 
-export class ApiError extends Error {
-  constructor(status, message, { code } = {}) {
-    super(message);
-    this.status = status;
-    this.code = code;
-  }
-}
+export { ApiError };
 
 function apiKey() {
   const key = process.env.HYPIXEL_API_KEY?.trim();

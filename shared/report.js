@@ -1,12 +1,12 @@
-import { ApiError, getGarden, getProfiles, resolvePlayer } from '../hypixel.js';
-import { getPriceBook } from '../prices.js';
-import { collectItems, collectPets } from '../profile.js';
-import { getAttributeConstants, getPetConstants } from '../repo.js';
-import { analyzeConsumables } from './consumables.js';
-import { analyzeFarming } from './farming.js';
-import { analyzeHunting } from './hunting.js';
+// Turns already-fetched data into the report. No network access here, so the
+// Node server and the static GitHub Pages build share it.
+import { analyzeConsumables } from './analyze/consumables.js';
+import { analyzeFarming } from './analyze/farming.js';
+import { analyzeHunting } from './analyze/hunting.js';
+import { ApiError } from './errors.js';
+import { collectItems, collectPets } from './profile.js';
 
-function pickProfile(profiles, wanted) {
+export function pickProfile(profiles, wanted) {
   if (wanted) {
     const w = String(wanted).toLowerCase();
     const match = profiles.find((p) => p.profile_id === w || p.cute_name?.toLowerCase() === w);
@@ -42,21 +42,9 @@ function bestValue(section) {
   return picks.sort((a, b) => a.perPoint - b.perPoint).slice(0, 8);
 }
 
-export async function analyzePlayer(query, wantedProfile) {
-  const player = await resolvePlayer(query);
-  const profiles = await getProfiles(player.uuid);
-  if (!profiles.length) throw new ApiError(404, `${player.name} has never played SkyBlock.`, { code: 'NO_PROFILES' });
-
-  const profile = pickProfile(profiles, wantedProfile);
+export function buildReport({ player, profiles, profile, garden, book, petConstants, attrConstants }) {
   const member = profile.members?.[player.uuid];
   if (!member) throw new ApiError(404, 'Could not find this player in the selected profile.');
-
-  const [garden, book, petConstants, attrConstants] = await Promise.all([
-    getGarden(profile.profile_id).catch(() => null),
-    getPriceBook(),
-    getPetConstants(),
-    getAttributeConstants(),
-  ]);
 
   const ctx = {
     member,

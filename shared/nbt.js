@@ -1,30 +1,34 @@
 // Minimal reader for the gzipped, base64 NBT blobs Hypixel uses for inventories
-// and auction items. Only reading is supported; longs become Numbers.
-import { gunzipSync } from 'node:zlib';
+// and auction items. Runs in Node and in the browser. Only reading is
+// supported; longs become Numbers.
+import { gunzipSync } from 'fflate';
 
 const TAG = {
   END: 0, BYTE: 1, SHORT: 2, INT: 3, LONG: 4, FLOAT: 5, DOUBLE: 6,
   BYTE_ARRAY: 7, STRING: 8, LIST: 9, COMPOUND: 10, INT_ARRAY: 11, LONG_ARRAY: 12,
 };
 
+const utf8 = new TextDecoder();
+
 class Reader {
-  constructor(buf) {
-    this.buf = buf;
+  constructor(bytes) {
+    this.bytes = bytes;
+    this.view = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
     this.pos = 0;
   }
 
-  byte() { const v = this.buf.readInt8(this.pos); this.pos += 1; return v; }
-  ubyte() { const v = this.buf.readUInt8(this.pos); this.pos += 1; return v; }
-  short() { const v = this.buf.readInt16BE(this.pos); this.pos += 2; return v; }
-  ushort() { const v = this.buf.readUInt16BE(this.pos); this.pos += 2; return v; }
-  int() { const v = this.buf.readInt32BE(this.pos); this.pos += 4; return v; }
-  long() { const v = this.buf.readBigInt64BE(this.pos); this.pos += 8; return Number(v); }
-  float() { const v = this.buf.readFloatBE(this.pos); this.pos += 4; return v; }
-  double() { const v = this.buf.readDoubleBE(this.pos); this.pos += 8; return v; }
+  byte() { const v = this.view.getInt8(this.pos); this.pos += 1; return v; }
+  ubyte() { const v = this.view.getUint8(this.pos); this.pos += 1; return v; }
+  short() { const v = this.view.getInt16(this.pos); this.pos += 2; return v; }
+  ushort() { const v = this.view.getUint16(this.pos); this.pos += 2; return v; }
+  int() { const v = this.view.getInt32(this.pos); this.pos += 4; return v; }
+  long() { const v = this.view.getBigInt64(this.pos); this.pos += 8; return Number(v); }
+  float() { const v = this.view.getFloat32(this.pos); this.pos += 4; return v; }
+  double() { const v = this.view.getFloat64(this.pos); this.pos += 8; return v; }
 
   string() {
     const len = this.ushort();
-    const v = this.buf.toString('utf8', this.pos, this.pos + len);
+    const v = utf8.decode(this.bytes.subarray(this.pos, this.pos + len));
     this.pos += len;
     return v;
   }
@@ -40,7 +44,7 @@ class Reader {
       case TAG.STRING: return this.string();
       case TAG.BYTE_ARRAY: {
         const len = this.int();
-        const out = Array.from(this.buf.subarray(this.pos, this.pos + len));
+        const out = Array.from(this.bytes.subarray(this.pos, this.pos + len));
         this.pos += len;
         return out;
       }
@@ -86,17 +90,24 @@ class Reader {
   }
 }
 
-export function parseNbt(buffer) {
-  return new Reader(buffer).root();
+export function parseNbt(bytes) {
+  return new Reader(bytes).root();
+}
+
+function base64ToBytes(data) {
+  const bin = atob(data);
+  const out = new Uint8Array(bin.length);
+  for (let i = 0; i < bin.length; i++) out[i] = bin.charCodeAt(i);
+  return out;
 }
 
 /** Decode a base64 gzipped NBT string into a JS object. */
 export function decodeNbtBase64(data) {
   if (!data) return null;
-  const raw = Buffer.from(data, 'base64');
+  const raw = base64ToBytes(data);
   // Most blobs are gzipped, but a few endpoints return raw NBT.
-  const buf = raw[0] === 0x1f && raw[1] === 0x8b ? gunzipSync(raw) : raw;
-  return parseNbt(buf);
+  const bytes = raw[0] === 0x1f && raw[1] === 0x8b ? gunzipSync(raw) : raw;
+  return parseNbt(bytes);
 }
 
 /**

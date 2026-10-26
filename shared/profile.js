@@ -1,7 +1,7 @@
 // Turns a raw Hypixel profile member into something the analyzers can query:
 // a flat list of every item the player owns, their pets with levels, and
 // skill levels.
-import { decodeInventory } from './lib/nbt.js';
+import { decodeInventory } from './nbt.js';
 
 export const RARITIES = ['COMMON', 'UNCOMMON', 'RARE', 'EPIC', 'LEGENDARY', 'MYTHIC', 'DIVINE', 'SPECIAL', 'VERY_SPECIAL'];
 

@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { gzipSync } from 'node:zlib';
-import { decodeInventory } from '../lib/nbt.js';
+import { decodeInventory } from '../nbt.js';
 import { skillLevel } from '../profile.js';
 import { attributeLevel } from './attributes.js';
 import { priceLines, source, totals } from './helpers.js';

@@ -2,8 +2,8 @@ import express from 'express';
 import { existsSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { analyzePlayer } from './analyze/index.js';
-import { ApiError } from './hypixel.js';
+import { ApiError } from '../shared/errors.js';
+import { analyzePlayer } from './report.js';
 import { getPriceBook, startAuctionPolling } from './prices.js';
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
