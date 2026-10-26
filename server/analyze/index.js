@@ -15,8 +15,11 @@ function pickProfile(profiles, wanted) {
   return profiles.find((p) => p.selected) ?? profiles[0];
 }
 
-function apiWarnings(member) {
+function apiWarnings(member, profile) {
   const warnings = [];
+  if (['ironman', 'island'].includes(profile.game_mode)) {
+    warnings.push('This profile cannot trade on the bazaar or auction house, so prices are only a guide to how hard each item is to get.');
+  }
   if (!member.inventory) {
     warnings.push('Inventory API is turned off for this profile, so armor, tools and accessories could not be checked. Turn it on in SkyBlock settings under API settings.');
   }
@@ -33,7 +36,8 @@ function bestValue(sections) {
         if (s.unit !== 'fortune' || !s.counted) continue;
         if (!['missing', 'partial'].includes(s.status) || s.gain <= 0) continue;
         if (!s.cost?.total || s.cost.unpriced) continue;
-        picks.push({ section: section.id, group: g.title, id: s.id, name: s.name, gain: s.gain, total: s.cost.total, perPoint: s.cost.total / s.gain, action: s.action });
+        if (s.costGain <= 0) continue;
+        picks.push({ section: section.id, group: g.title, id: s.id, name: s.name, gain: s.costGain, total: s.cost.total, perPoint: s.cost.total / s.costGain, action: s.action });
       }
     }
   }
@@ -77,7 +81,7 @@ export async function analyzePlayer(query, wantedProfile) {
     profiles: profiles.map((p) => ({ id: p.profile_id, name: p.cute_name, selected: Boolean(p.selected), gameMode: p.game_mode ?? 'normal' })),
     sections: { farming, hunting, consumables },
     bestValue: bestValue([farming, hunting]),
-    warnings: apiWarnings(member),
+    warnings: apiWarnings(member, profile),
     prices: book.meta,
     generatedAt: Date.now(),
   };

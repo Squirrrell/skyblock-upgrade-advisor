@@ -96,7 +96,7 @@ function gearGroup(ctx) {
       detail: core ? `You have ${book.name(core.id) ?? prettyId(core.id)}` : 'None in your accessory bag',
       action: nextCore ? `Get ${book.name(nextCore.id) ?? prettyId(nextCore.id)}` : null,
       cost: nextCore ? priceLines(book, [{ id: nextCore.id, qty: 1 }]) : null,
-      costNote: 'Infernal costs far more than the fortune it adds',
+      costGain: nextCore ? nextCore.value - (core?.value ?? 0) : 0,
     }),
   );
   return group('gear', 'Gear and accessories', rows);
@@ -118,6 +118,7 @@ function toolsGroup(ctx) {
       detail: owned ? `Best owned: ${book.name(owned.id) ?? prettyId(owned.id)}` : hasBasic ? 'Only a starter version owned (no fortune)' : 'Not owned',
       action: next ? `Upgrade to ${book.name(next.id) ?? prettyId(next.id)}` : null,
       cost: next ? priceLines(book, [{ id: next.id, qty: 1 }]) : null,
+      costGain: next ? next.value - (owned?.value ?? 0) : 0,
     });
   });
 

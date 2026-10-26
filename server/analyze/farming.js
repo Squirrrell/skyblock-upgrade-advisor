@@ -211,6 +211,7 @@ function armorGroup(ctx) {
       detail: best.set ? `${ownedCount}/4 pieces owned, worth +${best.value}` : 'No farming armor found anywhere on this profile',
       action: next ? `Next step: ${next.name} (+${next.total} as a full set)` : null,
       cost: next ? priceLines(book, missingNext.map((id) => ({ id, qty: 1 }))) : null,
+      costGain: next ? next.total - best.value : 0,
       costNote: next && next.prefix !== 'MELON' && next.prefix !== 'CROPIE' ? 'Usually upgraded from the tier below, AH price shown' : null,
     }),
   );
@@ -262,7 +263,7 @@ function pieceUpgrades(ctx, pieces, kind, targetReforge) {
       current: reforgeNow,
       max: reforgeMax,
       detail: needReforge.length
-        ? `Not on: ${needReforge.map((p) => `${p.name}${p.reforge && p.reforge !== 'none' ? ` (${prettyId(p.reforge)})` : ''}`).join(', ')}`
+        ? `Not on: ${needReforge.map((p) => p.name).join(', ')}`
         : `On all ${pieces.length} pieces`,
       action: needReforge.length ? `Apply ${book.name(target.stone) ?? prettyId(target.stone)} at a reforge anvil` : null,
       cost: priceLines(book, [{ id: target.stone, qty: needReforge.length }]),
@@ -463,6 +464,7 @@ function petsGroup(ctx) {
         : 'No farming pet found',
       action: nextUp ? `Next step: ${prettyId(nextUp.tier)} ${prettyId(nextUp.type)} (+${nextUp.value} at max level)` : null,
       cost: nextUp ? priceLines(book, [{ id: `PET_${nextUp.type}_${nextUp.tier}`, qty: 1 }]) : null,
+      costGain: nextUp ? nextUp.value - (best?.value ?? 0) : 0,
       costNote: nextUp?.type === 'ROSE_DRAGON' ? 'Price is for a lowest BIN listing; level 200 costs more' : null,
     }),
   );
@@ -617,7 +619,7 @@ function toolsGroup(ctx) {
             .filter(Boolean)
             .join('. ') || null,
         cost: lines.length ? priceLines(book, lines) : null,
-        costNote: 'Dedication scales with crop milestones and is not counted in the number',
+        costNote: (ench.dedication ?? 0) < 4 ? 'Dedication scales with crop milestones, so it is not in the number' : null,
         tags: ['tool'],
       }),
     );

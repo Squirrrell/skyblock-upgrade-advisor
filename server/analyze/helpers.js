@@ -51,13 +51,17 @@ export function source(fields) {
     else if (current > 0) status = 'partial';
     else status = 'missing';
   }
+  const gain = Math.max(0, round(max - current));
   return {
     id: fields.id,
     name: fields.name,
     status,
     current,
     max,
-    gain: Math.max(0, round(max - current)),
+    gain,
+    // Fortune the listed cost actually buys, when that is only the next step
+    // toward `max` (e.g. the next armor tier, not the best one).
+    costGain: fields.costGain != null ? Math.max(0, round(fields.costGain)) : gain,
     unit: fields.unit ?? 'fortune',
     detail: fields.detail ?? null,
     action: status === 'done' ? null : fields.action ?? null,
