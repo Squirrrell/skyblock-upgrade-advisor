@@ -13,6 +13,7 @@ const HYPIXEL = 'https://api.hypixel.net/v2/skyblock';
 const UUID = /^[0-9a-f]{32}$/i;
 const PROFILE_ID = /^[0-9a-f]{8}-?[0-9a-f]{4}-?[0-9a-f]{4}-?[0-9a-f]{4}-?[0-9a-f]{12}$/i;
 const USERNAME = /^\w{1,16}$/;
+const UA = 'skyblock-upgrade-advisor (+https://github.com/Squirrrell/skyblock-upgrade-advisor)';
 
 function allowedOrigin(request, env) {
   const origin = request.headers.get('Origin');
@@ -56,10 +57,19 @@ async function cachedFetch(url, init, ttl, ctx) {
   return res;
 }
 
-function hypixelError(res, origin) {
+async function hypixelError(res, origin) {
   if (res.status === 429) return fail(429, 'Hypixel rate limit hit, try again in a minute.', 'RATE_LIMIT', origin);
-  if (res.status === 403) return fail(502, 'Hypixel rejected the API key on the proxy.', 'BAD_API_KEY', origin);
-  return fail(502, `Hypixel returned HTTP ${res.status}`, null, origin);
+  // Hypixel explains key problems in JSON; anything else (an HTML page) means
+  // the request was blocked before it reached the API.
+  const text = await res.text();
+  let cause = null;
+  try {
+    cause = JSON.parse(text).cause ?? null;
+  } catch {
+    // not JSON
+  }
+  if (res.status === 403 && cause) return fail(502, `Hypixel rejected the API key on the proxy (${cause}).`, 'BAD_API_KEY', origin);
+  return fail(502, `Hypixel returned HTTP ${res.status}${cause ? ` (${cause})` : ' without an API response'}.`, 'UPSTREAM', origin);
 }
 
 async function resolvePlayer(query, origin, ctx) {
@@ -73,27 +83,37 @@ async function resolvePlayer(query, origin, ctx) {
   }
   if (!USERNAME.test(query)) return fail(400, 'That does not look like a Minecraft username.', null, origin);
 
-  // Mojang sometimes refuses cloud IPs on one host, so try both.
-  const urls = [
-    `https://api.mojang.com/users/profiles/minecraft/${query}`,
-    `https://api.minecraftservices.com/minecraft/profile/lookup/name/${query}`,
+  // Mojang often refuses requests from Cloudflare's network, so fall back to
+  // public mirrors of the same lookup. Each entry maps its JSON to { id, name }.
+  const sources = [
+    [`https://api.mojang.com/users/profiles/minecraft/${query}`, (d) => d],
+    [`https://api.minecraftservices.com/minecraft/profile/lookup/name/${query}`, (d) => d],
+    [`https://playerdb.co/api/player/minecraft/${query}`, (d) => d?.data?.player && { id: d.data.player.raw_id, name: d.data.player.username }],
+    [`https://mowojang.matdoes.dev/users/profiles/minecraft/${query}`, (d) => d],
   ];
-  for (const url of urls) {
-    const res = await cachedFetch(url, {}, 3600, ctx);
-    if (res.status === 204 || res.status === 404) return fail(404, `No Minecraft account called "${query}".`, 'NO_PLAYER', origin);
-    if (res.ok) {
-      const data = await res.json();
-      if (data?.id) return json({ uuid: data.id, name: data.name }, 200, origin);
+  const statuses = [];
+  for (const [url, map] of sources) {
+    let res;
+    try {
+      res = await cachedFetch(url, { headers: { 'User-Agent': UA } }, 3600, ctx);
+    } catch {
+      statuses.push('error');
+      continue;
     }
+    statuses.push(res.status);
+    if (res.status === 204 || res.status === 404) return fail(404, `No Minecraft account called "${query}".`, 'NO_PLAYER', origin);
+    if (!res.ok) continue;
+    const data = map(await res.json().catch(() => null));
+    if (data?.id) return json({ uuid: data.id.replace(/-/g, ''), name: data.name }, 200, origin);
   }
-  return fail(502, 'Mojang lookup failed', null, origin);
+  return fail(502, `Name lookup failed (${statuses.join(', ')}).`, null, origin);
 }
 
 async function hypixel(path, env, origin, ctx) {
   if (!env.HYPIXEL_API_KEY) return fail(503, 'The proxy has no Hypixel API key set.', 'NO_API_KEY', origin);
-  const res = await cachedFetch(`${HYPIXEL}/${path}`, { headers: { 'API-Key': env.HYPIXEL_API_KEY } }, 120, ctx);
+  const res = await cachedFetch(`${HYPIXEL}/${path}`, { headers: { 'API-Key': env.HYPIXEL_API_KEY.trim(), 'User-Agent': UA } }, 120, ctx);
   if (res.status === 404) return json({ success: true, profiles: null, garden: null }, 200, origin);
-  if (!res.ok) return hypixelError(res, origin);
+  if (!res.ok) return await hypixelError(res, origin);
   const headers = new Headers({ 'Content-Type': 'application/json', ...corsHeaders(origin) });
   return new Response(res.body, { status: 200, headers });
 }
