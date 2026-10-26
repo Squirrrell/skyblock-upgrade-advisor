@@ -85,12 +85,13 @@ export function totals(groups) {
   for (const g of groups) {
     for (const s of g.items) {
       if (!s.counted || s.unit !== 'fortune' || s.status === 'tip') continue;
+      // Rows we cannot read still count toward the max, just not the current value.
+      max += s.max;
       if (s.status === 'unknown') {
         unreadable += s.max;
         continue;
       }
       current += s.current;
-      max += s.max;
     }
   }
   return { current: round(current), max: round(max), unreadable: round(unreadable) };

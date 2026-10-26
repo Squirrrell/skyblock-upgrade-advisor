@@ -39,7 +39,7 @@ test('totals skip conditional, unknown and non-fortune rows', () => {
       ],
     },
   ];
-  assert.deepEqual(totals(groups), { current: 10, max: 20, unreadable: 40 });
+  assert.deepEqual(totals(groups), { current: 10, max: 60, unreadable: 40 });
 });
 
 test('priceLines totals priced lines and counts unpriced ones', () => {

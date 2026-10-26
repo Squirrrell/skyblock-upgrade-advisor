@@ -35,6 +35,17 @@ export const REFORGES = {
   blooming: { name: 'Blooming', stone: 'FLOWERING_BOUQUET', values: [1, 2, 3, 4, 5, 6] },
 };
 
+// Fixed caps from the wiki's maximum build, so the "max" never depends on
+// what a player owns: recombobulated Helianthus with Mossy, 8 Perfect
+// Peridots and Pesterminator VI; recombobulated Blossom with Rooted and
+// Green Thumb V after every unique visitor.
+export const MAX_BUILD = {
+  armor: { reforge: 120, gems: 80, pesterminator: 48 },
+  equipment: { reforge: 72, gems: 0, pesterminator: 0 },
+  greenThumb: 140,
+  petItem: 60,
+};
+
 export const EQUIPMENT_SLOTS = ['NECKLACE', 'CLOAK', 'BELT', 'BRACELET'];
 
 // Per-piece value climbs from `min` to `max` as you serve garden visitors.

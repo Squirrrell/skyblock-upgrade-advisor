@@ -1,6 +1,6 @@
 import { HUNTING_SHARDS, HUNTING_TOOLS, KUUDRA_CORES, MAJESTIC } from '../data/hunting.js';
 import { deepFind, skillLevel } from '../profile.js';
-import { attributeSource } from './attributes.js';
+import { attributeSource, attributeState } from './attributes.js';
 import { RARITY_INDEX, group, prettyId, priceLines, source, totals } from './helpers.js';
 
 function skillGroup(ctx) {
@@ -19,11 +19,40 @@ function skillGroup(ctx) {
   ]);
 }
 
+const byAbility = (ability) => HUNTING_SHARDS.find((d) => d.ability === ability);
+
+/**
+ * Echo of Hunter makes Hunter's Karma up to 20% stronger, and Echo of Echoes
+ * makes Echo of Hunter up to 50% stronger, so maxed Hunter's Karma is 13.
+ */
+function hunterMultiplier(ctx, maxed = false) {
+  const lvl = (ability) => {
+    const st = attributeState(byAbility(ability), ctx);
+    return maxed ? 1 : st.level / st.maxLevel;
+  };
+  const echoHunter = 0.2 * lvl('echo_of_hunter');
+  const echoEchoes = 0.5 * lvl('echo_of_echoes');
+  return 1 + echoHunter * (1 + echoEchoes);
+}
+
 function shardGroup(ctx) {
+  const rows = HUNTING_SHARDS.map((def) => {
+    if (def.ability !== 'hunter_karma') return attributeSource(def, ctx);
+    const st = attributeState(def, ctx);
+    const mult = hunterMultiplier(ctx);
+    const base = (def.max * st.level) / st.maxLevel;
+    return attributeSource(def, ctx, {
+      current: base * mult,
+      max: def.max * hunterMultiplier(ctx, true),
+      // Megalith shards alone only add the base fortune, boosted by the Echoes you have now.
+      costGain: (def.max - base) * mult,
+      detail: `Level ${st.level}/${st.maxLevel}, ${st.stacks} shards syphoned. Your Echo attributes boost it by ${Math.round((mult - 1) * 100)}%.`,
+    });
+  });
   return group(
     'shards',
     'Attribute shards',
-    HUNTING_SHARDS.map((def) => attributeSource(def, ctx)),
+    rows,
     'Karma attributes add fortune for shards of one rarity. Echo attributes multiply the others.',
   );
 }
@@ -58,7 +87,6 @@ function gearGroup(ctx) {
       status: belt ? (belt.rarity === 'MYTHIC' ? 'done' : 'unknown') : 'missing',
       current: belt?.rarity === 'MYTHIC' ? 30 : 0,
       max: 30,
-      condition: 'Critter Safari only',
       detail: belt
         ? `Yours is ${prettyId(belt.rarity ?? 'common')}. It reaches +30 at Mythic with the Haunted and Cavern biome milestones.`
         : 'Not owned',
@@ -66,19 +94,19 @@ function gearGroup(ctx) {
       costNote: 'Not tradeable',
     }),
   );
-  if (belt) {
-    const majestic = belt.reforge === 'majestic';
+  {
+    const majestic = belt?.reforge === 'majestic';
     rows.push(
       source({
         id: 'majestic',
         name: 'Majestic reforge on Safari Belt',
-        status: majestic ? 'done' : 'missing',
         current: majestic ? MAJESTIC[beltRarity] : 0,
-        max: MAJESTIC[beltRarity],
-        condition: 'Critter Safari only',
-        detail: majestic ? 'Applied' : `Currently ${belt.reforge ? prettyId(belt.reforge) : 'not reforged'}`,
-        action: 'Apply Morning Dew at a reforge anvil',
-        cost: priceLines(book, [{ id: 'MORNING_DEW', qty: 1 }]),
+        // +4 on a Mythic belt, the highest rarity it reaches.
+        max: MAJESTIC[5],
+        detail: !belt ? 'Needs a Safari Belt' : majestic ? `Applied on a ${prettyId(belt.rarity ?? 'common')} belt` : `Currently ${belt.reforge ? prettyId(belt.reforge) : 'not reforged'}`,
+        action: belt && !majestic ? 'Apply Morning Dew at a reforge anvil' : belt ? 'Raise the belt to Mythic' : 'Get a Safari Belt first',
+        cost: belt && !majestic ? priceLines(book, [{ id: 'MORNING_DEW', qty: 1 }]) : null,
+        costGain: belt && !majestic ? MAJESTIC[beltRarity] : 0,
       }),
     );
   }
@@ -185,6 +213,8 @@ function otherGroup(ctx) {
       current: cake ? 1 : 0,
       max: 1,
       condition: 'Lasts 48 hours',
+      // The wiki's 181 maximum includes this cake, so it counts toward the total.
+      counted: true,
       detail: cake ? 'Active right now' : 'Not active',
       action: 'Eat one before a hunting session',
       cost: priceLines(book, [{ id: 'EPOCH_CAKE_STARBORN', qty: 1 }]),
@@ -212,5 +242,10 @@ function otherGroup(ctx) {
 
 export function analyzeHunting(ctx) {
   const groups = [skillGroup(ctx), shardGroup(ctx), gearGroup(ctx), toolsGroup(ctx), otherGroup(ctx)];
-  return { id: 'hunting', title: 'Hunting fortune', groups, totals: totals(groups) };
+  return {
+    id: 'hunting',
+    title: 'Hunting fortune',
+    groups,
+    totals: { ...totals(groups), note: "Out of the wiki's unconditional maximum. Tool, karma and Critter Safari bonuses for specific shards come on top." },
+  };
 }

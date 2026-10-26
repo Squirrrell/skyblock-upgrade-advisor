@@ -72,6 +72,7 @@ npm test
 - Some sources are not in the API at all: the garden fortune account upgrade, your pest bestiary tier, Crop Analyzer milestones, Rosewater Flasks eaten and Carrolyn exports. Those rows are marked with a question mark and left out of the totals.
 - Items that you normally upgrade in game (Fermento into Helianthus, Peony into Blossom) are shown at their auction price, which is a rough stand-in for the real cost.
 - The totals only count fortune that is always on. Crop-specific, contest-only and pest-only bonuses are listed but not added up.
+- The maximums are fixed, so they are the same for every player. Farming tops out at 1,824.7: the wiki's max build (recombobulated Helianthus with Mossy, Perfect Peridots and Pesterminator VI, recombobulated Blossom with Rooted and Green Thumb V, a level 200 Rose Dragon with a Green Bandana, and so on), without tool, crop-only or short-term bonuses. Hunting uses the wiki's unconditional maximum of 181.
 - Ironman and Stranded profiles can't trade, so for them the prices only show how valuable each item is.
 
 ## License

@@ -12,6 +12,7 @@ import {
   FARMING_TOOLS,
   GARDEN_CHIPS,
   GARDEN_LEVEL_XP,
+  MAX_BUILD,
   PERIDOT,
   PET_ITEMS,
   PET_UPGRADES,
@@ -233,27 +234,33 @@ function armorGroup(ctx) {
   }
 
   // Per-piece upgrades only make sense on the set you actually wear.
-  const pieces = best.owned.filter(Boolean);
-  if (pieces.length) rows.push(...pieceUpgrades(ctx, pieces, 'armor', 'mossy'));
+  rows.push(...pieceUpgrades(ctx, best.owned.filter(Boolean), 'armor', 'mossy', MAX_BUILD.armor));
   return group('armor', 'Armor', rows);
 }
 
-/** Reforge, Peridot gems and (for armor) Pesterminator across a set of pieces. */
-function pieceUpgrades(ctx, pieces, kind, targetReforge) {
+/**
+ * Reforge, Peridot gems and (for armor) Pesterminator across a set of pieces.
+ * `caps` are the fixed best-in-slot totals from the wiki max build, so the
+ * maximum never depends on what the player happens to own. `costGain` is
+ * what the listed purchase adds to the pieces they have now.
+ */
+function pieceUpgrades(ctx, pieces, kind, targetReforge, caps) {
   const { book } = ctx;
   const target = REFORGES[targetReforge];
   const rows = [];
+  const none = pieces.length === 0;
+  const noneNote = kind === 'armor' ? 'Get farming armor first' : 'Get farming equipment first';
 
   // Reforge
   let reforgeNow = 0;
-  let reforgeMax = 0;
+  let reforgeReach = 0;
   const needReforge = [];
   for (const piece of pieces) {
     const r = rarityIdx(piece);
     const best = target.values[r];
-    const have = REFORGES[piece.reforge]?.values[r] ?? 0;
-    reforgeMax += best;
-    reforgeNow += Math.min(have, best);
+    const have = Math.min(REFORGES[piece.reforge]?.values[r] ?? 0, best);
+    reforgeNow += have;
+    reforgeReach += best;
     if (piece.reforge !== targetReforge) needReforge.push(piece);
   }
   rows.push(
@@ -261,62 +268,68 @@ function pieceUpgrades(ctx, pieces, kind, targetReforge) {
       id: `${kind}-reforge`,
       name: `${target.name} reforge`,
       current: reforgeNow,
-      max: reforgeMax,
-      detail: needReforge.length
-        ? `Not on: ${needReforge.map((p) => p.name).join(', ')}`
-        : `On all ${pieces.length} pieces`,
-      action: needReforge.length ? `Apply ${book.name(target.stone) ?? prettyId(target.stone)} at a reforge anvil` : null,
-      cost: priceLines(book, [{ id: target.stone, qty: needReforge.length }]),
-      costNote: 'Plus the anvil fee',
+      max: caps.reforge,
+      detail: none
+        ? `Worth up to +${caps.reforge} on a full recombobulated set`
+        : needReforge.length
+          ? `Not on: ${needReforge.map((p) => p.name).join(', ')}`
+          : `On all ${pieces.length} pieces. The rest of the max comes from higher rarity (recombobulate or upgrade).`,
+      action: none ? noneNote : needReforge.length ? `Apply ${book.name(target.stone) ?? prettyId(target.stone)} at a reforge anvil` : null,
+      cost: needReforge.length ? priceLines(book, [{ id: target.stone, qty: needReforge.length }]) : null,
+      costGain: reforgeReach - reforgeNow,
+      costNote: needReforge.length ? 'Plus the anvil fee' : null,
       tags: ['reforge'],
     }),
   );
 
   // Peridot gems
-  let gemNow = 0;
-  let gemMax = 0;
-  let perfectNeeded = 0;
-  const unlockLines = [];
-  let slotsTotal = 0;
-  let slotsPerfect = 0;
-  for (const piece of pieces) {
-    const r = rarityIdx(piece);
-    const slots = (book.item(piece.id)?.gemstone_slots ?? []).filter((s) => s.slot_type === 'PERIDOT');
-    slots.forEach((slot, i) => {
-      const key = `PERIDOT_${i}`;
-      slotsTotal++;
-      gemMax += PERIDOT.PERFECT[r];
-      const quality = piece.gems[key];
-      if (quality) gemNow += PERIDOT[quality]?.[r] ?? 0;
-      if (quality === 'PERFECT') {
-        slotsPerfect++;
-        return;
-      }
-      perfectNeeded++;
-      const locked = slot.costs && Array.isArray(piece.unlockedGemSlots) && !piece.unlockedGemSlots.includes(key);
-      const neverUnlocked = slot.costs && !piece.unlockedGemSlots && !quality;
-      if (locked || neverUnlocked) {
-        for (const c of slot.costs) if (c.type === 'ITEM') unlockLines.push({ id: c.item_id, qty: c.amount });
-      }
-    });
-  }
-  if (slotsTotal > 0) {
+  if (caps.gems) {
+    let gemNow = 0;
+    let gemReach = 0;
+    let perfectNeeded = 0;
+    const unlockLines = [];
+    let slotsTotal = 0;
+    let slotsPerfect = 0;
+    for (const piece of pieces) {
+      const r = rarityIdx(piece);
+      const slots = (book.item(piece.id)?.gemstone_slots ?? []).filter((sl) => sl.slot_type === 'PERIDOT');
+      slots.forEach((slot, i) => {
+        const key = `PERIDOT_${i}`;
+        slotsTotal++;
+        gemReach += PERIDOT.PERFECT[r];
+        const quality = piece.gems[key];
+        if (quality) gemNow += PERIDOT[quality]?.[r] ?? 0;
+        if (quality === 'PERFECT') {
+          slotsPerfect++;
+          return;
+        }
+        perfectNeeded++;
+        const locked = slot.costs && Array.isArray(piece.unlockedGemSlots) && !piece.unlockedGemSlots.includes(key);
+        const neverUnlocked = slot.costs && !piece.unlockedGemSlots && !quality;
+        if (locked || neverUnlocked) {
+          for (const c of slot.costs) if (c.type === 'ITEM') unlockLines.push({ id: c.item_id, qty: c.amount });
+        }
+      });
+    }
     rows.push(
       source({
         id: `${kind}-peridot`,
         name: 'Peridot gemstones',
         current: gemNow,
-        max: gemMax,
-        detail: `${slotsPerfect}/${slotsTotal} slots hold a Perfect Peridot`,
-        action: perfectNeeded ? `Socket ${perfectNeeded} Perfect Peridot${perfectNeeded === 1 ? '' : 's'}` : null,
-        cost: priceLines(book, mergeLines([{ id: 'PERFECT_PERIDOT_GEM', qty: perfectNeeded }, ...unlockLines])),
+        max: caps.gems,
+        detail: none
+          ? `Worth up to +${caps.gems} with 8 Perfect Peridots in recombobulated Helianthus`
+          : `${slotsPerfect}/${slotsTotal} slots hold a Perfect Peridot`,
+        action: none ? noneNote : perfectNeeded ? `Socket ${perfectNeeded} Perfect Peridot${perfectNeeded === 1 ? '' : 's'}` : null,
+        cost: perfectNeeded ? priceLines(book, mergeLines([{ id: 'PERFECT_PERIDOT_GEM', qty: perfectNeeded }, ...unlockLines])) : null,
+        costGain: gemReach - gemNow,
         costNote: unlockLines.length ? 'Includes gems to unlock empty slots, coin fees not included' : null,
         tags: ['gemstone'],
       }),
     );
   }
 
-  if (kind === 'armor') {
+  if (caps.pesterminator) {
     let now = 0;
     const missingV = [];
     const missingVI = [];
@@ -331,13 +344,16 @@ function pieceUpgrades(ctx, pieces, kind, targetReforge) {
         id: 'pesterminator',
         name: 'Pesterminator',
         current: now,
-        max: pieces.length * 12,
-        detail: pieces.map((p) => `${slotName(p)} ${toRoman(p.enchantments.pesterminator ?? 0)}`).join(', '),
-        action: missingVI.length ? 'Apply Pesterminator V books, then a Beginner\'s Guide to Pesthunting for VI' : null,
-        cost: priceLines(book, [
-          { id: 'ENCHANTMENT_PESTERMINATOR_5', qty: missingV.length, label: 'Pesterminator V book' },
-          { id: 'PESTHUNTING_GUIDE', qty: missingVI.length },
-        ]),
+        max: caps.pesterminator,
+        detail: none ? '+2 per level on each armor piece, up to VI' : pieces.map((p) => `${slotName(p)} ${toRoman(p.enchantments.pesterminator ?? 0)}`).join(', '),
+        action: none ? noneNote : missingVI.length ? "Apply Pesterminator V books, then a Beginner's Guide to Pesthunting for VI" : null,
+        cost: missingVI.length
+          ? priceLines(book, [
+              { id: 'ENCHANTMENT_PESTERMINATOR_5', qty: missingV.length, label: 'Pesterminator V book' },
+              { id: 'PESTHUNTING_GUIDE', qty: missingVI.length },
+            ])
+          : null,
+        costGain: pieces.length * 12 - now,
         tags: ['enchant'],
       }),
     );
@@ -386,14 +402,16 @@ function equipmentGroup(ctx) {
       max: top.max * 4,
       detail: `${slots.filter((s) => s.best).map((s) => s.best.item.name).join(', ') || 'No farming equipment owned'}. Values assume ${served.toLocaleString('en-US')} visitors served.`,
       action: needBlossom.length ? `Get Blossom pieces for: ${needBlossom.map((id) => prettyId(id.split('_').pop())).join(', ')}` : null,
-      cost: priceLines(book, needBlossom.map((id) => ({ id, qty: 1 }))),
+      cost: needBlossom.length ? priceLines(book, needBlossom.map((id) => ({ id, qty: 1 }))) : null,
+      // Blossom pieces bought today are worth what your visitor count allows.
+      costGain: pieceValue(top) * 4 - current,
       costNote: 'Peony upgrades into Blossom in game; AH price shown',
     }),
   ];
 
   const worn = slots.map((s) => s.best?.item).filter(Boolean);
-  if (worn.length) {
-    rows.push(...pieceUpgrades(ctx, worn, 'equipment', 'rooted'));
+  rows.push(...pieceUpgrades(ctx, worn, 'equipment', 'rooted', MAX_BUILD.equipment));
+  {
     let gtNow = 0;
     const needGt = [];
     for (const piece of worn) {
@@ -406,10 +424,13 @@ function equipmentGroup(ctx) {
         id: 'green-thumb',
         name: 'Green Thumb',
         current: gtNow,
-        max: worn.length * 0.05 * 5 * unique,
-        detail: `Gives 0.05 per level per unique visitor (${unique} served). ${worn.map((p) => `${slotName(p)} ${toRoman(p.enchantments.green_thumb ?? 0)}`).join(', ')}`,
-        action: needGt.length ? `Apply Green Thumb V to ${needGt.length} piece${needGt.length === 1 ? '' : 's'}` : null,
-        cost: priceLines(book, [{ id: 'ENCHANTMENT_GREEN_THUMB_5', qty: needGt.length, label: 'Green Thumb V book' }]),
+        max: MAX_BUILD.greenThumb,
+        detail: `Gives 0.05 per level per unique visitor on each piece (${unique} served so far). ${worn.map((p) => `${slotName(p)} ${toRoman(p.enchantments.green_thumb ?? 0)}`).join(', ')}`,
+        action: worn.length
+          ? [needGt.length ? `Apply Green Thumb V to ${needGt.length} piece${needGt.length === 1 ? '' : 's'}` : null, 'Serve more unique visitors'].filter(Boolean).join('. ')
+          : 'Get farming equipment first',
+        cost: needGt.length ? priceLines(book, [{ id: 'ENCHANTMENT_GREEN_THUMB_5', qty: needGt.length, label: 'Green Thumb V book' }]) : null,
+        costGain: worn.length * 0.05 * 5 * unique - gtNow,
         tags: ['enchant'],
       }),
     );
@@ -487,10 +508,21 @@ function petsGroup(ctx) {
         name: 'Pet item',
         status: unrated ? 'unknown' : undefined,
         current: held?.gives ?? 0,
-        max: ideal.gives,
+        max: MAX_BUILD.petItem,
+        costGain: ideal.gives - (held?.gives ?? 0),
         detail: `${best.def.name} holds ${held ? held.name : best.pet.heldItem ? prettyId(best.pet.heldItem) : 'nothing'}${unrated ? ', which this tool has no fortune value for' : ''}. Best fortune option: ${ideal.name} (+${round(ideal.gives)}).`,
         action: held?.id === ideal.id ? null : `Give your ${best.def.name} a ${ideal.name}`,
         cost: held?.id === ideal.id ? null : priceLines(book, [{ id: ideal.id, qty: 1 }]),
+      }),
+    );
+  } else {
+    rows.push(
+      source({
+        id: 'pet-item',
+        name: 'Pet item',
+        max: MAX_BUILD.petItem,
+        detail: 'A Green Bandana gives +4 per garden level, up to +60',
+        action: 'Get a farming pet first',
       }),
     );
   }
@@ -769,5 +801,10 @@ export function analyzeFarming(ctx) {
     chipsGroup(ctx),
     boostsGroup(ctx),
   ];
-  return { id: 'farming', title: 'Farming fortune', groups, totals: totals(groups) };
+  return {
+    id: 'farming',
+    title: 'Farming fortune',
+    groups,
+    totals: { ...totals(groups), note: 'Out of the most general fortune you can have. Tool, crop-only, contest and short-term bonuses come on top.' },
+  };
 }

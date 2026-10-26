@@ -30,6 +30,12 @@ function shardRarity(def, constants) {
   return entry?.rarity ?? def.rarity;
 }
 
+/** Current level of an attribute for this profile. */
+export function attributeState(def, ctx) {
+  const stacks = ctx.member.attributes?.stacks?.[def.ability] ?? 0;
+  return { stacks, ...attributeLevel(stacks, shardRarity(def, ctx.attrConstants), ctx.attrConstants) };
+}
+
 /**
  * Build a report row for one attribute. `def.max` is the stat at max level;
  * values scale linearly per level.
