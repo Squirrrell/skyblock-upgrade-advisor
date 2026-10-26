@@ -32,8 +32,8 @@ function FortuneMetric({ icon: Icon, label, totals, cost, big }) {
         <div className="h-full rounded-full bg-accent" style={{ width: `${pct}%` }} />
       </div>
       <p className="mt-3 text-sm text-muted">
-        Always-on fortune we could read.
-        {totals.unreadable > 0 && ` Up to ${num(totals.unreadable)} more is hidden from the API.`}
+        {totals.note}
+        {totals.unreadable > 0 && ` ${num(totals.unreadable)} of the max is in sources Hypixel does not share.`}
         {cost > 0 && ` About ${coins(cost)} coins to buy the rest.`}
       </p>
     </div>

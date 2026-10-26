@@ -23,26 +23,22 @@ export default function Report({ report, refreshing, onRefresh, onPickProfile })
 
   const panelRef = useRef(null);
 
-  const changeTab = (id, { keepScroll = false } = {}) => {
+  const changeTab = (id) => {
     setTab(id);
     save('tab', id);
     // If the user is deep in the old list, start the new one from its top.
     const top = panelRef.current?.getBoundingClientRect().top;
-    if (!keepScroll && top != null && top < 0) {
+    if (top != null && top < 0) {
       window.scrollTo({ top: window.scrollY + top - 140, behavior: 'instant' });
     }
   };
 
-  const jumpTo = (sectionId, rowId) => {
-    changeTab(sectionId, { keepScroll: true });
-    // Wait a frame for the tab to render, then scroll to the row's group.
-    requestAnimationFrame(() => {
-      const group = report.sections[sectionId].groups.find((g) => g.items.some((s) => s.id === rowId));
-      document.getElementById(`group-${sectionId}-${group?.id}`)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    });
-  };
-
   const section = report.sections[tab] ?? report.sections.farming;
+
+  const jumpTo = (rowId) => {
+    const group = section.groups.find((g) => g.items.some((s) => s.id === rowId));
+    document.getElementById(`group-${section.id}-${group?.id}`)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  };
 
   return (
     <div className={refreshing ? 'opacity-70 transition-opacity' : 'transition-opacity'}>
@@ -60,7 +56,6 @@ export default function Report({ report, refreshing, onRefresh, onPickProfile })
       )}
 
       <Summary sections={report.sections} />
-      <BestValue picks={report.bestValue} onJump={jumpTo} />
 
       <div className="sticky top-16 z-10 -mx-4 mt-10 border-b border-line bg-bg/90 px-4 backdrop-blur-md sm:-mx-6 sm:px-6">
         <div className="flex flex-wrap items-center justify-between gap-3 py-3">
@@ -115,6 +110,7 @@ export default function Report({ report, refreshing, onRefresh, onPickProfile })
       </div>
 
       <div ref={panelRef} className="mt-6" role="tabpanel" aria-label={section.title}>
+        <BestValue sectionId={section.id} picks={report.bestValue[section.id]} onJump={jumpTo} />
         <SectionView section={section} hideDone={hideDone} sort={sort} />
       </div>
 

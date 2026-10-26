@@ -27,18 +27,16 @@ function apiWarnings(member, profile) {
   return warnings;
 }
 
-/** Cheapest fortune per coin across both fortune sections. */
-function bestValue(sections) {
+/** Cheapest fortune per coin within one fortune section. */
+function bestValue(section) {
   const picks = [];
-  for (const section of sections) {
-    for (const g of section.groups) {
-      for (const s of g.items) {
-        if (s.unit !== 'fortune' || !s.counted) continue;
-        if (!['missing', 'partial'].includes(s.status) || s.gain <= 0) continue;
-        if (!s.cost?.total || s.cost.unpriced) continue;
-        if (s.costGain <= 0) continue;
-        picks.push({ section: section.id, group: g.title, id: s.id, name: s.name, gain: s.costGain, total: s.cost.total, perPoint: s.cost.total / s.costGain, action: s.action });
-      }
+  for (const g of section.groups) {
+    for (const s of g.items) {
+      if (s.unit !== 'fortune' || !s.counted) continue;
+      if (!['missing', 'partial'].includes(s.status) || s.gain <= 0) continue;
+      if (!s.cost?.total || s.cost.unpriced) continue;
+      if (s.costGain <= 0) continue;
+      picks.push({ section: section.id, group: g.title, id: s.id, name: s.name, gain: s.costGain, total: s.cost.total, perPoint: s.cost.total / s.costGain, action: s.action });
     }
   }
   return picks.sort((a, b) => a.perPoint - b.perPoint).slice(0, 8);
@@ -80,7 +78,7 @@ export async function analyzePlayer(query, wantedProfile) {
     profile: { id: profile.profile_id, name: profile.cute_name, gameMode: profile.game_mode ?? 'normal' },
     profiles: profiles.map((p) => ({ id: p.profile_id, name: p.cute_name, selected: Boolean(p.selected), gameMode: p.game_mode ?? 'normal' })),
     sections: { farming, hunting, consumables },
-    bestValue: bestValue([farming, hunting]),
+    bestValue: { farming: bestValue(farming), hunting: bestValue(hunting) },
     warnings: apiWarnings(member, profile),
     prices: book.meta,
     generatedAt: Date.now(),
