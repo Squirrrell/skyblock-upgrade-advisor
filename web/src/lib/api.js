@@ -6,7 +6,15 @@ export class ReportError extends Error {
   }
 }
 
+/** True for the GitHub Pages build, which runs the analysis in the browser. */
+export const STATIC_MODE = Boolean(import.meta.env.VITE_PROXY_URL);
+
 export async function fetchReport(name, profile, { signal } = {}) {
+  if (STATIC_MODE) {
+    const { fetchStaticReport } = await import('./static-report.js');
+    return fetchStaticReport(name, profile, { signal });
+  }
+
   const qs = profile ? `?profile=${encodeURIComponent(profile)}` : '';
   let res;
   try {

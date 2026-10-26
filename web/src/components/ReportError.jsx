@@ -1,7 +1,17 @@
 import { ArrowClockwiseIcon, KeyIcon, UserIcon, WarningIcon } from '@phosphor-icons/react';
+import { STATIC_MODE } from '../lib/api.js';
 
 export default function ReportError({ error, player, onRetry }) {
   const code = error?.code;
+
+  if ((code === 'NO_API_KEY' || code === 'BAD_API_KEY') && STATIC_MODE) {
+    return (
+      <Panel icon={KeyIcon} title="Profile lookups are down">
+        <p>{error.message} The site owner needs to set or renew the Hypixel API key on the lookup proxy.</p>
+        <RetryButton onRetry={onRetry} />
+      </Panel>
+    );
+  }
 
   if (code === 'NO_API_KEY' || code === 'BAD_API_KEY') {
     return (
