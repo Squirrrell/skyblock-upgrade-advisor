@@ -10,9 +10,14 @@
 // browser draws as a 3D cube (lib/iso.js). Head items aren't handled here;
 // the browser draws them from their skins.
 //
-// Mojang's textures are not committed: this writes them to web/public/mc/
-// (git-ignored) when the site is built, and skips the work when that folder
-// is already up to date for the current release.
+// SkyBlock's own items (fishing nets, reforge stones...) are drawn by
+// Hypixel's official SkyBlock resource pack, which Hypixel publishes at
+// api.hypixel.net/v2/resources/packs. Each item's `item_model` in Hypixel's
+// item list points into it, and it is read the same way as Mojang's files.
+//
+// Neither Mojang's nor Hypixel's textures are committed: this writes them to
+// web/public/mc/ (git-ignored) when the site is built, and skips the work when
+// that folder is already up to date for the current release and pack.
 // Usage: node scripts/build-icons.mjs [--force]
 import { createHash } from 'node:crypto';
 import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
@@ -52,7 +57,21 @@ try {
   }
   throw err;
 }
-const version = process.env.MC_VERSION || manifest.latest.release;
+const mcVersion = process.env.MC_VERSION || manifest.latest.release;
+
+// Hypixel's SkyBlock pack (newest pack format) and its item list. Without
+// them the icons fall back to the vanilla materials.
+let hypixelPack = null;
+let hypixelItems = [];
+try {
+  const packs = await (await fetchOk('https://api.hypixel.net/v2/resources/packs')).json();
+  const sb = packs.packs?.find((p) => p.id === 'SkyBlock');
+  hypixelPack = sb?.versions?.slice().sort((a, b) => b.packFormat - a.packFormat)[0] ?? null;
+  hypixelItems = (await (await fetchOk('https://api.hypixel.net/v2/resources/skyblock/items')).json()).items ?? [];
+} catch (err) {
+  console.warn(`mc icons: Hypixel pack unavailable (${err.message}), using vanilla textures only`);
+}
+const version = hypixelPack ? `${mcVersion}+hypixel.${hypixelPack.hash.slice(0, 8)}` : mcVersion;
 if (!process.argv.includes('--force') && existsSync(indexFile)) {
   try {
     if (JSON.parse(readFileSync(indexFile, 'utf8')).version === version) {
@@ -64,8 +83,8 @@ if (!process.argv.includes('--force') && existsSync(indexFile)) {
   }
 }
 
-const meta = await (await fetchOk(manifest.versions.find((v) => v.id === version).url)).json();
-const jar = await cached(`client-${version}.jar`, meta.downloads.client.url);
+const meta = await (await fetchOk(manifest.versions.find((v) => v.id === mcVersion).url)).json();
+const jar = await cached(`client-${mcVersion}.jar`, meta.downloads.client.url);
 const HEAD_SKINS = {
   skeleton: 'entity/skeleton/skeleton',
   wither_skeleton: 'entity/skeleton/wither_skeleton',
@@ -78,8 +97,23 @@ const wanted = new RegExp(
   `^assets/minecraft/(items/|models/(item|block)/|textures/(item|block)/|textures/(${Object.values(HEAD_SKINS).join('|')})\\.png$)`,
 );
 const files = unzipSync(new Uint8Array(jar), { filter: (f) => wanted.test(f.name) });
-const json = (path) => (files[path] ? JSON.parse(strFromU8(files[path])) : null);
+if (hypixelPack) {
+  const zip = await cached(`hypixel-skyblock-${hypixelPack.hash}.zip`, hypixelPack.url);
+  Object.assign(files, unzipSync(new Uint8Array(zip), { filter: (f) => /^assets\/hypixel_skyblock\/(items|models|textures)\//.test(f.name) }));
+}
+const json = (path) => {
+  try {
+    return files[path] ? JSON.parse(strFromU8(files[path])) : null;
+  } catch {
+    return null;
+  }
+};
 const bare = (ref) => String(ref).replace(/^minecraft:/, '');
+/** "ns:path" (minecraft by default) -> its file in the merged packs. */
+const resource = (ref, kind, ext) => {
+  const [ns, path] = String(ref).includes(':') ? String(ref).split(':') : ['minecraft', String(ref)];
+  return `assets/${ns}/${kind}/${path}${ext}`;
+};
 
 // ------------------------------------------------------------------ legacy names
 
@@ -125,9 +159,8 @@ function loadModel(ref) {
   let elements = null;
   const chain = [];
   for (let r = ref, i = 0; r && i < 12; i++) {
-    const path = bare(r);
-    chain.push(path);
-    const model = json(`assets/minecraft/models/${path}.json`);
+    chain.push(bare(r));
+    const model = json(resource(r, 'models', '.json'));
     if (!model) break;
     textures = { ...model.textures, ...textures };
     elements ??= model.elements ?? null;
@@ -142,7 +175,7 @@ function texturePath(textures, ref) {
   let t = sprite(ref);
   for (let i = 0; i < 10 && typeof t === 'string' && t.startsWith('#'); i++) t = sprite(textures[t.slice(1)]);
   if (typeof t !== 'string') return null;
-  const path = `assets/minecraft/textures/${bare(t)}.png`;
+  const path = resource(t, 'textures', '.png');
   return files[path] ? path : null;
 }
 
@@ -166,9 +199,14 @@ function addTexture(path) {
   return textures.get(path);
 }
 
-/** Icon spec: { f: layers } flat, { b: { t, l, r } } block faces, or { h: skin } head. */
-function iconFor(name) {
-  const def = definitionModel(json(`assets/minecraft/items/${name}.json`)?.model);
+/**
+ * Icon spec for an item definition ("wheat", or "hypixel_skyblock:item/..."):
+ * { f: layers } flat, { b: { t, l, r } } block faces, or { h: skin } head.
+ */
+function iconFor(ref) {
+  // Normally { model: {...} }; a few of Hypixel's files are the model node itself.
+  const root = json(resource(ref, 'items', '.json'));
+  const def = definitionModel(root?.model && typeof root.model === 'object' ? root.model : root);
   if (!def) return null;
   const special = def.special ? bare(def.special.type ?? '') : null;
   if (special === 'head') {
@@ -220,12 +258,32 @@ for (const key of Object.keys(map)) {
   else delete map[key];
 }
 
+// SkyBlock items drawn by Hypixel's pack, keyed by their item_model. A few
+// placeholder-paper items have no item_model but a definition of the same
+// name in the pack (SAFARI_BELT -> .../safari_belt.json); those are keyed "#ID".
+const models = {};
+const byName = new Map();
+for (const path of Object.keys(files)) {
+  const m = /^assets\/hypixel_skyblock\/items\/(.+)\.json$/.exec(path);
+  if (m) byName.set(m[1].split('/').pop().toUpperCase(), `hypixel_skyblock:${m[1]}`);
+}
+for (const item of hypixelItems) {
+  const ref = item.item_model ?? (item.material === 'PAPER' ? byName.get(item.id) : null);
+  const key = item.item_model ? ref : `#${item.id}`;
+  if (!ref || key in models) continue;
+  const icon = iconFor(ref);
+  if (icon) models[key] = icon;
+}
+
 rmSync(OUT, { recursive: true, force: true });
 mkdirSync(OUT, { recursive: true });
 for (const [path, hash] of textures) writeFileSync(new URL(`${hash}.png`, OUT), files[path]);
-writeFileSync(indexFile, JSON.stringify({ version, map, icons }));
+writeFileSync(indexFile, JSON.stringify({ version, map, icons, models }));
 writeFileSync(
   new URL('NOTICE.txt', OUT),
-  `Textures from Minecraft ${version} by Mojang Studios, used for item icons under the Minecraft Usage Guidelines.\nGenerated by scripts/build-icons.mjs; not part of this repository.\n`,
+  `Textures from Minecraft ${mcVersion} by Mojang Studios, used for item icons under the Minecraft Usage Guidelines,\nand from Hypixel's SkyBlock resource pack (api.hypixel.net/v2/resources/packs), by Hypixel Inc.\nGenerated by scripts/build-icons.mjs; not part of this repository.\n`,
 );
-console.log(`mc icons: ${Object.keys(icons).length} icons, ${textures.size} textures, ${Object.keys(map).length} legacy names (${version})`);
+const withModel = hypixelItems.filter((i) => i.item_model).length;
+console.log(
+  `mc icons: ${Object.keys(icons).length} icons, ${Object.keys(models).length}/${withModel} SkyBlock item models, ${textures.size} textures, ${Object.keys(map).length} legacy names (${version})`,
+);

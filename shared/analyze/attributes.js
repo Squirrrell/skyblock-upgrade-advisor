@@ -56,6 +56,8 @@ export function attributeSource(def, ctx, overrides = {}) {
     action: shardsToMax > 0 ? `Syphon ${shardsToMax} more ${def.name}${shardsToMax === 1 ? '' : 's'} into the attribute menu` : null,
     cost: shardsToMax > 0 ? priceLines(ctx.book, [{ id: def.shard, qty: shardsToMax }]) : null,
     tags: ['shard', rarity.toLowerCase()],
+    // The shard itself, drawn as its 3D head.
+    icon: def.shard,
     ...overrides,
   });
 }

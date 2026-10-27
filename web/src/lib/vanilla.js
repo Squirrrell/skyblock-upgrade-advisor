@@ -1,5 +1,6 @@
-// Icons for regular (non-head) items, from the Minecraft textures that
-// scripts/build-icons.mjs extracts into /mc/. An item's Hypixel material and
+// Icons for regular (non-head) items, from the textures that
+// scripts/build-icons.mjs extracts into /mc/: Hypixel's SkyBlock pack for
+// items that have an item_model, Minecraft's own for the rest. An item's Hypixel material and
 // data value ("INK_SACK:3") pick the icon: a flat sprite, layered and tinted
 // (leather armor takes the item's dye colour), or a block drawn as a 3D cube.
 import { renderedHead } from './heads3d.js';
@@ -39,18 +40,24 @@ async function draw(spec, color) {
 }
 
 /**
- * Icon URL for a material key ("INK_SACK:3", or a name like "WHEAT:0"), or
+ * Icon URL for an item: its Hypixel pack model ("hypixel_skyblock:item/..."),
+ * else its material key ("INK_SACK:3", or a name like "WHEAT:0"). Returns
  * undefined while it loads (onReady is called after), or null if there is none.
  */
-export function vanillaIcon(key, color, onReady) {
+export function vanillaIcon(key, color, onReady, model = null, itemId = null) {
   if (typeof document === 'undefined') return null;
   if (!index) {
     loadIndex(onReady);
     return undefined;
   }
-  const [material] = key.split(':');
-  const name = index.map[key] ?? index.map[`${material}:0`] ?? (index.icons[material.toLowerCase()] ? material.toLowerCase() : null);
-  const spec = name && index.icons[name];
+  let name = model && index.models?.[model] ? model : null;
+  // Paper items Hypixel's list gives no model, matched to the pack by name.
+  if (!name && itemId && index.models?.[`#${itemId}`]) name = `#${itemId}`;
+  if (!name) {
+    const [material] = key.split(':');
+    name = index.map[key] ?? index.map[`${material}:0`] ?? (index.icons[material.toLowerCase()] ? material.toLowerCase() : null);
+  }
+  const spec = name && (index.models?.[name] ?? index.icons[name]);
   if (!spec) return null;
   if (spec.h) return renderedHead(fileUrl(spec.h), onReady);
   // A single untinted sprite needs no drawing.

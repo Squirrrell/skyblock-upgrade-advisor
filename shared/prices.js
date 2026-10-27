@@ -128,6 +128,8 @@ export function slimItems(items) {
     // Minecraft material and data value ("INK_SACK:3") and dye colour ("R,G,B").
     if (item.material) out.mat = `${item.material}:${item.durability ?? 0}`;
     if (item.color) out.color = item.color;
+    // The model Hypixel's SkyBlock resource pack draws it with.
+    if (item.item_model) out.model = item.item_model;
     return out;
   });
 }

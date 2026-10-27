@@ -1,7 +1,7 @@
 // Item icon state: which pack is selected, textures from a loaded FurfSky
 // pack, and per-item hints (skull texture, rarity, glint) from the item index.
 import { useSyncExternalStore } from 'react';
-import { DEFAULT_ICON_PACK, ICON_PACKS, SPECIAL_ICONS } from '../theme.js';
+import { DEFAULT_ICON_PACK, ICON_PACKS, SPECIAL_ICONS, STAND_IN_ICONS } from '../theme.js';
 import { STATIC_MODE } from './api.js';
 import { loadItems } from './data.js';
 import { bundledLookup, combinePacks, loadPackTextures } from './furfsky.js';
@@ -157,12 +157,15 @@ export function itemInfo(id) {
     skull: item?.skull ?? headHash(id),
     // Shards shown as a plain item (Obsidian Defender: obsidian) use its modern name.
     mat: item?.mat ?? (heads?.models?.[id] ? `${heads.models[id].toUpperCase()}:0` : null),
+    model: item?.model ?? null,
     color: item?.color ?? null,
   };
 }
 
 /** The Minecraft material an id is drawn with: the item's own, or the id itself (WHEAT, CHEST...). */
 function materialKey(id, hint) {
+  const standIn = STAND_IN_ICONS.find(([re]) => re.test(id))?.[1];
+  if (standIn) return `${standIn}:0`;
   if (hint.mat) return hint.mat;
   if (id.startsWith('ENCHANTMENT_')) return 'ENCHANTED_BOOK:0';
   return `${SPECIAL_ICONS[id] ?? id}:0`;
@@ -173,12 +176,13 @@ export function iconUrls(id, extraHint = {}) {
   if (!id) return [];
   const info = itemInfo(id);
   // extraHint (an inventory item's own skin, material and dye) wins over the item index.
-  const hint = { skull: info.skull, mat: info.mat, color: info.color, isPet: PET_ID.test(id) };
+  const hint = { skull: info.skull, mat: info.mat, color: info.color, model: info.model, isPet: PET_ID.test(id) };
   for (const [k, v] of Object.entries(extraHint)) if (v != null) hint[k] = v;
   const src = {
     head: (skin) => renderedHead(skin, emit),
     vanilla: () => {
-      const own = vanillaIcon(materialKey(id, hint), hint.color, emit);
+      // Hypixel's pack model first, then the item's (or a stand-in) Minecraft material.
+      const own = vanillaIcon(materialKey(id, hint), hint.color, emit, hint.model, id);
       // An inventory item's own material first, then the item index's.
       return own === null && info.mat && info.mat !== hint.mat ? vanillaIcon(info.mat, hint.color, emit) : own;
     },

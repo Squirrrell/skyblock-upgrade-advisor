@@ -139,6 +139,7 @@ function toolsGroup(ctx) {
     const hasBasic = tool.others.some((id) => items.some((i) => i.id === id));
     return source({
       id: `hunt-${tool.id}`,
+      icon: owned?.id ?? next?.id ?? tool.tiers[0].id,
       name: tool.name,
       current: owned?.value ?? 0,
       max: top.value,

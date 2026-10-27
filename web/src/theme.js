@@ -133,13 +133,25 @@ export const SPECIAL_ICONS = {
 };
 
 /**
+ * Minecraft items drawn for these SkyBlock items when Hypixel's SkyBlock pack
+ * could not be read at build time (they are plain paper in its item data).
+ * They match the materials the items used before the pack existed.
+ */
+export const STAND_IN_ICONS = [
+  [/_FISHING_NET$/, 'COBWEB'],
+  [/_LASSO$/, 'LEAD'],
+  [/_POCKET_BLACK_HOLE$/, 'ENDER_EYE'],
+];
+
+/**
  * Icon packs. Each turns a SkyBlock item id into candidate image URLs, best
  * first; if none loads, the UI shows the "?" placeholder. All icons are the
  * site's own, no third-party renderer. `hint.skull` is the item's skin
  * (pets, shards, talismans and every other player head), and `src` gives:
  *   src.head(skin)      the head drawn in 3D from that skin (lib/heads3d.js)
- *   src.vanilla(id)     the Minecraft texture Hypixel uses for the item's
- *                       material, blocks drawn in 3D (lib/vanilla.js)
+ *   src.vanilla(id)     the texture Hypixel draws the item with: its model in
+ *                       Hypixel's SkyBlock pack, else its Minecraft material,
+ *                       blocks drawn in 3D (lib/vanilla.js)
  *   src.pack(id), src.packSkull(skin)   a FurfSky Reborn texture
  * Each returns a URL, undefined while it is still being drawn, or null.
  *
