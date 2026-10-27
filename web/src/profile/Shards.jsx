@@ -1,14 +1,14 @@
 // Every hunting shard on the profile: what is in the Hunting Box, what has
-// been syphoned into attributes, and what the held shards would sell for.
+// been syphoned into attributes, and what all of it is worth on the bazaar.
 import { useMemo, useState } from 'react';
 import { coins, date, int, num } from '../lib/format.js';
 import { ItemSlot } from '../mc.jsx';
 import { Bar, Chip, Empty, Panel, SearchInput, SortTh, Stat, StatGrid, rarityClass, rarityLabel } from '../ui.jsx';
 
 const VIEWS = [
+  ['all', 'All shards', () => true],
   ['owned', 'In your Hunting Box', (r) => r.owned > 0],
   ['attributes', 'Syphoned into attributes', (r) => r.syphoned > 0],
-  ['all', 'Both', () => true],
 ];
 const RARITIES = ['COMMON', 'UNCOMMON', 'RARE', 'EPIC', 'LEGENDARY'];
 
@@ -16,6 +16,7 @@ const SORTS = {
   name: (r) => r.name,
   attribute: (r) => r.level + r.syphoned / 1000,
   owned: (r) => r.owned,
+  syphoned: (r) => r.syphoned,
   sell: (r) => r.sell ?? -1,
   value: (r) => r.value,
   rarity: (r) => r.rarityIndex,
@@ -23,7 +24,7 @@ const SORTS = {
 
 export default function Shards({ stats }) {
   const s = stats.shards;
-  const [view, setView] = useState('owned');
+  const [view, setView] = useState('all');
   const [rarity, setRarity] = useState(null);
   const [query, setQuery] = useState('');
   const [sort, setSort] = useState({ key: 'value', dir: -1 });
@@ -45,19 +46,19 @@ export default function Shards({ stats }) {
 
   if (!s.list.length) return <Empty>No hunting shards on this profile yet. Shards come from hunting on Galatea and from fusing.</Empty>;
 
-  const top = s.list.find((r) => r.owned > 0);
+  const top = s.list.find((r) => r.value > 0);
   return (
     <div className="fade-in flex flex-col gap-6">
       <StatGrid>
-        <Stat label="Estimated value" value={coins(s.value)} sub={`${coins(s.buyValue)} to buy them all`} tone="gold" />
-        <Stat label="Shards held" value={int(s.owned)} sub={`${s.typesOwned} of ${s.typesTotal} types`} accent />
-        <Stat label="Attributes" value={s.attributes} sub={`${s.maxedAttributes} at max level`} />
+        <Stat label="Total shard value" value={coins(s.value)} sub={`${coins(s.heldValue)} held · ${coins(s.syphonedValue)} in attributes`} tone="gold" />
+        <Stat label="Shards held" value={int(s.owned)} sub={`${s.typesOwned} of ${s.typesTotal} types · ${coins(s.heldValue)}`} accent />
+        <Stat label="Shards syphoned" value={int(s.syphoned)} sub={`${s.attributes} attributes · ${s.maxedAttributes} maxed`} />
         <Stat label="Shards fused" value={int(s.fused)} sub={top ? `Most valuable: ${top.name}` : null} />
       </StatGrid>
 
       <Panel
         title="Hunting shards"
-        subtitle={`Held shards valued at bazaar instant-sell, which is what you would get selling them now.${s.unpriced ? ` ${s.unpriced} type${s.unpriced === 1 ? ' has' : 's have'} no bazaar price.` : ''} Syphoned shards are spent, so they only count toward the attribute level.`}
+        subtitle={`Every shard the account has, held and syphoned into attributes, at bazaar instant-sell. Buying them all again would cost about ${coins(s.buyValue)}.${s.unpriced ? ` ${s.unpriced} type${s.unpriced === 1 ? ' has' : 's have'} no bazaar price.` : ''}`}
         pad={false}
       >
         <div className="flex flex-col gap-3 px-5 py-4 sm:px-6">
@@ -85,7 +86,7 @@ export default function Shards({ stats }) {
           <p className="px-5 pb-6 text-sm text-muted sm:px-6">No shards match. Try another filter.</p>
         ) : (
           <div className="scroll-x px-2 pb-2">
-            <table className="w-full min-w-[760px] text-sm">
+            <table className="w-full min-w-[840px] text-sm">
               <thead>
                 <tr>
                   <SortTh id="name" sort={sort} setSort={setSort}>
@@ -96,6 +97,9 @@ export default function Shards({ stats }) {
                   </SortTh>
                   <SortTh id="owned" sort={sort} setSort={setSort} align="right">
                     Held
+                  </SortTh>
+                  <SortTh id="syphoned" sort={sort} setSort={setSort} align="right">
+                    Syphoned
                   </SortTh>
                   <SortTh id="sell" sort={sort} setSort={setSort} align="right">
                     Each
@@ -140,18 +144,21 @@ export default function Shards({ stats }) {
                         <>
                           <div className="flex items-baseline justify-between gap-3">
                             <span>{r.attribute}</span>
-                            <span className="text-xs tabular text-muted">
-                              {r.maxLevel ? `${r.level}/${r.maxLevel}` : '-'}
-                              {r.syphoned ? ` · ${r.syphoned} syphoned` : ''}
-                            </span>
+                            <span className="text-xs tabular text-muted">{r.maxLevel ? `Level ${r.level}/${r.maxLevel}` : '-'}</span>
                           </div>
                           {r.maxLevel > 0 && <Bar value={r.level / r.maxLevel} gold={r.level >= r.maxLevel} className="mt-1.5" />}
                         </>
                       )}
                     </td>
                     <td className="px-3 py-2 text-right tabular">{r.owned ? int(r.owned) : '-'}</td>
-                    <td className="px-3 py-2 text-right text-warn tabular">{r.sell != null ? coins(r.sell) : '-'}</td>
-                    <td className="px-3 py-2 text-right font-semibold text-warn tabular">{r.owned && r.sell != null ? coins(r.value) : '-'}</td>
+                    <td className="px-3 py-2 text-right tabular">{r.syphoned ? int(r.syphoned) : '-'}</td>
+                    <td className="px-3 py-2 text-right text-warn tabular">{r.sell != null ? coins(r.sell) : 'no price'}</td>
+                    <td
+                      className="px-3 py-2 text-right font-semibold text-warn tabular"
+                      title={r.sell != null ? `${coins(r.heldValue)} held + ${coins(r.syphonedValue)} syphoned` : undefined}
+                    >
+                      {r.sell != null ? coins(r.value) : '-'}
+                    </td>
                   </tr>
                 ))}
               </tbody>

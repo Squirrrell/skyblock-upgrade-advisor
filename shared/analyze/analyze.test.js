@@ -103,8 +103,11 @@ test('shardStats values held shards and reads attribute levels', async () => {
   const book = { value: (id) => ({ SHARD_CRICKET: 40_000 })[id] ?? null, price: (id) => (id === 'SHARD_CRICKET' ? { unit: 50_000 } : null) };
   const member = { shards: { owned: [{ type: 'CRICKET', amount_owned: 3 }, { type: 'PUCK', amount_owned: 2 }], fused: 7 }, attributes: { stacks: { pest_fortune: 3, visitor_bait: 1 } } };
   const s = shardStats(member, book, constants);
-  assert.equal(s.value, 120_000);
-  assert.equal(s.buyValue, 150_000);
+  // 3 held + 3 syphoned crickets at 40k; Puck has no price.
+  assert.equal(s.heldValue, 120_000);
+  assert.equal(s.syphonedValue, 120_000);
+  assert.equal(s.value, 240_000);
+  assert.equal(s.buyValue, 300_000);
   assert.equal(s.owned, 5);
   assert.equal(s.unpriced, 1);
   // Matched by internal name even though the ability is "Visitor Speed".

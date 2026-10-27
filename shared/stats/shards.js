@@ -1,6 +1,8 @@
 // Hunting shards: every shard type the player holds (Hypixel's Hunting Box,
 // member.shards.owned) or has syphoned into an attribute
-// (member.attributes.stacks), named and priced from the bazaar.
+// (member.attributes.stacks), named and priced from the bazaar. The account's
+// shard value counts both: held shards could be sold, syphoned ones are what
+// the attribute levels cost.
 import { attributeLevel } from '../analyze/attributes.js';
 import { prettyId } from '../analyze/helpers.js';
 
@@ -48,6 +50,8 @@ export function shardStats(member, book, constants) {
         // Bazaar instant-sell (what you would get now) and instant-buy.
         sell: book?.value?.(id) ?? null,
         buy: book?.price?.(id)?.unit ?? null,
+        heldValue: 0,
+        syphonedValue: 0,
         value: 0,
       });
     }
@@ -73,19 +77,26 @@ export function shardStats(member, book, constants) {
       row.level = lvl.level;
       row.maxLevel = lvl.maxLevel;
     }
-    row.value = (row.sell ?? 0) * row.owned;
+    row.heldValue = (row.sell ?? 0) * row.owned;
+    row.syphonedValue = (row.sell ?? 0) * row.syphoned;
+    row.value = row.heldValue + row.syphonedValue;
   }
   list.sort((a, b) => b.value - a.value || b.owned - a.owned || a.name.localeCompare(b.name));
 
   const owned = list.filter((r) => r.owned > 0);
+  const total = (f) => list.reduce((n, r) => n + f(r), 0);
   return {
     list,
     typesOwned: owned.length,
     typesTotal: defs.length,
     owned: owned.reduce((n, r) => n + r.owned, 0),
-    value: owned.reduce((n, r) => n + r.value, 0),
-    buyValue: owned.reduce((n, r) => n + (r.buy ?? r.sell ?? 0) * r.owned, 0),
-    unpriced: owned.filter((r) => r.sell == null).length,
+    // Everything the account has in shards, held and syphoned, at instant-sell.
+    value: total((r) => r.value),
+    heldValue: total((r) => r.heldValue),
+    syphonedValue: total((r) => r.syphonedValue),
+    // The same shards at instant-buy: what collecting them again would cost.
+    buyValue: total((r) => (r.buy ?? r.sell ?? 0) * (r.owned + r.syphoned)),
+    unpriced: list.filter((r) => r.sell == null).length,
     syphoned: list.reduce((n, r) => n + r.syphoned, 0),
     attributes: list.filter((r) => r.syphoned > 0).length,
     maxedAttributes: list.filter((r) => r.maxLevel && r.level >= r.maxLevel).length,
