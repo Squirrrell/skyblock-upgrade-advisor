@@ -107,6 +107,27 @@ function Missing({ missing }) {
   );
 }
 
+/** "Dec 04, 2024, 11:03 PM" */
+const when = (ms) =>
+  new Date(ms).toLocaleString('en-US', { month: 'short', day: '2-digit', year: 'numeric', hour: 'numeric', minute: '2-digit' });
+
+/** The detailed card for an owned accessory: its in-game lore, then when it was obtained and its value. */
+function detail(x) {
+  const base = { name: x.name, rarity: x.rarity, icon: x.id };
+  const extras = [
+    x.recombobulated ? { text: '(Recombobulated)', color: 'var(--code-grey)' } : null,
+    x.obtained ? { text: `Obtained: ${when(x.obtained)}`, color: 'var(--code-red)' } : null,
+    x.value ? { text: `Item value: ${int(x.value)} coins (${coins(x.value)})`, color: 'var(--code-gold)' } : null,
+  ];
+  if (x.lore?.length) return { ...base, lore: x.lore, lines: extras };
+  // Older reports without lore fall back to the short tooltip.
+  return {
+    ...base,
+    lines: [x.recombobulated ? { text: 'Recombobulated', color: 'var(--code-gold)' } : null, x.enrichment ? `Enrichment: ${x.enrichment}` : null, ...extras],
+    label: `${rarityLabel(x.rarity).toUpperCase()} ACCESSORY`,
+  };
+}
+
 function Owned({ a }) {
   const [q, setQ] = useState('');
   const query = q.trim().toLowerCase();
@@ -148,15 +169,7 @@ function Owned({ a }) {
                 rarity={x.rarity}
                 glint={x.recombobulated}
                 alt={x.name}
-                tooltip={{
-                  name: x.name,
-                  rarity: x.rarity,
-                  lines: [
-                    x.recombobulated ? { text: 'Recombobulated', color: 'var(--code-gold)' } : null,
-                    x.enrichment ? `Enrichment: ${x.enrichment}` : null,
-                  ],
-                  label: `${rarityLabel(x.rarity).toUpperCase()} ACCESSORY`,
-                }}
+                tooltip={detail(x)}
               />
             </li>
           ))}

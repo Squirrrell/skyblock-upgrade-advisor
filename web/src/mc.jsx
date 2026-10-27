@@ -61,8 +61,53 @@ export function TooltipLayer() {
   }, []);
 
   if (!current) return null;
-  const { name, rarity, lines = [], label } = current.content;
+  const { name, rarity, lines = [], label, lore, icon } = current.content;
   const color = RARITY[rarity] ?? RARITY.COMMON;
+  const line = (l, i) =>
+    typeof l === 'string' ? (
+      <div key={i} className="mc-tt-line">
+        {l}
+      </div>
+    ) : (
+      <div key={i} className="mc-tt-line" style={l.color ? { color: l.color } : undefined}>
+        {l.text}
+      </div>
+    );
+
+  // The detailed card: rarity-coloured header, the item's own lore, then extras.
+  if (lore) {
+    return (
+      <div
+        ref={ref}
+        className="mc-tooltip mc-tt-card"
+        style={{ ...pos, '--tt-rarity': color, '--tt-ink': rarity === 'COMMON' || !RARITY[rarity] ? '#151515' : '#fff' }}
+        role="tooltip"
+      >
+        <div className="mc-tt-head">
+          {icon && (
+            <span className="mc-tt-icon">
+              <Icon id={icon} />
+            </span>
+          )}
+          <span>{name}</span>
+        </div>
+        <div className="mc-tt-body">
+          {lore.map((l, i) =>
+            stripCodes(l).trim() ? (
+              <div key={i} className="mc-tt-line mc-tt-lore">
+                {mcText(l)}
+              </div>
+            ) : (
+              <div key={i} className="mc-tt-gap" />
+            ),
+          )}
+          {lines.filter(Boolean).length > 0 && <div className="mc-tt-gap" />}
+          {lines.filter(Boolean).map(line)}
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div ref={ref} className="mc-tooltip" style={pos} role="tooltip">
       <div className="mc-tt-name" style={{ color }}>
@@ -86,6 +131,59 @@ export function TooltipLayer() {
       )}
     </div>
   );
+}
+
+// ------------------------------------------------------------------ § text
+
+// Minecraft formatting codes: §0-§f colours, §l bold, §o italic, §n
+// underline, §m strikethrough, §k scrambled (hidden here), §r reset.
+const CODE_COLORS = {
+  0: 'black',
+  1: 'dark-blue',
+  2: 'dark-green',
+  3: 'dark-aqua',
+  4: 'dark-red',
+  5: 'dark-purple',
+  6: 'gold',
+  7: 'grey',
+  8: 'dark-grey',
+  9: 'blue',
+  a: 'green',
+  b: 'aqua',
+  c: 'red',
+  d: 'pink',
+  e: 'yellow',
+  f: 'white',
+};
+
+const stripCodes = (s) => String(s).replace(/§./g, '');
+
+/** A lore line with § codes as styled spans. */
+function mcText(s) {
+  const out = [];
+  let style = {};
+  let hidden = false;
+  const parts = String(s).split(/(§.)/);
+  parts.forEach((part, i) => {
+    const m = /^§(.)$/.exec(part);
+    if (m) {
+      const c = m[1].toLowerCase();
+      if (CODE_COLORS[c]) {
+        style = { color: `var(--code-${CODE_COLORS[c]})` };
+        hidden = false;
+      } else if (c === 'r') {
+        style = {};
+        hidden = false;
+      } else if (c === 'l') style = { ...style, fontWeight: 700 };
+      else if (c === 'o') style = { ...style, fontStyle: 'italic' };
+      else if (c === 'n') style = { ...style, textDecoration: 'underline' };
+      else if (c === 'm') style = { ...style, textDecoration: 'line-through' };
+      else if (c === 'k') hidden = true;
+      return;
+    }
+    if (part && !hidden) out.push(<span key={i} style={style}>{part}</span>);
+  });
+  return out;
 }
 
 // ------------------------------------------------------------------ item slot

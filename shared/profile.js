@@ -83,6 +83,9 @@ function normalizeItem(raw, location) {
     farmingForDummies: extra.farming_for_dummies_count ?? 0,
     attributes: extra.attributes ?? {},
     petInfo,
+    // The in-game lore lines, with their § colour codes, and when it was obtained.
+    lore,
+    obtained: obtainedAt(extra.timestamp),
     // What the icon is drawn from: the 1.8 item id and damage ("#351:3"),
     // the player-head skin and a leather dye colour ("R,G,B").
     mat: typeof raw.id === 'number' ? `#${raw.id}:${raw.Damage ?? 0}` : null,
@@ -90,6 +93,14 @@ function normalizeItem(raw, location) {
     color: raw.tag.display?.color != null ? [16, 8, 0].map((b) => (raw.tag.display.color >> b) & 255).join(',') : null,
     extra,
   };
+}
+
+/** ExtraAttributes.timestamp: milliseconds, or "4/15/20 12:41 AM" on old items. */
+function obtainedAt(ts) {
+  if (typeof ts === 'number') return ts;
+  if (typeof ts !== 'string') return null;
+  const ms = Date.parse(ts.replace(/(\d+)\/(\d+)\/(\d{2})\b/, (m, a, b, y) => `${a}/${b}/20${y}`));
+  return Number.isNaN(ms) ? null : ms;
 }
 
 const prettyName = (id) => String(id).toLowerCase().replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());

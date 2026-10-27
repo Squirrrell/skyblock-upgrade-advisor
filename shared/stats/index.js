@@ -477,7 +477,7 @@ function misc(member) {
 
 // ------------------------------------------------------------------ accessories
 
-function accessories(member, items) {
+function accessories(member, items, book) {
   const bag = items.filter((i) => i.location === 'Accessory bag');
   const abs = member.accessory_bag_storage ?? {};
   return {
@@ -486,7 +486,17 @@ function accessories(member, items) {
     unlockedPowers: (abs.unlocked_powers ?? []).map(prettyId),
     tuning: Object.entries(abs.tuning?.slot_0 ?? {}).filter(([, v]) => v > 0).map(([stat, points]) => ({ stat: prettyId(stat), points })),
     bagUpgrades: abs.bag_upgrades_purchased ?? 0,
-    owned: bag.map((i) => ({ id: i.id, name: i.name, rarity: i.rarity, recombobulated: i.recombobulated, enrichment: i.extra?.talisman_enrichment ?? null })),
+    owned: bag.map((i) => ({
+      id: i.id,
+      name: i.name,
+      rarity: i.rarity,
+      recombobulated: i.recombobulated,
+      enrichment: i.extra?.talisman_enrichment ?? null,
+      // For the detailed tooltip: in-game lore, when it was obtained, its value.
+      lore: i.lore,
+      obtained: i.obtained,
+      value: itemValue(i, book),
+    })),
     apiOff: !member.inventory,
   };
 }
@@ -564,7 +574,7 @@ export function buildStats(ctx) {
   const mn = mining(member);
   const fg = foraging(member);
   const pt = pets(member, ctx.pets);
-  const acc = accessories(member, items);
+  const acc = accessories(member, items, book);
   const nw = computeNetworth({ items, pets: pt.list, member, profile, book });
   return {
     overview: overview(member, profile, {

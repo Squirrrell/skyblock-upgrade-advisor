@@ -526,6 +526,53 @@ option {
   text-transform: uppercase;
 }
 
+/* The detailed item card: rarity header with the icon, then the item's lore. */
+.mc-tooltip.mc-tt-card {
+  padding: 0;
+  width: max-content;
+  max-width: min(24rem, calc(100vw - 16px));
+}
+
+.mc-tt-card .mc-tt-head {
+  display: flex;
+  align-items: center;
+  gap: calc(var(--px) * 4);
+  padding: calc(var(--px) * 3) calc(var(--px) * 5);
+  background: var(--tt-rarity);
+  color: var(--tt-ink);
+  font-weight: 700;
+  text-transform: uppercase;
+  text-shadow: none;
+}
+
+.mc-tt-card .mc-tt-icon {
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  flex-shrink: 0;
+}
+
+.mc-tt-card .mc-tt-icon img {
+  width: 32px;
+  height: 32px;
+  object-fit: cover;
+  object-position: top;
+  image-rendering: pixelated;
+}
+
+.mc-tt-card .mc-tt-body {
+  padding: calc(var(--px) * 4) calc(var(--px) * 5);
+}
+
+.mc-tt-card .mc-tt-lore {
+  color: var(--code-grey);
+}
+
+.mc-tt-card .mc-tt-gap {
+  height: 0.6em;
+}
+
 /* ------------------------------------------------------------------ misc */
 
 .skeleton {
