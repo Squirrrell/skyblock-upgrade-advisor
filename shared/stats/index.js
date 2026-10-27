@@ -209,6 +209,7 @@ function pets(member, ctxPets) {
 const MINION_SLOTS = [
   [0, 5], [5, 6], [15, 7], [30, 8], [50, 9], [75, 10], [100, 11], [125, 12], [150, 13], [175, 14], [200, 15],
   [225, 16], [250, 17], [275, 18], [300, 19], [350, 20], [400, 21], [450, 22], [500, 23], [550, 24], [600, 25], [650, 26],
+  [700, 27],
 ];
 
 function collections(member, profile) {
@@ -272,21 +273,22 @@ const DOJO = [
   ['fireball', 'Tenacity'],
 ];
 const dojoGrade = (p) => (p >= 1000 ? 'S' : p >= 800 ? 'A' : p >= 600 ? 'B' : p >= 400 ? 'C' : p >= 200 ? 'D' : p > 0 ? 'F' : '-');
+// Total dojo points per belt, from the community wiki's Dojo page.
 const BELTS = [
-  [15000, 'Black'],
-  [10000, 'Brown'],
-  [7000, 'Blue'],
-  [4000, 'Green'],
-  [2000, 'Yellow'],
-  [0, 'White'],
+  [7000, 'Black'],
+  [6000, 'Brown'],
+  [4000, 'Blue'],
+  [2000, 'Green'],
+  [1000, 'Yellow'],
+  [0, 'None yet'],
 ];
+// Faction titles from the wiki's Reputation page. Reputation cannot go negative.
 const REP_RANKS = [
   [12000, 'Hero'],
-  [6000, 'Honored'],
+  [7000, 'Honored'],
   [3000, 'Trusted'],
   [1000, 'Friendly'],
-  [0, 'Neutral'],
-  [-Infinity, 'Hostile'],
+  [-Infinity, 'Neutral'],
 ];
 const KUUDRA_TIERS = [
   ['none', 'Basic'],

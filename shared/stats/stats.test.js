@@ -90,7 +90,8 @@ test('misc sections read events and the Crimson Isle', () => {
   assert.equal(stats.chocolate.duplicates, 3);
   assert.equal(stats.jacob.earned.gold, 1);
   assert.equal(stats.crimson.dojoTotal, 1488);
-  assert.equal(stats.crimson.belt, 'White');
+  // Yellow starts at 1,000 points.
+  assert.equal(stats.crimson.belt, 'Yellow');
   assert.equal(stats.crimson.mages.rank, 'Neutral');
   assert.equal(stats.crimson.trophyFish.list.find((f) => f.id === 'blobfish').bronze, 1);
   assert.equal(stats.garden.level, 14);
