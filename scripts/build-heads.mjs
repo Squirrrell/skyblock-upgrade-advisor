@@ -1,5 +1,6 @@
 // Collects the skull textures of every pet and attribute shard from the
-// NotEnoughUpdates repo, so their icons can be drawn as flat 2D heads.
+// NotEnoughUpdates repo. FurfSky Reborn retextures pets by skull texture, so
+// this is how the icon code finds a pet's texture in a loaded pack.
 // Pets and shards change rarely, so the result is committed; rerun this after
 // a SkyBlock update adds new ones.
 // Usage: node scripts/build-heads.mjs   (writes web/public/heads.json)

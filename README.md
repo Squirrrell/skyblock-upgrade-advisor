@@ -129,8 +129,8 @@ The site is styled like Minecraft's inventory screens: grey bevelled panels, ite
 
 Item icons come in two packs, picked from the header:
 
-- **Hypixel default**: textures rendered by SkyCrypt's public item API, with player-head items (including pets and attribute shards) drawn as flat faces by mc-heads.
-- **FurfSky Reborn**: pick your own copy of the pack (the "FULL" `.zip`, not the `.cats` file) with "Load pack .zip". It is read in your browser and never uploaded, because the pack's license doesn't allow hosting its files. Items the pack doesn't cover use the default icons.
+- **Hypixel default**: textures rendered by SkyCrypt's public item API. Pets and other player-head items show as 3D heads; a non-pet head only falls back to a flat face from mc-heads if that render fails.
+- **FurfSky Reborn**: pick your own copy of the pack (the "FULL" `.zip`, not the `.cats` file) with "Load pack .zip". It is read in your browser and never uploaded, because the pack's license doesn't allow hosting its files. Pets are matched by their skull texture, the way the pack itself does it. Items the pack doesn't cover use the default icons.
 
 Missing icons show the purple and black missing-texture square.
 
@@ -143,7 +143,7 @@ node scripts/make-textures.mjs
 node scripts/build-heads.mjs
 ```
 
-The first redraws the background and button tiles. The second refreshes `web/public/heads.json`, the pet and shard head textures from the NotEnoughUpdates repo, after an update adds new ones.
+The first redraws the background and button tiles. The second refreshes `web/public/heads.json`, the pet and shard skull textures from the NotEnoughUpdates repo that FurfSky matching uses, after an update adds new ones.
 
 Monocraft is by Idrees Hassan under the SIL Open Font License; the license is in `web/public/fonts/`.
 

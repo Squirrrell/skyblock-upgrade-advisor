@@ -9,7 +9,9 @@ let packTextures = null; // { get(id) -> objectURL } once a FurfSky zip is loade
 let packInfo = null; // { name, count }
 let items = null; // Map<id, item> from the item index
 let shardIds = null; // Map<SHARD_X, ATTRIBUTE_SHARD_Y;1>
-let heads = null; // { pets: { TYPE: hash }, shards: { SHARD_X: hash } }, from scripts/build-heads.mjs
+// { pets: { TYPE: hash }, shards: { SHARD_X: hash } }, from scripts/build-heads.mjs.
+// Used to find a pet's or shard's texture in a FurfSky pack, not to draw it.
+let heads = null;
 const listeners = new Set();
 
 function readPack() {
@@ -105,6 +107,6 @@ export function itemInfo(id) {
 export function iconUrls(id, extraHint = {}) {
   if (!id) return [];
   const info = itemInfo(id);
-  const hint = { skull: info.skull, shardInternal: shardIds?.get(id), ...extraHint };
+  const hint = { skull: info.skull, isPet: PET_ID.test(id), shardInternal: shardIds?.get(id), ...extraHint };
   return ICON_PACKS[pack].urls(id, hint, packTextures);
 }

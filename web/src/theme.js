@@ -132,25 +132,27 @@ const RARITY_INDEX = { COMMON: 0, UNCOMMON: 1, RARE: 2, EPIC: 3, LEGENDARY: 4, M
  * `hint` carries what the caller knows: skull texture hash, shard internal id.
  *
  * - default: Hypixel's own textures, rendered by SkyCrypt's public item API
- *   (sky.shiiyu.moe), with player-head items drawn as flat faces by mc-heads.
+ *   (sky.shiiyu.moe). Player heads and pets come back as 3D heads. Only if
+ *   that fails does a non-pet head fall back to a flat face from mc-heads;
+ *   pets never use the flat face.
  * - furfsky: FurfSky Reborn textures the visitor loads from their own copy of
- *   the pack (see lib/furfsky.js). The pack's license does not allow hosting
- *   its files, so nothing is uploaded; items it lacks fall back to default.
+ *   the pack (see lib/furfsky.js), matched by item id or, for pets and other
+ *   heads, by skull texture. The pack's license does not allow hosting its
+ *   files, so nothing is uploaded; items it lacks fall back to default.
  */
 export const ICON_PACKS = {
   default: {
     label: 'Hypixel default',
     urls(id, hint = {}) {
-      const out = [];
-      if (hint.skull) out.push(`https://mc-heads.net/avatar/${hint.skull}/64`);
-      out.push(`https://sky.shiiyu.moe/api/item/${encodeURIComponent(skyCryptId(id, hint))}`);
+      const out = [`https://sky.shiiyu.moe/api/item/${encodeURIComponent(skyCryptId(id, hint))}`];
+      if (hint.skull && !hint.isPet) out.push(`https://mc-heads.net/avatar/${hint.skull}/64`);
       return out;
     },
   },
   furfsky: {
     label: 'FurfSky Reborn',
     urls(id, hint = {}, packTextures) {
-      const own = packTextures?.get(id);
+      const own = packTextures?.get(id) ?? packTextures?.getSkull?.(hint.skull);
       return own ? [own, ...ICON_PACKS.default.urls(id, hint)] : ICON_PACKS.default.urls(id, hint);
     },
   },

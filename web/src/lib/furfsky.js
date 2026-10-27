@@ -3,13 +3,15 @@
 //
 // Two layouts are understood:
 //  - OptiFine / MCPatcher CIT: .properties files matching
-//    nbt.ExtraAttributes.id (exact ids, regex: and pattern: rules), with the
+//    nbt.ExtraAttributes.id (exact ids, regex: and pattern: rules) or a
+//    skull texture (nbt.SkullOwner...Value, how the pack retextures pets), with the
 //    texture given by texture=, texture.<item>=, a local model json, or a
 //    .png named like the properties file. This is the classic FurfSky
 //    Reborn "FULL" zip.
 //  - Firmament: assets/firmskyblock/models/item/<skyblock_id>.json, whose
 //    layer0 texture points into assets/firmskyblock/textures/.
 import { unzip } from 'fflate';
+import { skullHash } from '../../../shared/prices.js';
 
 const decoder = new TextDecoder();
 
@@ -37,7 +39,13 @@ function idMatcher(value) {
   const m = /^(i?)(regex|pattern):(.*)$/.exec(value);
   if (!m) return { exact: value.trim() };
   const [, insensitive, kind, body] = m;
-  const source = kind === 'regex' ? body : body.replace(/[.+^${}()|[\]\\]/g, '\\$&').replace(/\*/g, '.*').replace(/\?/g, '.');
+  const source =
+    kind === 'regex'
+      ? body
+      : body
+          .replace(/[.+^${}()|[\]\\]/g, '\\$&')
+          .replace(/\*/g, '.*')
+          .replace(/\?/g, '.');
   try {
     return { re: new RegExp(`^(?:${source})$`, insensitive ? 'i' : '') };
   } catch {
@@ -90,7 +98,8 @@ function citRules(files) {
   for (const [path, bytes] of Object.entries(files)) {
     if (!path.toLowerCase().endsWith('.properties')) continue;
     const props = parseProperties(decoder.decode(bytes));
-    const matcher = idMatcher(props['nbt.ExtraAttributes.id']);
+    const skull = skullHash(props['nbt.SkullOwner.Properties.textures.0.Value']);
+    const matcher = skull ? { skull } : idMatcher(props['nbt.ExtraAttributes.id']);
     if (!matcher) continue;
     const texture = resolveCitTexture(files, path, props);
     if (!texture) continue;
@@ -132,9 +141,12 @@ export async function loadPackTextures(file) {
   const rules = [...firmamentRules(files), ...citRules(files)];
 
   const exact = new Map();
+  const skulls = new Map(); // skull texture hash -> texture path
   const patterns = [];
   for (const r of rules) {
-    if (r.exact) {
+    if (r.skull) {
+      if (!skulls.has(r.skull)) skulls.set(r.skull, r.texture);
+    } else if (r.exact) {
       if (!exact.has(r.exact)) exact.set(r.exact, r.texture);
     } else patterns.push(r);
   }
@@ -147,12 +159,17 @@ export async function loadPackTextures(file) {
   };
 
   return {
-    /** Number of exact item textures plus pattern rules. */
-    size: exact.size + patterns.length,
+    /** Number of item, skull and pattern textures. */
+    size: exact.size + skulls.size + patterns.length,
     get(id) {
       if (!id) return undefined;
       if (!resolved.has(id)) resolved.set(id, exact.get(id) ?? patterns.find((p) => p.re.test(id))?.texture ?? null);
       const path = resolved.get(id);
+      return path ? urlFor(path) : undefined;
+    },
+    /** Texture for a player-head item, by its skull texture hash. */
+    getSkull(hash) {
+      const path = hash && skulls.get(hash);
       return path ? urlFor(path) : undefined;
     },
     has(id) {
