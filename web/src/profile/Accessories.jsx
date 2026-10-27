@@ -1,11 +1,11 @@
 // Accessories in two views: what is missing (ranked by coins per magical
 // power, with a highest-tier-only option) and what is owned (the bag by
-// rarity). Each view has its own search.
+// rarity, with powers and tuning). Each view has its own search.
 import { useMemo, useState } from 'react';
 import { coins, int } from '../lib/format.js';
 import { load, save } from '../lib/storage.js';
 import { ItemSlot } from '../mc.jsx';
-import { Chip, Empty, Facts, Panel, SearchInput, Stat, StatGrid, rarityClass, rarityLabel } from '../ui.jsx';
+import { Chip, Empty, Panel, SearchInput, Stat, StatGrid, rarityClass, rarityLabel } from '../ui.jsx';
 
 const ORDER = ['MYTHIC', 'LEGENDARY', 'EPIC', 'RARE', 'UNCOMMON', 'COMMON', 'SPECIAL', 'VERY_SPECIAL'];
 const matches = (q, ...fields) => !q || fields.some((f) => f?.toLowerCase().includes(q));
@@ -116,56 +116,60 @@ function Owned({ a }) {
     [a.owned, query],
   );
   const shown = byRarity.reduce((n, [, l]) => n + l.length, 0);
+  // Power and tuning sit with the bag they belong to, as one short line.
+  const powers = a.unlockedPowers.map((p) => (p === a.selectedPower ? `${p} (selected)` : p));
   return (
-    <div className="grid gap-6 lg:grid-cols-[2fr_1fr]">
-      <Panel title="Accessory bag" subtitle={`${a.owned.length} accessories, grouped by rarity.`} pad={false}>
-        <div className="flex flex-wrap items-center gap-2 px-5 pt-4 pb-3 sm:px-6">
+    <Panel title="Accessory bag" subtitle={`${a.owned.length} accessories, grouped by rarity. Hover one for its name.`} pad={false}>
+      <div className="flex flex-col gap-3 px-5 pt-4 pb-3 sm:px-6">
+        <div className="flex flex-wrap items-center gap-2">
           <SearchInput value={q} onChange={setQ} placeholder="Search your accessories" className="w-full sm:w-64" />
           <span className="ml-auto text-sm text-muted tabular">{shown} shown</span>
         </div>
-        <div className="px-5 pb-5 sm:px-6">
-          {shown === 0 && <p className="text-sm text-muted">None of your accessories match that search.</p>}
-          {byRarity.map(([r, list]) => (
-            <section key={r} className="mb-5 last:mb-0">
-              <h3 className={`mb-2 text-sm font-bold uppercase ${rarityClass(r)}`}>
-                {rarityLabel(r)} <span className="text-muted">{list.length}</span>
-              </h3>
-              <ul className="grid gap-x-4 gap-y-2 sm:grid-cols-2">
-                {list.map((x, i) => (
-                  <li key={`${x.id}-${i}`} className="flex min-w-0 items-center gap-3">
-                    <ItemSlot
-                      id={x.id}
-                      rarity={x.rarity}
-                      glint={x.recombobulated}
-                      tooltip={{
-                        name: x.name,
-                        rarity: x.rarity,
-                        lines: [
-                          x.recombobulated ? { text: 'Recombobulated', color: 'var(--code-gold)' } : null,
-                          x.enrichment ? `Enrichment: ${x.enrichment}` : null,
-                        ],
-                        label: `${rarityLabel(x.rarity).toUpperCase()} ACCESSORY`,
-                      }}
-                    />
-                    <span className="min-w-0">
-                      <span className={`block truncate text-sm font-semibold ${rarityClass(x.rarity)}`}>{x.name}</span>
-                      {(x.recombobulated || x.enrichment) && (
-                        <span className="block truncate text-xs text-muted">
-                          {[x.recombobulated && 'Recombobulated', x.enrichment && `${x.enrichment} enrichment`].filter(Boolean).join(', ')}
-                        </span>
-                      )}
-                    </span>
-                  </li>
-                ))}
-              </ul>
-            </section>
-          ))}
-        </div>
-      </Panel>
-      <Panel title="Power and tuning">
-        <Facts rows={[['Unlocked powers', a.unlockedPowers.join(', ') || '-'], ...a.tuning.map((t) => [`Tuning: ${t.stat}`, t.points])]} />
-      </Panel>
-    </div>
+        <dl className="flex flex-wrap gap-x-6 gap-y-1 text-sm">
+          <div className="flex gap-2">
+            <dt className="text-muted">Powers unlocked</dt>
+            <dd>{powers.join(', ') || '-'}</dd>
+          </div>
+          {a.tuning.length > 0 && (
+            <div className="flex gap-2">
+              <dt className="text-muted">Tuning</dt>
+              <dd className="tabular">{a.tuning.map((t) => `${t.stat} ${t.points}`).join(', ')}</dd>
+            </div>
+          )}
+        </dl>
+      </div>
+      <div className="border-t border-line px-5 py-4 sm:px-6">
+        {shown === 0 && <p className="text-sm text-muted">None of your accessories match that search.</p>}
+        {byRarity.map(([r, list]) => (
+          <section key={r} className="mb-4 last:mb-0">
+            <h3 className={`mb-2 text-sm font-bold uppercase ${rarityClass(r)}`}>
+              {rarityLabel(r)} <span className="text-muted">{list.length}</span>
+            </h3>
+            <ul className="flex flex-wrap gap-1.5">
+              {list.map((x, i) => (
+                <li key={`${x.id}-${i}`}>
+                  <ItemSlot
+                    id={x.id}
+                    rarity={x.rarity}
+                    glint={x.recombobulated}
+                    alt={x.name}
+                    tooltip={{
+                      name: x.name,
+                      rarity: x.rarity,
+                      lines: [
+                        x.recombobulated ? { text: 'Recombobulated', color: 'var(--code-gold)' } : null,
+                        x.enrichment ? `Enrichment: ${x.enrichment}` : null,
+                      ],
+                      label: `${rarityLabel(x.rarity).toUpperCase()} ACCESSORY`,
+                    }}
+                  />
+                </li>
+              ))}
+            </ul>
+          </section>
+        ))}
+      </div>
+    </Panel>
   );
 }
 
