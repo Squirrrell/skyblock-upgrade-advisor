@@ -3,11 +3,11 @@ import { int, num } from './lib/format.js';
 
 export function Panel({ title, subtitle, actions, children, className = '', pad = true }) {
   return (
-    <section className={`rounded-xl border border-line bg-surface shadow-panel ${className}`}>
+    <section className={`min-w-0 border border-line bg-surface shadow-panel ${className}`}>
       {(title || actions) && (
         <header className="flex flex-wrap items-start justify-between gap-3 border-b border-line px-5 py-4 sm:px-6">
           <div className="min-w-0">
-            {title && <h2 className="font-semibold tracking-tight">{title}</h2>}
+            {title && <h2 className="font-bold">{title}</h2>}
             {subtitle && <p className="mt-1 max-w-[70ch] text-sm text-muted">{subtitle}</p>}
           </div>
           {actions}
@@ -18,12 +18,19 @@ export function Panel({ title, subtitle, actions, children, className = '', pad 
   );
 }
 
-export function Stat({ label, value, sub, accent }) {
+const TONES = { green: 'text-accent', gold: 'text-warn', red: 'text-danger' };
+
+/** A labelled number in a black readout. `accent` = green; or pass tone. */
+export function Stat({ label, value, sub, accent, tone, icon }) {
+  const color = TONES[tone ?? (accent ? 'green' : '')] ?? 'text-text';
   return (
-    <div className="min-w-0 rounded-xl border border-line bg-surface p-4 shadow-panel">
-      <div className="truncate text-xs font-medium text-muted">{label}</div>
-      <div className={`mt-1.5 truncate font-mono text-2xl font-medium tracking-tight tabular ${accent ? 'text-accent' : 'text-text'}`}>{value}</div>
-      {sub && <div className="mt-1 truncate text-xs text-muted">{sub}</div>}
+    <div className="min-w-0 border border-line bg-surface p-3 shadow-panel">
+      <div className="flex items-center gap-2 truncate text-sm text-muted">
+        {icon}
+        {label}
+      </div>
+      <div className={`mc-readout mt-2 max-w-full truncate text-xl tabular ${color}`}>{value}</div>
+      {sub && <div className="mt-1.5 truncate text-sm text-muted">{sub}</div>}
     </div>
   );
 }
@@ -46,11 +53,12 @@ export function Facts({ rows }) {
   );
 }
 
-export function Bar({ value, className = '', tone = 'bg-accent' }) {
+/** Progress drawn like the XP bar. `gold` marks something maxed. */
+export function Bar({ value, className = '', gold = false }) {
   const pct = Math.max(0, Math.min(1, value || 0)) * 100;
   return (
-    <div className={`h-1.5 overflow-hidden rounded-full bg-line ${className}`}>
-      <div className={`h-full rounded-full ${tone}`} style={{ width: `${pct}%` }} />
+    <div className={`mc-xpbar ${gold ? 'is-gold' : ''} ${className}`} role="progressbar" aria-valuenow={Math.round(pct)} aria-valuemin={0} aria-valuemax={100}>
+      <span style={{ width: `${pct}%` }} />
     </div>
   );
 }
@@ -71,7 +79,7 @@ export function LevelRow({ name, info, extra, note }) {
           {info.overflow > 0 && <span className="ml-1 text-accent">+{num(info.overflow, 2)}</span>}
         </span>
       </div>
-      <Bar value={info.progress} className="mt-2" tone={maxed ? 'bg-accent' : 'bg-accent/70'} />
+      <Bar value={info.progress} className="mt-2" gold={maxed} />
       <div className="mt-1.5 flex justify-between gap-3 text-xs text-muted">
         <span className="font-mono tabular">{int(info.xp)} XP</span>
         <span className="font-mono tabular">{maxed && !info.overflow ? 'Maxed' : `${int(info.toNext)} to next`}</span>
@@ -82,19 +90,12 @@ export function LevelRow({ name, info, extra, note }) {
 }
 
 export function Empty({ children }) {
-  return <div className="rounded-xl border border-dashed border-line p-8 text-center text-sm text-muted">{children}</div>;
+  return <div className="mc-well p-8 text-center text-sm text-muted">{children}</div>;
 }
 
 export function Chip({ active, onClick, children }) {
   return (
-    <button
-      type="button"
-      onClick={onClick}
-      aria-pressed={active}
-      className={`inline-flex h-8 shrink-0 items-center gap-1.5 rounded-lg border px-3 text-sm transition-colors ${
-        active ? 'border-accent bg-accent-soft text-text' : 'border-line text-muted hover:text-text'
-      }`}
-    >
+    <button type="button" onClick={onClick} aria-pressed={active} className="mc-btn mc-btn-sm shrink-0">
       {children}
     </button>
   );
@@ -109,7 +110,7 @@ export function SearchInput({ value, onChange, placeholder, className = '' }) {
       placeholder={placeholder}
       autoComplete="off"
       spellCheck="false"
-      className={`h-9 rounded-lg border border-line bg-surface px-3 text-sm text-text placeholder:text-muted focus:border-accent focus:outline-none ${className}`}
+      className={`h-9 px-3 text-sm ${className}`}
     />
   );
 }
@@ -125,10 +126,10 @@ export function Loading({ label = 'Loading' }) {
 
 export function ErrorNote({ error, onRetry }) {
   return (
-    <div className="rounded-xl border border-danger/40 bg-surface p-5 text-sm" role="alert">
+    <div className="mc-panel p-5 text-sm" role="alert">
       <p>{error?.message ?? 'Something went wrong.'}</p>
       {onRetry && (
-        <button type="button" onClick={onRetry} className="mt-3 rounded-lg border border-line px-3 py-1.5 font-medium hover:border-accent">
+        <button type="button" onClick={onRetry} className="mc-btn mt-3">
           Try again
         </button>
       )}
@@ -149,13 +150,22 @@ const RARITY = {
   SUPREME: 'r-divine',
 };
 export const rarityClass = (r) => RARITY[r] ?? 'text-text';
-export const rarityLabel = (r) => (r ? r.replace('_', ' ').toLowerCase().replace(/\b\w/g, (c) => c.toUpperCase()) : '');
+export const rarityLabel = (r) =>
+  r
+    ? r
+        .replace('_', ' ')
+        .toLowerCase()
+        .replace(/\b\w/g, (c) => c.toUpperCase())
+    : '';
 
 /** Sortable table header cell. */
 export function SortTh({ id, sort, setSort, children, align = 'left' }) {
   const active = sort.key === id;
   return (
-    <th className={`px-3 py-2 font-medium ${align === 'right' ? 'text-right' : 'text-left'}`} aria-sort={active ? (sort.dir > 0 ? 'ascending' : 'descending') : 'none'}>
+    <th
+      className={`px-3 py-2 font-medium ${align === 'right' ? 'text-right' : 'text-left'}`}
+      aria-sort={active ? (sort.dir > 0 ? 'ascending' : 'descending') : 'none'}
+    >
       <button
         type="button"
         onClick={() => setSort({ key: id, dir: active ? -sort.dir : -1 })}

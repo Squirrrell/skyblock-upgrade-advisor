@@ -70,7 +70,7 @@ export default function Calendar() {
 
   return (
     <div className="fade-in pt-8">
-      <h1 className="text-2xl font-semibold tracking-tight">Mayor & events</h1>
+      <h1 className="text-2xl font-bold text-[var(--code-yellow)]">Mayor & events</h1>
       <p className="mt-2 font-mono text-lg tabular">
         {d.monthName} {d.day}, Year {d.year} <span className="text-muted">· {String(d.hour).padStart(2, '0')}:{String(Math.floor(d.minute / 10) * 10).padStart(2, '0')}</span>
       </p>

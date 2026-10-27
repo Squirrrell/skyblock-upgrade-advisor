@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react';
 import { coins, int } from '../lib/format.js';
+import { ItemSlot } from '../mc.jsx';
 import { Chip, Empty, Facts, Panel, SearchInput, Stat, StatGrid, rarityClass, rarityLabel } from '../ui.jsx';
 
 const ORDER = ['MYTHIC', 'LEGENDARY', 'EPIC', 'RARE', 'UNCOMMON', 'COMMON', 'SPECIAL', 'VERY_SPECIAL'];
@@ -29,31 +30,49 @@ function Missing({ missing }) {
       <div className="scroll-x">
         <table className="w-full min-w-[560px] text-sm">
           <thead>
-            <tr className="border-b border-line text-xs text-muted">
-              <th className="px-5 py-2.5 text-left font-medium">Accessory</th>
-              <th className="px-3 py-2.5 text-right font-medium">MP</th>
-              <th className="px-3 py-2.5 text-right font-medium">Price</th>
-              <th className="px-5 py-2.5 text-right font-medium">Coins / MP</th>
+            <tr className="text-sm">
+              <th className="px-3 py-2 text-left">Accessory</th>
+              <th className="px-3 py-2 text-right">MP</th>
+              <th className="px-3 py-2 text-right">Price</th>
+              <th className="px-3 py-2 text-right">Coins / MP</th>
             </tr>
           </thead>
           <tbody>
             {rows.slice(0, limit).map((r) => (
-              <tr key={r.id} className="border-b border-line/60 last:border-0">
-                <td className="px-5 py-2">
-                  <span className={`font-medium ${rarityClass(r.tier)}`}>{r.name}</span>
-                  {r.upgradeFrom && <span className="ml-2 text-xs text-muted">upgrade from {r.upgradeFrom}</span>}
+              <tr key={r.id}>
+                <td className="px-2 py-1">
+                  <span className="flex items-center gap-3">
+                    <ItemSlot
+                      id={r.id}
+                      rarity={r.tier}
+                      tooltip={{
+                        name: r.name,
+                        rarity: r.tier,
+                        lines: [
+                          { text: `+${r.mp} magical power`, color: 'var(--code-green)' },
+                          r.price ? { text: `Price: ${coins(r.price)}`, color: 'var(--code-gold)' } : 'Not for sale',
+                          r.upgradeFrom ? `Upgrade from ${r.upgradeFrom}` : null,
+                        ],
+                        label: `${rarityLabel(r.tier).toUpperCase()} ACCESSORY`,
+                      }}
+                    />
+                    <span className="min-w-0">
+                      <span className={`font-bold ${rarityClass(r.tier)}`}>{r.name}</span>
+                      {r.upgradeFrom && <span className="ml-2 text-sm text-muted">upgrade from {r.upgradeFrom}</span>}
+                    </span>
+                  </span>
                 </td>
-                <td className="px-3 py-2 text-right font-mono tabular">+{r.mp}</td>
-                <td className="px-3 py-2 text-right font-mono tabular">{r.price ? coins(r.price) : <span className="text-muted">not sold</span>}</td>
-                <td className="px-5 py-2 text-right font-mono text-accent tabular">{r.perMp ? coins(r.perMp) : '-'}</td>
+                <td className="px-3 py-1 text-right text-accent tabular">+{r.mp}</td>
+                <td className="px-3 py-1 text-right text-warn tabular">{r.price ? coins(r.price) : <span className="text-muted">not sold</span>}</td>
+                <td className="px-3 py-1 text-right text-warn tabular">{r.perMp ? coins(r.perMp) : '-'}</td>
               </tr>
             ))}
           </tbody>
         </table>
       </div>
       {rows.length > limit && (
-        <div className="border-t border-line px-5 py-3">
-          <button type="button" onClick={() => setLimit((l) => l + 60)} className="text-sm font-medium text-accent hover:underline">
+        <div className="px-5 py-3">
+          <button type="button" onClick={() => setLimit((l) => l + 60)} className="mc-btn mc-btn-sm">
             Show more ({rows.length - limit} left)
           </button>
         </div>
@@ -77,24 +96,38 @@ export default function Accessories({ stats }) {
         <Stat label="Enrichments" value={enriched} sub={`${a.bagUpgrades} bag upgrades bought`} />
       </StatGrid>
 
-      {a.missing ? <Missing missing={a.missing} /> : <Empty>The missing-accessory list needs the accessory index, which comes with the next site deploy.</Empty>}
+      {a.missing ? (
+        <Missing missing={a.missing} />
+      ) : (
+        <Empty>The missing-accessory list needs the accessory index, which comes with the next site deploy.</Empty>
+      )}
 
       <div className="grid gap-6 lg:grid-cols-[2fr_1fr]">
         <Panel title="Accessory bag">
           {byRarity.map(([r, list]) => (
             <div key={r} className="mb-4 last:mb-0">
-              <h3 className={`mb-1.5 text-xs font-semibold tracking-wide uppercase ${rarityClass(r)}`}>
-                {rarityLabel(r)} <span className="font-mono text-muted">{list.length}</span>
+              <h3 className={`mb-1.5 text-sm font-bold uppercase ${rarityClass(r)}`}>
+                {rarityLabel(r)} <span className="text-muted">{list.length}</span>
               </h3>
-              <p className="text-sm leading-relaxed">
+              <div className="flex flex-wrap">
                 {list.map((x, i) => (
-                  <span key={`${x.id}-${i}`}>
-                    {x.name}
-                    {x.recombobulated && <span className="text-xs text-muted"> (recomb)</span>}
-                    {i < list.length - 1 && <span className="text-muted">, </span>}
-                  </span>
+                  <ItemSlot
+                    key={`${x.id}-${i}`}
+                    id={x.id}
+                    rarity={x.rarity}
+                    glint={x.recombobulated}
+                    tooltip={{
+                      name: x.name,
+                      rarity: x.rarity,
+                      lines: [
+                        x.recombobulated ? { text: 'Recombobulated', color: 'var(--code-gold)' } : null,
+                        x.enrichment ? `Enrichment: ${x.enrichment}` : null,
+                      ],
+                      label: `${rarityLabel(x.rarity).toUpperCase()} ACCESSORY`,
+                    }}
+                  />
                 ))}
-              </p>
+              </div>
             </div>
           ))}
         </Panel>

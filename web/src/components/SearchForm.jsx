@@ -25,7 +25,7 @@ export default function SearchForm({ onSearch, initial = '', size = 'lg' }) {
           placeholder="Look up another player"
           autoComplete="off"
           spellCheck="false"
-          className="h-9 w-full rounded-lg border border-line bg-surface pr-3 pl-9 text-sm text-text placeholder:text-muted focus:border-accent focus:outline-none"
+          className="h-9 w-full pr-3 pl-9 text-sm"
         />
       </form>
     );
@@ -33,7 +33,7 @@ export default function SearchForm({ onSearch, initial = '', size = 'lg' }) {
 
   return (
     <form onSubmit={submit} role="search" className="flex flex-col gap-2">
-      <label htmlFor={id} className="text-sm font-medium text-text">
+      <label htmlFor={id} className="text-sm text-text">
         Minecraft username
       </label>
       <div className="flex flex-col gap-2 sm:flex-row">
@@ -45,13 +45,9 @@ export default function SearchForm({ onSearch, initial = '', size = 'lg' }) {
           autoComplete="off"
           spellCheck="false"
           autoFocus
-          className="h-12 min-w-0 flex-1 rounded-lg border border-line bg-surface px-4 text-base text-text placeholder:text-muted focus:border-accent focus:outline-none"
+          className="h-12 min-w-0 flex-1 px-4 text-base"
         />
-        <button
-          type="submit"
-          className="inline-flex h-12 shrink-0 items-center justify-center gap-2 rounded-lg bg-accent px-5 font-medium whitespace-nowrap text-accent-ink transition-transform active:scale-[0.98] disabled:opacity-50"
-          disabled={!value.trim()}
-        >
+        <button type="submit" className="mc-btn h-12 shrink-0" disabled={!value.trim()}>
           <MagnifyingGlassIcon weight="bold" size={17} />
           Check profile
         </button>

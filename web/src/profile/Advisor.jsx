@@ -136,7 +136,7 @@ export default function Advisor({ report, stats, sectionId }) {
             <select
               value={sort}
               onChange={(e) => setSort(e.target.value)}
-              className="h-8 rounded-md border border-line bg-surface px-2 text-text focus:border-accent focus:outline-none"
+              className="h-8 px-2"
             >
               <option value="default">By category</option>
               <option value="gain">Biggest gain</option>

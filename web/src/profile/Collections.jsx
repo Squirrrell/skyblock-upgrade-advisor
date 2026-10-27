@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react';
 import { int } from '../lib/format.js';
 import { loadCollections } from '../lib/data.js';
 import { useLoad } from '../lib/useLoad.js';
+import { ItemSlot } from '../mc.jsx';
 import { Bar, Chip, Empty, ErrorNote, Loading, Panel, SearchInput, Stat, StatGrid } from '../ui.jsx';
 
 function tierOf(amount, tiers) {
@@ -44,7 +45,11 @@ function CollectionsPanel({ stats }) {
         <Stat label="Collections maxed" value={`${maxed} / ${rows.length}`} accent />
         <Stat label="Collections unlocked" value={`${unlocked} / ${rows.length}`} />
         <Stat label="Minion uniques" value={int(stats.minions.uniques)} sub={`of ${int(stats.minions.possible)}`} />
-        <Stat label="Minion slots" value={stats.minions.slots + stats.minions.communitySlots} sub={`${stats.minions.slots} from crafting, ${stats.minions.communitySlots} community`} />
+        <Stat
+          label="Minion slots"
+          value={stats.minions.slots + stats.minions.communitySlots}
+          sub={`${stats.minions.slots} from crafting, ${stats.minions.communitySlots} community`}
+        />
       </StatGrid>
       <Panel
         title="Collections"
@@ -64,20 +69,35 @@ function CollectionsPanel({ stats }) {
         {stats.collections.apiOff && <p className="mb-3 text-sm text-warn">The collections API is off for this player, so only coop totals are known.</p>}
         <ul className="grid gap-x-8 gap-y-1 md:grid-cols-2">
           {shown.map((r) => (
-            <li key={r.id} className="py-2">
-              <div className="flex items-baseline justify-between gap-3 text-sm">
-                <span className="truncate font-medium">{r.name}</span>
-                <span className={`font-mono tabular ${r.tier >= r.maxTier ? 'text-accent' : ''}`}>
-                  {r.tier} / {r.maxTier}
-                </span>
-              </div>
-              <Bar value={r.next ? r.amount / r.next : 1} className="mt-1.5" />
-              <div className="mt-1 flex justify-between text-xs text-muted">
-                <span className="font-mono tabular">
-                  {int(r.amount)}
-                  {r.mine !== r.amount && ` (you ${int(r.mine)})`}
-                </span>
-                <span className="font-mono tabular">{r.next ? `next at ${int(r.next)}` : 'Maxed'}</span>
+            <li key={r.id} className="flex items-center gap-3 py-1.5">
+              <ItemSlot
+                id={r.id}
+                count={r.tier}
+                tooltip={{
+                  name: `${r.name} ${r.tier}/${r.maxTier}`,
+                  lines: [
+                    `Collected: ${int(r.amount)}`,
+                    r.mine !== r.amount ? `You: ${int(r.mine)}` : null,
+                    r.next ? { text: `Next tier at ${int(r.next)}`, color: 'var(--code-yellow)' } : { text: 'Maxed', color: 'var(--code-green)' },
+                  ],
+                  label: 'COLLECTION',
+                }}
+              />
+              <div className="min-w-0 flex-1">
+                <div className="flex items-baseline justify-between gap-3 text-sm">
+                  <span className="truncate font-bold">{r.name}</span>
+                  <span className={`font-mono tabular ${r.tier >= r.maxTier ? 'text-accent' : ''}`}>
+                    {r.tier} / {r.maxTier}
+                  </span>
+                </div>
+                <Bar value={r.next ? r.amount / r.next : 1} gold={!r.next} className="mt-1.5" />
+                <div className="mt-1 flex justify-between text-xs text-muted">
+                  <span className="font-mono tabular">
+                    {int(r.amount)}
+                    {r.mine !== r.amount && ` (you ${int(r.mine)})`}
+                  </span>
+                  <span className="font-mono tabular">{r.next ? `next at ${int(r.next)}` : 'Maxed'}</span>
+                </div>
               </div>
             </li>
           ))}
@@ -94,7 +114,9 @@ function MinionsPanel({ stats }) {
   return (
     <Panel
       title="Minions crafted"
-      subtitle={m.nextSlotAt ? `${m.nextSlotAt - m.uniques} more unique crafts for the next minion slot (${m.nextSlotAt} uniques).` : 'Every crafting slot is unlocked.'}
+      subtitle={
+        m.nextSlotAt ? `${m.nextSlotAt - m.uniques} more unique crafts for the next minion slot (${m.nextSlotAt} uniques).` : 'Every crafting slot is unlocked.'
+      }
       actions={
         <Chip active={showAll} onClick={() => setShowAll((s) => !s)}>
           Show uncrafted
@@ -103,17 +125,24 @@ function MinionsPanel({ stats }) {
     >
       <ul className="grid gap-x-8 gap-y-2 sm:grid-cols-2 lg:grid-cols-3">
         {list.map((x) => (
-          <li key={x.type} className="py-1.5">
-            <div className="flex justify-between text-sm">
-              <span className="truncate">{x.name}</span>
-              <span className={`font-mono tabular ${x.tiers.length >= x.maxTier ? 'text-accent' : 'text-muted'}`}>
-                {x.tiers.length}/{x.maxTier}
-              </span>
-            </div>
-            <div className="mt-1.5 flex gap-0.5" aria-label={`Tiers crafted: ${x.tiers.join(', ') || 'none'}`}>
-              {Array.from({ length: x.maxTier }, (_, i) => (
-                <span key={i} className={`h-1.5 flex-1 rounded-sm ${x.tiers.includes(i + 1) ? 'bg-accent' : 'bg-line'}`} />
-              ))}
+          <li key={x.type} className="flex items-center gap-3 py-1.5">
+            <ItemSlot
+              id={`${x.type}_GENERATOR_${x.highest || 1}`}
+              count={x.highest || undefined}
+              tooltip={{ name: `${x.name} Minion`, lines: [`Tiers crafted: ${x.tiers.join(', ') || 'none'}`], label: `${x.tiers.length}/${x.maxTier} TIERS` }}
+            />
+            <div className="min-w-0 flex-1">
+              <div className="flex justify-between text-sm">
+                <span className="truncate">{x.name}</span>
+                <span className={`font-mono tabular ${x.tiers.length >= x.maxTier ? 'text-accent' : 'text-muted'}`}>
+                  {x.tiers.length}/{x.maxTier}
+                </span>
+              </div>
+              <div className="mt-1.5 flex gap-0.5" aria-label={`Tiers crafted: ${x.tiers.join(', ') || 'none'}`}>
+                {Array.from({ length: x.maxTier }, (_, i) => (
+                  <span key={i} className={`h-2 flex-1 border border-black ${x.tiers.includes(i + 1) ? 'bg-[var(--mc-xp)]' : 'bg-[var(--mc-xp-track)]'}`} />
+                ))}
+              </div>
             </div>
           </li>
         ))}

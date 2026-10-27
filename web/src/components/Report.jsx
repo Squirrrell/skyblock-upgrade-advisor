@@ -2,6 +2,7 @@ import { WarningIcon } from '@phosphor-icons/react';
 import { lazy, Suspense, useRef } from 'react';
 import { load, save } from '../lib/storage.js';
 import { Loading } from '../ui.jsx';
+import { ItemSlot } from '../mc.jsx';
 import ProfileBar from './ProfileBar.jsx';
 
 // Each tab is its own chunk, fetched the first time it opens.
@@ -23,20 +24,20 @@ function openCount(section) {
 }
 
 const TABS = [
-  { id: 'overview', label: 'Overview', view: Overview },
-  { id: 'skills', label: 'Skills', view: Skills },
-  { id: 'slayers', label: 'Slayers', view: Slayers },
-  { id: 'dungeons', label: 'Dungeons', view: Dungeons },
-  { id: 'mining', label: 'Mining & Foraging', view: Mining },
-  { id: 'farming', label: 'Farming', view: Advisor, section: 'farming' },
-  { id: 'hunting', label: 'Hunting', view: Advisor, section: 'hunting' },
-  { id: 'consumables', label: 'Consumables', view: Advisor, section: 'consumables' },
-  { id: 'collections', label: 'Collections & Minions', view: Collections },
-  { id: 'inventory', label: 'Inventory', view: Inventory },
-  { id: 'accessories', label: 'Accessories', view: Accessories },
-  { id: 'pets', label: 'Pets', view: Pets },
-  { id: 'crimson', label: 'Crimson & Rift', view: Crimson },
-  { id: 'misc', label: 'Events & Misc', view: Misc },
+  { id: 'overview', label: 'Overview', icon: 'BOOK_AND_QUILL', view: Overview },
+  { id: 'skills', label: 'Skills', icon: 'EXP_BOTTLE', view: Skills },
+  { id: 'slayers', label: 'Slayers', icon: 'GOLD_SWORD', view: Slayers },
+  { id: 'dungeons', label: 'Dungeons', icon: 'SKULL_ITEM', view: Dungeons },
+  { id: 'mining', label: 'Mining & Foraging', icon: 'DIAMOND_PICKAXE', view: Mining },
+  { id: 'farming', label: 'Farming', icon: 'WHEAT', view: Advisor, section: 'farming' },
+  { id: 'hunting', label: 'Hunting', icon: 'BOW', view: Advisor, section: 'hunting' },
+  { id: 'consumables', label: 'Consumables', icon: 'POTION', view: Advisor, section: 'consumables' },
+  { id: 'collections', label: 'Collections & Minions', icon: 'PAINTING', view: Collections },
+  { id: 'inventory', label: 'Inventory', icon: 'CHEST', view: Inventory },
+  { id: 'accessories', label: 'Accessories', icon: 'GOLD_INGOT', view: Accessories },
+  { id: 'pets', label: 'Pets', icon: 'BONE', view: Pets },
+  { id: 'crimson', label: 'Crimson & Rift', icon: 'BLAZE_POWDER', view: Crimson },
+  { id: 'misc', label: 'Events & Misc', icon: 'CAKE', view: Misc },
 ];
 
 export default function Report({ report, tab: urlTab, onTab, refreshing, onRefresh, onPickProfile }) {
@@ -58,7 +59,7 @@ export default function Report({ report, tab: urlTab, onTab, refreshing, onRefre
       <ProfileBar report={report} refreshing={refreshing} onRefresh={onRefresh} onPickProfile={onPickProfile} />
 
       {report.warnings.length > 0 && (
-        <div className="mt-6 flex gap-3 rounded-xl border border-warn/40 bg-surface p-4 text-sm leading-relaxed" role="status">
+        <div className="mc-panel mt-6 flex gap-3 p-4 text-sm leading-relaxed" role="status">
           <WarningIcon className="mt-0.5 shrink-0 text-warn" size={18} />
           <div>
             {report.warnings.map((w) => (
@@ -68,40 +69,31 @@ export default function Report({ report, tab: urlTab, onTab, refreshing, onRefre
         </div>
       )}
 
-      <div className="sticky top-[105px] z-20 -mx-4 mt-6 border-b border-line bg-bg/90 px-4 backdrop-blur-md sm:-mx-6 sm:px-6 md:top-16">
-        <div ref={tabsRef} role="tablist" aria-label="Profile sections" className="scroll-x -mb-px flex gap-1 py-2">
+      <div className="sticky top-[var(--header-h,64px)] z-20 mt-6 bg-[var(--mc-well)] px-1">
+        <div ref={tabsRef} role="tablist" aria-label="Profile sections" className="mc-tabs">
           {TABS.map((t) => {
             const active = t.id === tab.id;
             const open = t.section ? openCount(report.sections[t.section]) : 0;
             return (
-              <button
-                key={t.id}
-                role="tab"
-                type="button"
-                aria-selected={active}
-                onClick={() => changeTab(t.id)}
-                className={`inline-flex h-8 shrink-0 items-center gap-1.5 rounded-md px-3 text-sm font-medium whitespace-nowrap transition-colors ${
-                  active ? 'bg-surface-2 text-text' : 'text-muted hover:text-text'
-                }`}
-              >
+              <button key={t.id} role="tab" type="button" aria-selected={active} onClick={() => changeTab(t.id)} className="mc-tab text-sm">
+                <ItemSlot id={t.icon} tooltip={false} />
                 {t.label}
-                {open > 0 && <span className="font-mono text-xs text-muted tabular">{open}</span>}
+                {open > 0 && <span className="text-[var(--panel-red)] tabular">{open}</span>}
               </button>
             );
           })}
         </div>
       </div>
 
-      <div ref={panelRef} className="mt-6" role="tabpanel" aria-label={tab.label}>
+      <div ref={panelRef} className="mc-window" role="tabpanel" aria-label={tab.label}>
         <Suspense fallback={<Loading />}>
           <View report={report} stats={report.stats} sectionId={tab.section} onTab={changeTab} />
         </Suspense>
       </div>
 
-      <footer className="mt-16 max-w-[75ch] text-sm leading-relaxed text-muted">
-        Numbers come from the Hypixel API and the community SkyBlock wiki, and can lag behind game patches. Networth is an
-        estimate from bazaar and lowest-BIN prices of base items plus recombobulators, potato books, gems and pet items;
-        enchantments, reforges and stars are not counted.
+      <footer className="mt-10 max-w-[75ch] text-sm leading-relaxed text-muted">
+        Numbers come from the Hypixel API and the community SkyBlock wiki, and can lag behind game patches. Networth is an estimate from bazaar and lowest-BIN
+        prices of base items plus recombobulators, potato books, gems and pet items; enchantments, reforges and stars are not counted.
       </footer>
     </div>
   );

@@ -1,7 +1,8 @@
 import { useMemo, useState } from 'react';
 import { coins } from '../lib/format.js';
 import { prettyId } from '../../../shared/analyze/helpers.js';
-import { Chip, Empty, Panel, SearchInput, rarityClass } from '../ui.jsx';
+import { ItemSlot } from '../mc.jsx';
+import { Chip, Empty, Panel, SearchInput, rarityClass, rarityLabel } from '../ui.jsx';
 
 const ROMAN = ['', 'I', 'II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII', 'IX', 'X'];
 const enchantText = (e) =>
@@ -21,17 +22,40 @@ function ItemRow({ item }) {
   ].filter(Boolean);
   const hasMore = enchants || tags.length;
   return (
-    <li className="border-b border-line/60 last:border-0">
-      <button type="button" disabled={!hasMore} onClick={() => setOpen((o) => !o)} aria-expanded={hasMore ? open : undefined} className="flex w-full items-baseline justify-between gap-3 py-2 text-left text-sm enabled:hover:bg-surface-2/60">
-        <span className="min-w-0 truncate">
-          <span className={`font-medium ${rarityClass(item.rarity)}`}>{item.name}</span>
+    <li>
+      <button
+        type="button"
+        disabled={!hasMore}
+        onClick={() => setOpen((o) => !o)}
+        aria-expanded={hasMore ? open : undefined}
+        className="flex w-full items-center justify-between gap-3 px-1 py-1 text-left text-sm enabled:hover:bg-white/10"
+      >
+        <ItemSlot
+          id={item.id}
+          rarity={item.rarity}
+          count={item.count}
+          glint={Boolean(enchants)}
+          focusable={false}
+          tooltip={{
+            name: item.name,
+            rarity: item.rarity,
+            lines: [
+              enchants ? { text: enchants, color: 'var(--code-blue)' } : null,
+              ...tags,
+              item.value ? { text: `Value: ${coins(item.value)}`, color: 'var(--code-gold)' } : null,
+            ],
+            label: item.rarity ? rarityLabel(item.rarity).toUpperCase() : undefined,
+          }}
+        />
+        <span className="min-w-0 flex-1 truncate">
+          <span className={`font-bold ${rarityClass(item.rarity)}`}>{item.name}</span>
           {item.count > 1 && <span className="ml-1 text-muted">x{item.count}</span>}
           {tags.length > 0 && <span className="ml-2 hidden text-xs text-muted sm:inline">{tags.slice(0, 2).join(' · ')}</span>}
         </span>
-        <span className="shrink-0 font-mono text-xs text-muted tabular">{item.value ? coins(item.value) : ''}</span>
+        <span className="shrink-0 text-sm text-warn tabular">{item.value ? coins(item.value) : ''}</span>
       </button>
       {open && hasMore && (
-        <div className="fade-in pb-3 text-xs leading-relaxed text-muted">
+        <div className="px-1 pb-3 pl-[calc(var(--slot)+1rem)] text-sm leading-relaxed text-muted">
           {tags.length > 0 && <p>{tags.join(' · ')}</p>}
           {enchants && <p className="mt-1">{enchants}</p>}
           <p className="mt-1 font-mono">{item.id}</p>
@@ -52,7 +76,11 @@ export default function Inventory({ stats }) {
     return groups
       .filter((g) => where === 'ALL' || g.location === where)
       .map((g) => {
-        let items = needle ? g.items.filter((i) => i.name.toLowerCase().includes(needle) || i.id.toLowerCase().includes(needle) || enchantText(i.enchantments).toLowerCase().includes(needle)) : g.items;
+        let items = needle
+          ? g.items.filter(
+              (i) => i.name.toLowerCase().includes(needle) || i.id.toLowerCase().includes(needle) || enchantText(i.enchantments).toLowerCase().includes(needle),
+            )
+          : g.items;
         if (sort === 'value') items = [...items].sort((a, b) => (b.value ?? 0) - (a.value ?? 0));
         return { ...g, items, total: g.items.reduce((n, i) => n + (i.value ?? 0), 0) };
       })
@@ -65,7 +93,7 @@ export default function Inventory({ stats }) {
     <div className="fade-in flex flex-col gap-6">
       <div className="flex flex-wrap items-center gap-3">
         <SearchInput value={q} onChange={setQ} placeholder="Search items or enchants" className="w-full sm:w-72" />
-        <select value={sort} onChange={(e) => setSort(e.target.value)} className="h-9 rounded-lg border border-line bg-surface px-2 text-sm" aria-label="Sort items">
+        <select value={sort} onChange={(e) => setSort(e.target.value)} className="h-9 px-2 text-sm" aria-label="Sort items">
           <option value="slot">In slot order</option>
           <option value="value">Most valuable first</option>
         </select>
@@ -83,8 +111,8 @@ export default function Inventory({ stats }) {
       {shown.length ? (
         <div className="grid gap-6 lg:grid-cols-2">
           {shown.map((g) => (
-            <Panel key={g.location} title={g.location} actions={g.total > 0 && <span className="font-mono text-sm text-muted tabular">{coins(g.total)}</span>}>
-              <ul>
+            <Panel key={g.location} title={g.location} actions={g.total > 0 && <span className="mc-readout text-sm text-warn tabular">{coins(g.total)}</span>}>
+              <ul className="mc-well p-1">
                 {g.items.map((item, i) => (
                   <ItemRow key={item.uuid ?? `${item.id}-${i}`} item={item} />
                 ))}

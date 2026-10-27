@@ -22,32 +22,27 @@ export default function SectionView({ section, hideDone, sort }) {
   );
 
   if (!groups.length) {
-    return (
-      <div className="rounded-xl border border-dashed border-line p-10 text-center text-muted">
-        Everything here is finished. Turn off "Hide finished" to see it all.
-      </div>
-    );
+    return <div className="mc-well p-10 text-center text-muted">Everything here is finished. Turn off "Hide finished" to see it all.</div>;
   }
 
   return (
     <div className="flex flex-col gap-6">
-      {groups.map((g, i) => (
+      {groups.map((g) => (
         <section
           key={g.id}
           id={`group-${section.id}-${g.id}`}
-          style={{ animationDelay: `${Math.min(i, 6) * 40}ms` }}
-          className="fade-in rounded-xl border border-line bg-surface px-5 shadow-panel sm:px-6"
+          className="border border-line bg-surface px-4 shadow-panel sm:px-5"
           aria-labelledby={`title-${section.id}-${g.id}`}
         >
           <header className="border-b border-line py-4">
-            <h3 id={`title-${section.id}-${g.id}`} className="font-semibold tracking-tight">
+            <h3 id={`title-${section.id}-${g.id}`} className="font-bold">
               {g.title}
             </h3>
             {g.blurb && <p className="mt-1 max-w-[70ch] text-sm text-muted">{g.blurb}</p>}
           </header>
           <ul>
             {g.items.map((item) => (
-              <SourceRow key={item.id} item={item} />
+              <SourceRow key={item.id} item={item} sectionId={section.id} />
             ))}
           </ul>
         </section>

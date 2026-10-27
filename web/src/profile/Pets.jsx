@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { coins, int } from '../lib/format.js';
 import { prettyId } from '../../../shared/analyze/helpers.js';
+import { ItemSlot } from '../mc.jsx';
 import { Bar, Chip, Empty, Stat, StatGrid, rarityClass, rarityLabel } from '../ui.jsx';
 
 export default function Pets({ stats }) {
@@ -23,21 +24,44 @@ export default function Pets({ stats }) {
       </div>
       <ul className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
         {list.map((pet, i) => (
-          <li key={`${pet.type}-${pet.tier}-${i}`} className={`rounded-xl border bg-surface p-4 shadow-panel ${pet.active ? 'border-accent' : 'border-line'}`}>
-            <div className="flex items-baseline justify-between gap-2">
-              <span className={`truncate font-medium ${rarityClass(pet.tier)}`}>{pet.name}</span>
-              <span className="shrink-0 font-mono text-sm tabular">
-                {pet.level != null ? `Lvl ${pet.level}` : '?'}
-                <span className="text-muted">/{pet.maxLevel}</span>
-              </span>
+          <li
+            key={`${pet.type}-${pet.tier}-${i}`}
+            className={`border bg-surface p-3 shadow-panel ${pet.active ? 'outline outline-[var(--px)] outline-[var(--code-yellow)]' : ''}`}
+          >
+            <div className="flex items-center gap-3">
+              <ItemSlot
+                id={`PET_${pet.type}_${pet.tier}`}
+                rarity={pet.tier}
+                tooltip={{
+                  name: `[Lvl ${pet.level ?? '?'}] ${pet.name}`,
+                  rarity: pet.tier,
+                  lines: [
+                    `${int(pet.exp)} XP`,
+                    pet.heldItem ? `Held item: ${prettyId(pet.heldItem.replace(/^PET_ITEM_/, ''))}` : null,
+                    pet.skin ? `Skin: ${prettyId(pet.skin)}` : null,
+                    pet.active ? { text: 'Active pet', color: 'var(--code-green)' } : null,
+                  ],
+                  label: `${rarityLabel(pet.tier).toUpperCase()} PET`,
+                }}
+              />
+              <div className="min-w-0 flex-1">
+                <div className="flex items-baseline justify-between gap-2">
+                  <span className={`truncate font-bold ${rarityClass(pet.tier)}`}>{pet.name}</span>
+                  <span className="shrink-0 font-mono text-sm tabular">
+                    {pet.level != null ? `Lvl ${pet.level}` : '?'}
+                    <span className="text-muted">/{pet.maxLevel}</span>
+                  </span>
+                </div>
+                <div className="mt-0.5 text-sm text-muted">
+                  {rarityLabel(pet.tier)}
+                  {pet.active && <span className="ml-2 text-accent">Active</span>}
+                  {pet.skin && <span className="ml-2">Skin: {prettyId(pet.skin)}</span>}
+                </div>
+              </div>
+              {pet.heldItem && <ItemSlot id={pet.heldItem} />}
             </div>
-            <div className="mt-0.5 text-xs text-muted">
-              {rarityLabel(pet.tier)}
-              {pet.active && <span className="ml-2 text-accent">Active</span>}
-              {pet.skin && <span className="ml-2">Skin: {prettyId(pet.skin)}</span>}
-            </div>
-            <Bar value={pet.level != null ? pet.level / pet.maxLevel : 0} className="mt-3" />
-            <div className="mt-2 flex justify-between gap-2 text-xs text-muted">
+            <Bar value={pet.level != null ? pet.level / pet.maxLevel : 0} gold={pet.level >= pet.maxLevel} className="mt-3" />
+            <div className="mt-2 flex justify-between gap-2 text-sm text-muted">
               <span className="truncate">{pet.heldItem ? prettyId(pet.heldItem.replace(/^PET_ITEM_/, '')) : 'No item'}</span>
               <span className="font-mono tabular">{int(pet.exp)} XP</span>
             </div>

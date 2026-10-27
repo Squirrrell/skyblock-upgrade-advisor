@@ -4,7 +4,8 @@ import { prettyId } from '../../../shared/analyze/helpers.js';
 import { ago, coins, int, num } from '../lib/format.js';
 import { invalidate, loadBazaar, loadItems } from '../lib/data.js';
 import { useLoad } from '../lib/useLoad.js';
-import { Chip, ErrorNote, Loading, SearchInput, SortTh } from '../ui.jsx';
+import { ItemSlot } from '../mc.jsx';
+import { Chip, ErrorNote, Loading, SearchInput, SortTh, rarityClass } from '../ui.jsx';
 
 const ROMAN = ['', 'I', 'II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII', 'IX', 'X'];
 const CATS = [
@@ -67,7 +68,10 @@ export default function Bazaar() {
     const test = CATS.find((c) => c[0] === cat)[2];
     const needle = q.trim().toLowerCase();
     return rows
-      .filter((r) => test(r.id) && (!needle || r.name.toLowerCase().includes(needle) || r.id.toLowerCase().includes(needle)) && Math.min(r.buyWeek, r.sellWeek) >= minVol)
+      .filter(
+        (r) =>
+          test(r.id) && (!needle || r.name.toLowerCase().includes(needle) || r.id.toLowerCase().includes(needle)) && Math.min(r.buyWeek, r.sellWeek) >= minVol,
+      )
       .sort((a, b) => {
         const k = sort.key;
         const av = a[k];
@@ -85,13 +89,17 @@ export default function Bazaar() {
     <div className="fade-in pt-8">
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-semibold tracking-tight">Bazaar</h1>
+          <h1 className="flex items-center gap-3 text-2xl font-bold text-[var(--code-yellow)]">
+            <ItemSlot id="BAZAAR" tooltip={false} />
+            Bazaar
+          </h1>
           <p className="mt-1 max-w-[70ch] text-sm text-muted">
-            Live instant-buy and instant-sell prices for every product. Flip margin assumes a buy order at the top bid and a sell offer at the lowest ask, minus bazaar tax.
+            Live instant-buy and instant-sell prices for every product. Flip margin assumes a buy order at the top bid and a sell offer at the lowest ask, minus
+            bazaar tax.
             {data && ` Updated ${ago(data.bz.lastUpdated)}.`}
           </p>
         </div>
-        <button type="button" onClick={refresh} className="inline-flex h-9 items-center gap-2 rounded-lg border border-line px-3 text-sm font-medium hover:border-accent">
+        <button type="button" onClick={refresh} className="mc-btn mc-btn-sm">
           <ArrowClockwiseIcon size={16} className={loading ? 'animate-spin' : ''} /> Refresh
         </button>
       </div>
@@ -100,7 +108,7 @@ export default function Bazaar() {
         <SearchInput value={q} onChange={setQ} placeholder="Search products" className="w-full sm:w-64" />
         <label className="flex items-center gap-2 text-sm text-muted">
           Tax
-          <select value={tax} onChange={(e) => setTax(Number(e.target.value))} className="h-9 rounded-lg border border-line bg-surface px-2 text-text">
+          <select value={tax} onChange={(e) => setTax(Number(e.target.value))} className="h-9 px-2">
             <option value={1.25}>1.25%</option>
             <option value={1.125}>1.125%</option>
             <option value={1}>1%</option>
@@ -108,7 +116,7 @@ export default function Bazaar() {
         </label>
         <label className="flex items-center gap-2 text-sm text-muted">
           Min weekly volume
-          <select value={minVol} onChange={(e) => setMinVol(Number(e.target.value))} className="h-9 rounded-lg border border-line bg-surface px-2 text-text">
+          <select value={minVol} onChange={(e) => setMinVol(Number(e.target.value))} className="h-9 px-2">
             {[0, 1000, 10000, 100000, 1000000].map((v) => (
               <option key={v} value={v}>
                 {v ? int(v) : 'Any'}
@@ -129,11 +137,11 @@ export default function Bazaar() {
         {loading && !data && <Loading />}
         {error && <ErrorNote error={error} onRetry={refresh} />}
         {data && (
-          <div className="rounded-xl border border-line bg-surface shadow-panel">
+          <div className="border border-line bg-surface p-2 shadow-panel">
             <div className="scroll-x">
               <table className="w-full min-w-[820px] text-sm">
                 <thead>
-                  <tr className="border-b border-line text-xs text-muted">
+                  <tr className="text-sm">
                     <SortTh id="name" sort={sort} setSort={setSort}>
                       Product
                     </SortTh>
@@ -159,27 +167,46 @@ export default function Bazaar() {
                 </thead>
                 <tbody>
                   {shown.slice(0, limit).map((r) => (
-                    <tr key={r.id} className="border-b border-line/60 last:border-0 hover:bg-surface-2/50">
-                      <td className="px-3 py-2">
-                        <span className="font-medium">{r.name}</span>
+                    <tr key={r.id}>
+                      <td className="px-2 py-1">
+                        <span className="flex items-center gap-3">
+                          <ItemSlot
+                            id={r.id}
+                            tooltip={{
+                              name: r.name,
+                              rarity: data.items.get(r.id)?.tier,
+                              lines: [
+                                { text: `Instant buy: ${num(r.buy, 1)}`, color: 'var(--code-gold)' },
+                                { text: `Instant sell: ${num(r.sell, 1)}`, color: 'var(--code-gold)' },
+                                {
+                                  text: `Flip margin: ${num(r.margin, 1)} (${num(r.marginPct, 1)}%)`,
+                                  color: r.margin > 0 ? 'var(--code-green)' : 'var(--code-red)',
+                                },
+                                `Sold per hour: ${int(r.hourly)}`,
+                              ],
+                              label: 'BAZAAR',
+                            }}
+                          />
+                          <span className={`font-bold ${rarityClass(data.items.get(r.id)?.tier)}`}>{r.name}</span>
+                        </span>
                       </td>
-                      <td className="px-3 py-2 text-right font-mono tabular">{num(r.buy, 1)}</td>
-                      <td className="px-3 py-2 text-right font-mono tabular">{num(r.sell, 1)}</td>
-                      <td className={`px-3 py-2 text-right font-mono tabular ${r.margin > 0 ? 'text-accent' : 'text-muted'}`}>{num(r.margin, 1)}</td>
-                      <td className="px-3 py-2 text-right font-mono tabular">{num(r.marginPct, 1)}%</td>
-                      <td className="px-3 py-2 text-right font-mono tabular">{int(r.hourly)}</td>
-                      <td className="px-3 py-2 text-right font-mono tabular">{coins(r.hourlyProfit)}</td>
+                      <td className="px-3 py-1 text-right text-warn tabular">{num(r.buy, 1)}</td>
+                      <td className="px-3 py-1 text-right text-warn tabular">{num(r.sell, 1)}</td>
+                      <td className={`px-3 py-1 text-right tabular ${r.margin > 0 ? 'text-accent' : 'text-danger'}`}>{num(r.margin, 1)}</td>
+                      <td className={`px-3 py-1 text-right tabular ${r.marginPct > 0 ? 'text-accent' : 'text-danger'}`}>{num(r.marginPct, 1)}%</td>
+                      <td className="px-3 py-1 text-right tabular">{int(r.hourly)}</td>
+                      <td className="px-3 py-1 text-right text-warn tabular">{coins(r.hourlyProfit)}</td>
                     </tr>
                   ))}
                 </tbody>
               </table>
             </div>
-            <div className="flex flex-wrap items-center justify-between gap-3 border-t border-line px-4 py-3 text-sm text-muted">
+            <div className="flex flex-wrap items-center justify-between gap-3 px-2 pt-3 pb-1 text-sm text-muted">
               <span>
                 {shown.length} of {rows.length} products
               </span>
               {shown.length > limit && (
-                <button type="button" onClick={() => setLimit((l) => l + 150)} className="font-medium text-accent hover:underline">
+                <button type="button" onClick={() => setLimit((l) => l + 150)} className="mc-btn mc-btn-sm">
                   Show more
                 </button>
               )}
@@ -187,7 +214,8 @@ export default function Bazaar() {
           </div>
         )}
         <p className="mt-4 max-w-[75ch] text-xs leading-relaxed text-muted">
-          "Margin × volume" is the margin times the slower side of the hourly volume. It shows where money moves, not what one player will make: you compete with every other flipper for those orders.
+          "Margin × volume" is the margin times the slower side of the hourly volume. It shows where money moves, not what one player will make: you compete
+          with every other flipper for those orders.
         </p>
       </div>
     </div>

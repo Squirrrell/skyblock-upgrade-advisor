@@ -3,7 +3,7 @@ export default function ReportSkeleton() {
   return (
     <div className="pt-8" aria-busy="true" aria-label="Loading profile">
       <div className="flex items-center gap-4">
-        <div className="skeleton size-14" />
+        <div className="skeleton size-[calc(var(--px)*30)]" />
         <div className="flex flex-col gap-2">
           <div className="skeleton h-6 w-44" />
           <div className="skeleton h-4 w-64" />

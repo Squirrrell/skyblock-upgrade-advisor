@@ -20,15 +20,14 @@ export default function ReportError({ error, player, onRetry }) {
         <ol className="mt-4 list-decimal space-y-2 pl-5">
           <li>
             Sign in at{' '}
-            <a className="text-accent underline underline-offset-2" href="https://developer.hypixel.net/dashboard" target="_blank" rel="noreferrer">
+            <a className="mc-link" href="https://developer.hypixel.net/dashboard" target="_blank" rel="noreferrer">
               developer.hypixel.net
             </a>{' '}
             and create a key.
           </li>
           <li>
-            Copy <code className="rounded bg-surface-2 px-1.5 py-0.5 font-mono text-sm">.env.example</code> to{' '}
-            <code className="rounded bg-surface-2 px-1.5 py-0.5 font-mono text-sm">.env</code> and paste it after{' '}
-            <code className="rounded bg-surface-2 px-1.5 py-0.5 font-mono text-sm">HYPIXEL_API_KEY=</code>
+            Copy <code className="mc-readout text-sm">.env.example</code> to <code className="mc-readout text-sm">.env</code> and paste it after{' '}
+            <code className="mc-readout text-sm">HYPIXEL_API_KEY=</code>
           </li>
           <li>Restart the server.</li>
         </ol>
@@ -55,13 +54,13 @@ export default function ReportError({ error, player, onRetry }) {
 
 function Panel({ icon: Icon, title, children }) {
   return (
-    <section className="mt-12 max-w-2xl rounded-xl border border-line bg-surface p-6 shadow-panel sm:p-8" role="alert">
+    <section className="mc-panel mt-12 max-w-2xl p-6 sm:p-8" role="alert">
       <div className="flex items-start gap-4">
-        <span className="grid size-10 shrink-0 place-items-center rounded-lg bg-surface-2 text-muted">
+        <span className="mc-slot shrink-0 text-[var(--code-white)]">
           <Icon size={20} />
         </span>
         <div className="min-w-0 leading-relaxed text-muted">
-          <h1 className="text-xl font-semibold tracking-tight text-text">{title}</h1>
+          <h1 className="text-xl font-bold text-text">{title}</h1>
           <div className="mt-2">{children}</div>
         </div>
       </div>
@@ -71,11 +70,7 @@ function Panel({ icon: Icon, title, children }) {
 
 function RetryButton({ onRetry }) {
   return (
-    <button
-      type="button"
-      onClick={onRetry}
-      className="mt-6 inline-flex h-10 items-center gap-2 rounded-lg border border-line px-4 font-medium text-text transition-colors hover:border-accent active:scale-[0.98]"
-    >
+    <button type="button" onClick={onRetry} className="mc-btn mt-6">
       <ArrowClockwiseIcon size={16} />
       Try again
     </button>

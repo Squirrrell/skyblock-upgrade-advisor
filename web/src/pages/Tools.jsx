@@ -24,7 +24,7 @@ function Field({ label, children }) {
     </label>
   );
 }
-const inputCls = 'h-10 rounded-lg border border-line bg-surface px-3 font-mono text-text tabular focus:border-accent focus:outline-none';
+const inputCls = 'h-10 px-3 tabular';
 
 function XpCalculator() {
   const [curve, setCurve] = useState('skill');
@@ -141,12 +141,12 @@ export default function Tools() {
   const groups = [...new Set(LINKS.map((l) => l[0]))];
   return (
     <div className="fade-in pt-8">
-      <h1 className="text-2xl font-semibold tracking-tight">Calculators & links</h1>
+      <h1 className="text-2xl font-bold text-[var(--code-yellow)]">Calculators & links</h1>
       <div className="mt-6 grid gap-6 lg:grid-cols-2">
         <XpCalculator />
         <SlayerCalculator />
       </div>
-      <h2 className="mt-12 text-lg font-semibold tracking-tight">Helpful community sites</h2>
+      <h2 className="mt-12 text-lg font-bold">Helpful community sites</h2>
       <div className="mt-4 grid gap-6 md:grid-cols-2 lg:grid-cols-3">
         {groups.map((g) => (
           <section key={g}>
