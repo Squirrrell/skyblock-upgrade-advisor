@@ -32,6 +32,7 @@ function ItemRow({ item }) {
       >
         <ItemSlot
           id={item.id}
+          hint={{ skull: item.skull, mat: item.mat, color: item.color }}
           rarity={item.rarity}
           count={item.count}
           glint={Boolean(enchants)}

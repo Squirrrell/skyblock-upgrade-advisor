@@ -525,6 +525,10 @@ function inventory(items, book) {
       gems: Object.keys(item.gems ?? {}).length,
       pet: item.petInfo ? { type: item.petInfo.type, tier: item.petInfo.tier } : null,
       value: itemValue(item, book),
+      // For the icon: 1.8 item id, player-head skin, leather dye.
+      mat: item.mat,
+      skull: item.skull,
+      color: item.color,
     });
   }
   return INVENTORY_ORDER.filter((l) => groups[l]).map((location) => ({ location, items: groups[location] }))

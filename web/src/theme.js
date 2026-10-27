@@ -132,51 +132,34 @@ export const SPECIAL_ICONS = {
   ENCHANTED_BOOK: 'ENCHANTED_BOOK',
 };
 
-const RARITY_INDEX = { COMMON: 0, UNCOMMON: 1, RARE: 2, EPIC: 3, LEGENDARY: 4, MYTHIC: 5 };
-
 /**
- * Icon packs. Each pack turns a SkyBlock item id into candidate image URLs,
- * tried in order; if every one fails the UI shows the "?" placeholder.
- * `hint` carries what the caller knows: skull texture hash, shard internal id.
+ * Icon packs. Each turns a SkyBlock item id into candidate image URLs, best
+ * first; if none loads, the UI shows the "?" placeholder. All icons are the
+ * site's own, no third-party renderer. `hint.skull` is the item's skin
+ * (pets, shards, talismans and every other player head), and `src` gives:
+ *   src.head(skin)      the head drawn in 3D from that skin (lib/heads3d.js)
+ *   src.vanilla(id)     the Minecraft texture Hypixel uses for the item's
+ *                       material, blocks drawn in 3D (lib/vanilla.js)
+ *   src.pack(id), src.packSkull(skin)   a FurfSky Reborn texture
+ * Each returns a URL, undefined while it is still being drawn, or null.
  *
- * - default: Hypixel's own textures, rendered by SkyCrypt's public item API
- *   (sky.shiiyu.moe). Player heads and pets come back as 3D heads. If that
- *   fails, a pet falls back to mc-heads' 3D head and other heads to a flat
- *   face. Pets are drawn as 3D heads first anyway (lib/heads3d.js).
- * - furfsky: FurfSky Reborn textures, bundled with the site with the FurfSky
- *   team's permission (or read from the visitor's own copy, see
- *   lib/furfsky.js), matched by item id or, for other heads, by skull
- *   texture. Pets always use the default 3D heads, since the pack draws them
- *   flat. Items the pack lacks fall back to default.
+ * - default: what the game shows. Heads in 3D, everything else vanilla.
+ * - furfsky: FurfSky Reborn's textures for regular items (bundled with the
+ *   FurfSky team's permission, see lib/furfsky.js). Heads stay 3D, since the
+ *   pack draws pets and other heads flat; its head texture is only used if a
+ *   skin can't be loaded.
  */
 export const ICON_PACKS = {
   default: {
     label: 'Hypixel default',
-    urls(id, hint = {}) {
-      const out = [`https://sky.shiiyu.moe/api/item/${encodeURIComponent(skyCryptId(id, hint))}`];
-      // Pets fall back to mc-heads' 3D head render, other heads to a flat face.
-      if (hint.skull) out.push(hint.isPet ? `https://mc-heads.net/head/${hint.skull}/128` : `https://mc-heads.net/avatar/${hint.skull}/64`);
-      return out;
-    },
+    urls: (id, hint, src) => (hint.skull ? [src.head(hint.skull), src.vanilla(id)] : [src.vanilla(id)]),
   },
   furfsky: {
     label: 'FurfSky Reborn',
-    urls(id, hint = {}, packTextures) {
-      if (hint.isPet) return ICON_PACKS.default.urls(id, hint);
-      const own = packTextures?.get(id) ?? packTextures?.getSkull?.(hint.skull);
-      return own ? [own, ...ICON_PACKS.default.urls(id, hint)] : ICON_PACKS.default.urls(id, hint);
-    },
+    urls: (id, hint, src) =>
+      hint.skull ? [src.head(hint.skull), src.packSkull(hint.skull), src.vanilla(id)] : [src.pack(id), src.vanilla(id)],
   },
 };
-
-/** SkyCrypt's renderer wants NEU-style ids for pets, shards and books. */
-function skyCryptId(id, hint) {
-  const pet = /^PET_(.+)_(COMMON|UNCOMMON|RARE|EPIC|LEGENDARY|MYTHIC)$/.exec(id);
-  if (pet) return `${pet[1]};${RARITY_INDEX[pet[2]]}`;
-  if (id.startsWith('SHARD_') && hint.shardInternal) return hint.shardInternal;
-  if (id.startsWith('ENCHANTMENT_')) return SPECIAL_ICONS.ENCHANTED_BOOK;
-  return SPECIAL_ICONS[id] ?? id;
-}
 
 // -----------------------------------------------------------------------------
 

@@ -2,6 +2,7 @@
 // a flat list of every item the player owns, their pets with levels, and
 // skill levels.
 import { decodeInventory, decodeNbtBase64 } from './nbt.js';
+import { skullHash } from './prices.js';
 
 export const RARITIES = ['COMMON', 'UNCOMMON', 'RARE', 'EPIC', 'LEGENDARY', 'MYTHIC', 'DIVINE', 'SPECIAL', 'VERY_SPECIAL'];
 
@@ -82,6 +83,11 @@ function normalizeItem(raw, location) {
     farmingForDummies: extra.farming_for_dummies_count ?? 0,
     attributes: extra.attributes ?? {},
     petInfo,
+    // What the icon is drawn from: the 1.8 item id and damage ("#351:3"),
+    // the player-head skin and a leather dye colour ("R,G,B").
+    mat: typeof raw.id === 'number' ? `#${raw.id}:${raw.Damage ?? 0}` : null,
+    skull: skullHash(raw.tag.SkullOwner?.Properties?.textures?.[0]?.Value),
+    color: raw.tag.display?.color != null ? [16, 8, 0].map((b) => (raw.tag.display.color >> b) & 255).join(',') : null,
     extra,
   };
 }

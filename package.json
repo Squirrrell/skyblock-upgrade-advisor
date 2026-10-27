@@ -11,12 +11,13 @@
   "scripts": {
     "dev": "concurrently -n api,web -c green,cyan \"npm:dev:api\" \"npm:dev:web\"",
     "dev:api": "node --env-file-if-exists=.env --watch server/index.js",
-    "dev:web": "vite",
-    "build": "vite build",
-    "build:pages": "vite build && node scripts/build-data.mjs dist/data",
+    "dev:web": "node scripts/build-icons.mjs && vite",
+    "build": "node scripts/build-icons.mjs && vite build",
+    "build:pages": "node scripts/build-icons.mjs && vite build && node scripts/build-data.mjs dist/data",
     "preview:pages": "vite preview --port 4173",
     "start": "node --env-file-if-exists=.env server/index.js",
-    "test": "node --test"
+    "test": "node --test",
+    "icons": "node scripts/build-icons.mjs"
   },
   "dependencies": {
     "express": "^5.3.0",

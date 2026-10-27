@@ -129,10 +129,15 @@ The site is styled like Minecraft's inventory screens: grey bevelled panels, ite
 
 A new design is being tried out on the Farming tab: click "Preview the new design" there, or add `&ui=next` to a profile link. It lives in `web/src/next/`, scoped under the `.nx` class so it doesn't touch the Minecraft theme.
 
-Item icons come in two packs, picked from the header:
+Every icon is the site's own; nothing comes from a third-party renderer.
 
-- **Hypixel default**: textures rendered by SkyCrypt's public item API. Pets and other player-head items show as 3D heads; a non-pet head only falls back to a flat face from mc-heads if that render fails.
-- **FurfSky Reborn** (the default): textures from [FurfSky Reborn](https://furfsky.net), bundled with the site with the FurfSky Reborn team's permission, so every visitor sees them without loading anything. Pets are matched by their skull texture, the way the pack does it. Items the pack doesn't cover use the default icons.
+- **Head items** (pets, attribute shards, talismans and every other player head) are drawn in 3D in the browser from the item's skin, the way the inventory and the pet menu show them (`web/src/lib/heads3d.js`, `web/src/lib/iso.js`). Skins come from Hypixel's item list, the item's own data, or `web/public/heads.json` for pets and shards, and load from Mojang's texture server.
+- **Regular items** use the Minecraft texture Hypixel gives them. `scripts/build-icons.mjs` reads the current Minecraft client from Mojang at build time, maps Hypixel's 1.8 material names (`INK_SACK:3`) and numeric ids to today's items with [XSeries](https://github.com/CryptoMorin/XSeries)' XMaterial table and [minecraft-data](https://github.com/PrismarineJS/minecraft-data) (both MIT), and writes the textures to `web/public/mc/`. Blocks are drawn as 3D cubes, grass and leaves get their tint, and leather armor takes the item's dye colour. Mojang's textures are not committed; `npm run build` creates them and skips the work when they are current.
+
+Two packs, picked from the header:
+
+- **Hypixel default**: the icons above, as the game shows them.
+- **FurfSky Reborn** (the default): textures from [FurfSky Reborn](https://furfsky.net), bundled with the site with the FurfSky Reborn team's permission, so every visitor sees them without loading anything. Head items stay 3D, since the pack draws them flat. Items the pack doesn't cover use the default icons.
   - The bundled set lives in `web/public/furfsky/` and is built from both the current Catharsis release (`FurSky Reborn.cats.zip`) and the older OptiFine "FULL" zip; where both have a texture, the `.cats` one wins.
   - Running locally, the server also finds the packs in your Minecraft `resourcepacks` folder (or set `FURFSKY_PACKS` to their paths, separated by `;`) and uses them instead, so a newer copy shows up straight away. Those routes only answer requests from your own computer.
   - The texture button in the header lets you pick a different copy of the pack. It is read in the browser, never uploaded, and kept in that browser.
@@ -140,7 +145,7 @@ Item icons come in two packs, picked from the header:
 
 Missing icons show the purple and black missing-texture square.
 
-To regenerate the bundled assets:
+To regenerate the bundled assets (`npm run icons` rebuilds the Minecraft textures):
 
 ```bash
 node scripts/make-textures.mjs

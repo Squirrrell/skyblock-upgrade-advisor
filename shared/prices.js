@@ -120,11 +120,14 @@ export function slimItems(items) {
     const out = { id: item.id, name: item.name };
     const slots = item.gemstone_slots?.filter((s) => s.slot_type === 'PERIDOT');
     if (slots?.length) out.gemstone_slots = slots;
-    // Used by the item icons: rarity colour, enchant glint and player-head texture.
+    // Used by the item icons: rarity colour, enchant glint, player-head texture.
     if (item.tier) out.tier = item.tier;
     if (item.glowing) out.glowing = true;
     const skull = skullHash(item.skin?.value);
     if (skull) out.skull = skull;
+    // Minecraft material and data value ("INK_SACK:3") and dye colour ("R,G,B").
+    if (item.material) out.mat = `${item.material}:${item.durability ?? 0}`;
+    if (item.color) out.color = item.color;
     return out;
   });
 }

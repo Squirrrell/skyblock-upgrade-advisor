@@ -1,21 +1,21 @@
 // Item icon state: which pack is selected, textures from a loaded FurfSky
 // pack, and per-item hints (skull texture, rarity, glint) from the item index.
 import { useSyncExternalStore } from 'react';
-import { DEFAULT_ICON_PACK, ICON_PACKS } from '../theme.js';
+import { DEFAULT_ICON_PACK, ICON_PACKS, SPECIAL_ICONS } from '../theme.js';
 import { STATIC_MODE } from './api.js';
-import { dataUrl, loadItems } from './data.js';
+import { loadItems } from './data.js';
 import { bundledLookup, combinePacks, loadPackTextures } from './furfsky.js';
-import { PENDING_HEAD, renderedHead } from './heads3d.js';
+import { PENDING_ICON, renderedHead } from './heads3d.js';
 import { loadSavedPacks, savePacks } from './packStore.js';
+import { vanillaIcon } from './vanilla.js';
 
 let pack = readPack();
 let packTextures = null; // { get(id), getSkull(hash) } once a FurfSky pack is loaded
 let packInfo = null; // { names, count, source: 'minecraft' | 'saved' | 'picked' | 'bundled' }
 let packLoading = false;
 let items = null; // Map<id, item> from the item index
-let shardIds = null; // Map<SHARD_X, ATTRIBUTE_SHARD_Y;1>
 // { pets: { TYPE: hash }, shards: { SHARD_X: hash } }, from scripts/build-heads.mjs.
-// Used to find a pet's or shard's texture in a FurfSky pack, not to draw it.
+// The skins their 3D heads are drawn from.
 let heads = null;
 const listeners = new Set();
 
@@ -130,16 +130,7 @@ loadItems()
   })
   .catch(() => {});
 
-fetch(dataUrl('attribute_shards.json'))
-  .then((r) => (r.ok ? r.json() : null))
-  .then((data) => {
-    if (!data?.attributes) return;
-    shardIds = new Map(data.attributes.map((a) => [a.bazaarName, a.internalName]));
-    emit();
-  })
-  .catch(() => {});
-
-fetch(`${import.meta.env.BASE_URL}heads.json`)
+fetch(`${import.meta.env.BASE_URL}heads.json`, { cache: 'no-cache' })
   .then((r) => (r.ok ? r.json() : null))
   .then((data) => {
     heads = data;
@@ -156,7 +147,7 @@ function headHash(id) {
   return heads?.shards?.[id] ?? null;
 }
 
-/** What we know about an item: display name, rarity, glint, skull texture. */
+/** What we know about an item: display name, rarity, glint, skull texture, material. */
 export function itemInfo(id) {
   const item = items?.get(id);
   return {
@@ -164,20 +155,40 @@ export function itemInfo(id) {
     tier: item?.tier ?? null,
     glowing: Boolean(item?.glowing) || id?.startsWith('ENCHANTMENT_'),
     skull: item?.skull ?? headHash(id),
+    mat: item?.mat ?? null,
+    color: item?.color ?? null,
   };
+}
+
+/** The Minecraft material an id is drawn with: the item's own, or the id itself (WHEAT, CHEST...). */
+function materialKey(id, hint) {
+  if (hint.mat) return hint.mat;
+  if (id.startsWith('ENCHANTMENT_')) return 'ENCHANTED_BOOK:0';
+  return `${SPECIAL_ICONS[id] ?? id}:0`;
 }
 
 /** Candidate image URLs for an item in the selected pack, best first. */
 export function iconUrls(id, extraHint = {}) {
   if (!id) return [];
   const info = itemInfo(id);
-  const hint = { skull: info.skull, isPet: PET_ID.test(id), shardInternal: shardIds?.get(id), ...extraHint };
-  const urls = ICON_PACKS[pack].urls(id, hint, packTextures);
-  // Pets are always 3D heads, drawn here from their skin like the in-game pet menu.
-  if (hint.isPet && hint.skull) {
-    const head = renderedHead(hint.skull, emit);
-    if (head === undefined) return [PENDING_HEAD];
-    if (head) return [head, ...urls];
+  // extraHint (an inventory item's own skin, material and dye) wins over the item index.
+  const hint = { skull: info.skull, mat: info.mat, color: info.color, isPet: PET_ID.test(id) };
+  for (const [k, v] of Object.entries(extraHint)) if (v != null) hint[k] = v;
+  const src = {
+    head: (skin) => renderedHead(skin, emit),
+    vanilla: () => {
+      const own = vanillaIcon(materialKey(id, hint), hint.color, emit);
+      // An inventory item's own material first, then the item index's.
+      return own === null && info.mat && info.mat !== hint.mat ? vanillaIcon(info.mat, hint.color, emit) : own;
+    },
+    pack: () => packTextures?.get(id) ?? null,
+    packSkull: (skin) => packTextures?.getSkull?.(skin) ?? null,
+  };
+  const out = [];
+  for (const url of ICON_PACKS[pack].urls(id, hint, src)) {
+    // Still drawing the best icon: show an empty slot rather than a worse one.
+    if (url === undefined) return out.length ? out : [PENDING_ICON];
+    if (url) out.push(url);
   }
-  return urls;
+  return out;
 }

@@ -9,3 +9,5 @@ dist/
 .wrangler/
 worker/.dev.vars
 worker/.wrangler/
+# Minecraft textures, extracted at build time by scripts/build-icons.mjs
+web/public/mc/

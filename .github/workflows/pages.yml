@@ -42,6 +42,13 @@ jobs:
 
       - run: npm ci
 
+      # The Minecraft client jar the item icons are extracted from (scripts/build-icons.mjs).
+      - uses: actions/cache@v4
+        with:
+          path: .cache
+          key: mc-assets-${{ hashFiles('scripts/build-icons.mjs') }}
+          restore-keys: mc-assets-
+
       - run: npm test
 
       - name: Build site and price snapshot
