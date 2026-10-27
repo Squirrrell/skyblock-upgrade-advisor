@@ -161,6 +161,8 @@ export function itemInfo(id) {
     // Shards shown as a plain item (Obsidian Defender: obsidian) use its modern name.
     mat: item?.mat ?? (heads?.models?.[id] ? `${heads.models[id].toUpperCase()}:0` : null),
     model: item?.model ?? null,
+    accessory: Boolean(item?.acc),
+    requirements: item?.req ?? [],
     color: item?.color ?? null,
   };
 }

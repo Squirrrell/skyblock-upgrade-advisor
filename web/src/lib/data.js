@@ -40,6 +40,21 @@ export const loadAuctions = () => cached('auctions', 5 * 60_000, () => getJson(d
 /** The cheapest BIN auctions of each accessory, from the last scan. */
 export const loadListings = () => cached('listings', 5 * 60_000, () => getJson(dataUrl('listings.json'), 'the auction listings'));
 
+/**
+ * What an item costs to buy now: bazaar instant-buy, else the lowest BIN from
+ * the last auction scan. Resolves to (id) => { unit, source } | null.
+ */
+export const loadPrices = () =>
+  cached('price-lookup', 60_000, async () => {
+    const [bazaar, auctions] = await Promise.all([loadBazaar().catch(() => null), loadAuctions().catch(() => null)]);
+    return (id) => {
+      const q = bazaar?.products?.[id]?.quick_status;
+      if (q?.buyPrice) return { unit: q.buyPrice, source: 'bazaar' };
+      const bin = auctions?.lowest?.[id];
+      return bin ? { unit: bin, source: 'auction' } : null;
+    };
+  });
+
 export const loadBazaar = () => cached('bazaar', 60_000, () => getJson(`${HYPIXEL}/skyblock/bazaar`, 'the Hypixel bazaar'));
 
 export const loadElection = () => cached('election', 5 * 60_000, () => getJson(`${HYPIXEL}/resources/skyblock/election`, 'the Hypixel election'));

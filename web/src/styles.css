@@ -584,6 +584,30 @@ option {
   color: var(--text);
 }
 
+/* Accessories in a recipe open their own popup: marked so they stand out. */
+.item-dialog .recipe-link {
+  position: relative;
+  cursor: pointer;
+  border-radius: 12px;
+  outline: 2px solid color-mix(in srgb, var(--accent) 70%, transparent);
+  outline-offset: 1px;
+}
+
+.item-dialog .recipe-link:hover {
+  outline-color: var(--accent);
+}
+
+.item-dialog .recipe-name {
+  cursor: pointer;
+  text-decoration: underline;
+  text-decoration-color: color-mix(in srgb, currentColor 40%, transparent);
+  text-underline-offset: 3px;
+}
+
+.item-dialog .recipe-name:hover {
+  text-decoration-color: currentColor;
+}
+
 .item-dialog::backdrop {
   background: rgb(0 0 0 / 0.6);
 }

@@ -149,6 +149,9 @@ export function slimItems(items) {
     if (item.color) out.color = item.color;
     // The model Hypixel's SkyBlock resource pack draws it with.
     if (item.item_model) out.model = item.item_model;
+    // For the item popup: accessories can be opened from a recipe, and what it takes to use it.
+    if (item.category === 'ACCESSORY') out.acc = true;
+    if (item.requirements?.length) out.req = item.requirements;
     return out;
   });
 }

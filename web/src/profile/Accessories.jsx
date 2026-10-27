@@ -242,7 +242,7 @@ export default function Accessories({ stats }) {
       ) : (
         <Empty>The missing-accessory list needs the accessory index, which comes with the next site deploy.</Empty>
       )}
-      {open && <ItemDialog key={open.id} item={open} onClose={() => setOpen(null)} />}
+      {open && <ItemDialog key={open.id} item={open} stats={stats} onClose={() => setOpen(null)} />}
     </div>
   );
 }

@@ -1,12 +1,15 @@
-// A popup for one item: how to craft it, a copyable /ahs command, and its
-// cheapest Buy It Now auctions from the last auction house scan.
-import { ArrowRightIcon, CheckIcon, CopyIcon, XIcon } from '@phosphor-icons/react';
+// A popup for one item: how to craft it (with its requirements and what the
+// ingredients cost), a copyable /ahs command, and its cheapest Buy It Now
+// auctions from the last scan. Accessories in a recipe open their own popup
+// in place, with a Back button to return.
+import { ArrowLeftIcon, ArrowRightIcon, CheckCircleIcon, CheckIcon, CopyIcon, XCircleIcon, XIcon } from '@phosphor-icons/react';
 import { useEffect, useRef, useState } from 'react';
 import { prettyId } from '../../../shared/analyze/helpers.js';
-import { loadListings } from '../lib/data.js';
+import { loadCollections, loadListings, loadPrices } from '../lib/data.js';
 import { ago, coins, int, until } from '../lib/format.js';
 import { itemInfo } from '../lib/icons.js';
 import { loadNeuItem, recipesOf } from '../lib/neu.js';
+import { craftRequirement, describe } from '../lib/requirements.js';
 import { ItemSlot } from '../mc.jsx';
 import { rarityClass } from '../ui.jsx';
 
@@ -29,9 +32,99 @@ function CopyButton({ text, label = 'Copy' }) {
   );
 }
 
-const nameOf = (id) => itemInfo(id).name ?? prettyId(id);
+/** Resolves a promise once per mount; undefined while loading, null on failure. */
+function useLoad(load, deps) {
+  const [value, setValue] = useState(undefined);
+  useEffect(() => {
+    let alive = true;
+    setValue(undefined);
+    load()
+      // Wrapped: a loaded function (the price lookup) must not be taken as an updater.
+      .then((v) => alive && setValue(() => v ?? null))
+      .catch(() => alive && setValue(null));
+    return () => {
+      alive = false;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, deps);
+  return value;
+}
 
-function Recipe({ recipe, resultId }) {
+const nameOf = (id) => itemInfo(id).name ?? prettyId(id);
+const tierOf = (id) => itemInfo(id).tier ?? undefined;
+
+/** An ingredient slot; accessories are buttons that open their own popup. */
+function Ingredient({ c, onOpen }) {
+  if (!itemInfo(c.id).accessory) return <ItemSlot id={c.id} count={c.count} />;
+  return (
+    <button type="button" className="recipe-link block" onClick={() => onOpen(c.id)} aria-label={`Open ${nameOf(c.id)}`}>
+      <ItemSlot id={c.id} count={c.count} rarity={tierOf(c.id)} focusable={false} />
+    </button>
+  );
+}
+
+function IngredientName({ id, onOpen }) {
+  if (!itemInfo(id).accessory) return <span>{nameOf(id)}</span>;
+  return (
+    <button type="button" onClick={() => onOpen(id)} className={`recipe-name inline-flex items-center gap-1 font-semibold ${rarityClass(tierOf(id))}`}>
+      {nameOf(id)}
+      <ArrowRightIcon size={12} aria-hidden="true" />
+    </button>
+  );
+}
+
+/** Ingredients with their price, the total, and how that compares to buying it. */
+function Breakdown({ inputs, prices, buyPrice, onOpen }) {
+  const rows = inputs.map((c) => ({ ...c, price: prices?.(c.id) ?? null }));
+  const total = rows.reduce((n, r) => n + (r.price ? r.price.unit * r.count : 0), 0);
+  const unpriced = rows.filter((r) => !r.price).length;
+  return (
+    <div className="mt-3">
+      <ul className="flex flex-col">
+        {rows.map((r) => (
+          <li key={r.id} className="flex items-baseline justify-between gap-3 border-b border-line py-1.5 text-sm last:border-0">
+            <span className="min-w-0">
+              <span className="text-muted tabular">{int(r.count)} × </span>
+              <IngredientName id={r.id} onOpen={onOpen} />
+            </span>
+            <span className="shrink-0 text-right tabular">
+              {r.price ? (
+                <>
+                  <span className="text-warn">{coins(r.price.unit * r.count)}</span>
+                  {r.count > 1 && <span className="ml-1.5 text-xs text-muted">{coins(r.price.unit)} each</span>}
+                </>
+              ) : (
+                <span className="text-muted">no price</span>
+              )}
+            </span>
+          </li>
+        ))}
+      </ul>
+      {prices && (
+        <div className="mc-well mt-2 flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1 px-3 py-2 text-sm">
+          <span>
+            Crafting cost <span className="font-semibold text-warn tabular">{coins(total)}</span>
+            {unpriced > 0 && <span className="text-muted"> + {unpriced} unpriced</span>}
+          </span>
+          {buyPrice ? (
+            <span className="text-muted">
+              Buying it: <span className="text-warn tabular">{coins(buyPrice)}</span>
+              {!unpriced && total > 0 && (
+                <span className={buyPrice > total ? 'text-accent' : 'text-danger'}>
+                  {' '}
+                  ({buyPrice > total ? `crafting saves ${coins(buyPrice - total)}` : `buying saves ${coins(total - buyPrice)}`})
+                </span>
+              )}
+            </span>
+          ) : null}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function Recipe({ recipe, resultId, prices, onOpen }) {
+  const buyPrice = prices?.(resultId)?.unit ?? null;
   if (recipe.type === 'crafting') {
     const totals = new Map();
     for (const c of recipe.grid) if (c) totals.set(c.id, (totals.get(c.id) ?? 0) + c.count);
@@ -39,20 +132,12 @@ function Recipe({ recipe, resultId }) {
       <div>
         <div className="flex flex-wrap items-center gap-4">
           <div className="mc-well grid grid-cols-3 gap-1 p-1.5">
-            {recipe.grid.map((c, i) =>
-              c ? <ItemSlot key={i} id={c.id} count={c.count} /> : <span key={i} className="mc-slot" aria-hidden="true" />,
-            )}
+            {recipe.grid.map((c, i) => (c ? <Ingredient key={i} c={c} onOpen={onOpen} /> : <span key={i} className="mc-slot" aria-hidden="true" />))}
           </div>
           <ArrowRightIcon size={22} className="text-muted" aria-hidden="true" />
           <ItemSlot id={resultId} count={recipe.count} tooltip={false} />
         </div>
-        <ul className="mt-3 flex flex-col gap-1 text-sm">
-          {[...totals].map(([id, n]) => (
-            <li key={id}>
-              <span className="text-muted tabular">{int(n)} ×</span> {nameOf(id)}
-            </li>
-          ))}
-        </ul>
+        <Breakdown inputs={[...totals].map(([id, count]) => ({ id, count }))} prices={prices} buyPrice={buyPrice} onOpen={onOpen} />
       </div>
     );
   }
@@ -63,31 +148,49 @@ function Recipe({ recipe, resultId }) {
         {what}
         {recipe.duration ? `, takes ${until(Date.now() + recipe.duration * 1000)}` : ''}
       </p>
-      <ul className="mt-2 flex flex-wrap gap-3">
+      <div className="mt-2 flex flex-wrap gap-2">
         {recipe.inputs.map((c) => (
-          <li key={c.id} className="flex items-center gap-2 text-sm">
-            <ItemSlot id={c.id} count={c.count} />
-            <span>
-              <span className="text-muted tabular">{int(c.count)} ×</span> {nameOf(c.id)}
-            </span>
-          </li>
+          <Ingredient key={c.id} c={c} onOpen={onOpen} />
         ))}
-      </ul>
+      </div>
+      <Breakdown inputs={recipe.inputs} prices={prices} buyPrice={buyPrice} onOpen={onOpen} />
     </div>
   );
 }
 
+function Requirements({ neu, id, stats }) {
+  const collections = useLoad(loadCollections, []);
+  const craft = craftRequirement(neu?.crafttext, stats, collections);
+  const use = itemInfo(id).requirements.map((r) => describe(r, stats, collections));
+  if (!craft && !use.length) return null;
+  const row = (r, label) => (
+    <li key={label + r.text} className="flex items-start gap-2 text-sm">
+      {r.met === true ? (
+        <CheckCircleIcon size={16} className="mt-0.5 shrink-0 text-accent" aria-label="You have this" />
+      ) : r.met === false ? (
+        <XCircleIcon size={16} className="mt-0.5 shrink-0 text-danger" aria-label="You don't have this yet" />
+      ) : (
+        <span className="mt-0.5 inline-block size-4 shrink-0" aria-hidden="true" />
+      )}
+      <span>
+        <span className="text-muted">{label}: </span>
+        {r.text}
+        {r.have != null && r.need != null && r.met === false && (
+          <span className="text-muted tabular"> ({int(r.have)} of {int(r.need)})</span>
+        )}
+      </span>
+    </li>
+  );
+  return (
+    <ul className="mb-4 flex flex-col gap-1.5">
+      {craft && row(craft, 'To craft')}
+      {use.map((r) => row(r, 'To use'))}
+    </ul>
+  );
+}
+
 function Listings({ id, name }) {
-  const [data, setData] = useState(undefined);
-  useEffect(() => {
-    let alive = true;
-    loadListings()
-      .then((d) => alive && setData(d))
-      .catch(() => alive && setData(null));
-    return () => {
-      alive = false;
-    };
-  }, []);
+  const data = useLoad(loadListings, []);
   const list = data?.listings?.[id] ?? [];
   const now = Date.now();
   return (
@@ -124,10 +227,16 @@ function Listings({ id, name }) {
   );
 }
 
-/** `item`: { id, name, tier }. Opens as a modal; Escape or the backdrop closes it. */
-export default function ItemDialog({ item, onClose }) {
+/**
+ * `item`: { id, name, tier }. `stats` (the profile's) is used to tick off
+ * requirements. Opens as a modal; Escape or the backdrop closes it.
+ */
+export default function ItemDialog({ item, stats, onClose }) {
   const ref = useRef(null);
-  const [neu, setNeu] = useState(undefined);
+  const [stack, setStack] = useState([item]);
+  const current = stack[stack.length - 1];
+  const neu = useLoad(() => loadNeuItem(current.id), [current.id]);
+  const prices = useLoad(loadPrices, []);
 
   useEffect(() => {
     const dialog = ref.current;
@@ -135,17 +244,14 @@ export default function ItemDialog({ item, onClose }) {
     return () => dialog?.close();
   }, []);
 
-  useEffect(() => {
-    let alive = true;
-    setNeu(undefined);
-    loadNeuItem(item.id).then((d) => alive && setNeu(d));
-    return () => {
-      alive = false;
-    };
-  }, [item.id]);
+  const open = (id) => {
+    setStack((s) => [...s, { id, name: nameOf(id), tier: tierOf(id) }]);
+    ref.current?.scrollTo({ top: 0 });
+  };
+  const back = () => setStack((s) => s.slice(0, -1));
 
   // In-game search text: the base item name, without stars or reforges.
-  const searchName = (itemInfo(item.id).name ?? item.name).replace(/§./g, '').replace(/[✪➊-➎]/g, '').trim();
+  const searchName = (itemInfo(current.id).name ?? current.name).replace(/§./g, '').replace(/[✪➊-➎]/g, '').trim();
   const recipes = recipesOf(neu);
 
   return (
@@ -157,9 +263,14 @@ export default function ItemDialog({ item, onClose }) {
       onClick={(e) => e.target === ref.current && ref.current.close()}
     >
       <div className="flex items-center gap-3 border-b border-line px-5 py-4">
-        <ItemSlot id={item.id} rarity={item.tier} tooltip={false} />
-        <h2 id="item-dialog-title" className={`min-w-0 flex-1 truncate font-semibold ${rarityClass(item.tier)}`}>
-          {item.name}
+        {stack.length > 1 && (
+          <button type="button" onClick={back} className="mc-btn mc-btn-sm" aria-label={`Back to ${stack[stack.length - 2].name}`} title={`Back to ${stack[stack.length - 2].name}`}>
+            <ArrowLeftIcon size={14} />
+          </button>
+        )}
+        <ItemSlot id={current.id} rarity={current.tier} tooltip={false} />
+        <h2 id="item-dialog-title" className={`min-w-0 flex-1 truncate font-semibold ${rarityClass(current.tier)}`}>
+          {current.name}
         </h2>
         <button type="button" onClick={() => ref.current.close()} className="mc-btn mc-btn-sm" aria-label="Close">
           <XIcon size={14} />
@@ -172,21 +283,26 @@ export default function ItemDialog({ item, onClose }) {
           </h3>
           {neu === undefined ? (
             <div className="skeleton h-28" />
-          ) : recipes.length ? (
-            <div className="flex flex-col gap-5">
-              {recipes.map((r, i) => (
-                <Recipe key={i} recipe={r} resultId={item.id} />
-              ))}
-            </div>
           ) : (
-            <p className="text-sm text-muted">No recipe: this one drops, comes from an NPC trade or another source.</p>
+            <>
+              <Requirements neu={neu} id={current.id} stats={stats} />
+              {recipes.length ? (
+                <div className="flex flex-col gap-5">
+                  {recipes.map((r, i) => (
+                    <Recipe key={`${current.id}-${i}`} recipe={r} resultId={current.id} prices={prices} onOpen={open} />
+                  ))}
+                </div>
+              ) : (
+                <p className="text-sm text-muted">No recipe: this one drops, comes from an NPC trade or another source.</p>
+              )}
+            </>
           )}
         </section>
         <section aria-labelledby="item-dialog-ah">
           <h3 id="item-dialog-ah" className="mb-3 text-sm font-semibold">
             Auction house
           </h3>
-          <Listings id={item.id} name={searchName} />
+          <Listings key={current.id} id={current.id} name={searchName} />
         </section>
       </div>
     </dialog>
