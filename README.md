@@ -123,6 +123,30 @@ Set `PROFILE_FIXTURE` to the path of a saved `/v2/skyblock/profiles` response (e
 npm test
 ```
 
+## Look and item icons
+
+The site is styled like Minecraft's inventory screens: grey bevelled panels, item slots, stone buttons, creative-inventory tabs, XP bars and purple item tooltips, in the Monocraft pixel font. Everything that decides the look (palette, chat colour codes, rarity colours, font, GUI scale, backgrounds and the icon packs) lives in `web/src/theme.js`, and `web/src/styles.css` only reads those values.
+
+Item icons come in two packs, picked from the header:
+
+- **Hypixel default**: textures rendered by SkyCrypt's public item API, with player-head items (including pets and attribute shards) drawn as flat faces by mc-heads.
+- **FurfSky Reborn**: pick your own copy of the pack (the "FULL" `.zip`, not the `.cats` file) with "Load pack .zip". It is read in your browser and never uploaded, because the pack's license doesn't allow hosting its files. Items the pack doesn't cover use the default icons.
+
+Missing icons show the purple and black missing-texture square.
+
+To regenerate the bundled assets:
+
+```bash
+node scripts/make-textures.mjs
+```
+```bash
+node scripts/build-heads.mjs
+```
+
+The first redraws the background and button tiles. The second refreshes `web/public/heads.json`, the pet and shard head textures from the NotEnoughUpdates repo, after an update adds new ones.
+
+Monocraft is by Idrees Hassan under the SIL Open Font License; the license is in `web/public/fonts/`.
+
 ## How it works
 
 - `server/hypixel.js` talks to the Hypixel and Mojang APIs and caches responses for a couple of minutes.
