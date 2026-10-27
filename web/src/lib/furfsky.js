@@ -1,7 +1,10 @@
-// Reads a FurfSky Reborn resource pack zip that the visitor picks from their
-// own computer. Everything happens in the browser; nothing is uploaded.
+// Reads a FurfSky Reborn resource pack from the visitor's own computer.
+// Everything happens in the browser; nothing is uploaded.
 //
-// Two layouts are understood:
+// Three layouts are understood:
+//  - Catharsis .cats (the current FurfSky Reborn release, raw or inside a
+//    .cats.zip): 1.21 item definitions at assets/skyblock/items/<id>.json
+//    pointing at models and textures. Format: github.com/meowdding/cats-file-format
 //  - OptiFine / MCPatcher CIT: .properties files matching
 //    nbt.ExtraAttributes.id (exact ids, regex: and pattern: rules) or a
 //    skull texture (nbt.SkullOwner...Value, how the pack retextures pets), with the
@@ -10,7 +13,7 @@
 //    Reborn "FULL" zip.
 //  - Firmament: assets/firmskyblock/models/item/<skyblock_id>.json, whose
 //    layer0 texture points into assets/firmskyblock/textures/.
-import { unzip } from 'fflate';
+import { gunzipSync, unzip } from 'fflate';
 import { skullHash } from '../../../shared/prices.js';
 
 const decoder = new TextDecoder();
@@ -18,7 +21,7 @@ const decoder = new TextDecoder();
 function unzipAsync(bytes) {
   return new Promise((resolve, reject) => {
     // Only text metadata and PNGs matter; skip sounds, shaders and the rest.
-    unzip(bytes, { filter: (f) => /\.(properties|json|png)$/i.test(f.name) }, (err, files) => (err ? reject(err) : resolve(files)));
+    unzip(bytes, { filter: (f) => /\.(properties|json|png|cats)$/i.test(f.name) }, (err, files) => (err ? reject(err) : resolve(files)));
   });
 }
 
@@ -129,17 +132,94 @@ function firmamentRules(files) {
   return rules;
 }
 
-/**
- * Turn a pack zip (File or Blob) into a lookup with get(id) -> object URL.
- * Exact ids are a map lookup; regex and pattern rules are tried after that
- * and the answer is cached. Object URLs are made on first use. Animated
- * textures (tall strips of frames) show their first frame because slot
- * images crop to a square from the top.
- */
-export async function loadPackTextures(file) {
-  const files = await unzipAsync(new Uint8Array(await file.arrayBuffer()));
-  const rules = [...firmamentRules(files), ...citRules(files)];
+// ------------------------------------------------------------------ .cats
 
+/** Index a .cats archive: Map<path, () => bytes>, with each module's top folder dropped. */
+function readCats(bytes) {
+  const view = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
+  if (view.getUint32(0) !== 0x43415453) throw new Error('Not a .cats file');
+  let pos = 5; // magic + version
+  const entries = [];
+  const walk = (prefix) => {
+    const count = view.getUint16(pos);
+    pos += 2;
+    for (let i = 0; i < count; i++) {
+      const type = view.getUint8(pos++);
+      const len = view.getUint8(pos++);
+      const name = decoder.decode(bytes.subarray(pos, pos + len));
+      pos += len;
+      if (type === 1) walk(prefix + name + '/');
+      else {
+        entries.push({ path: prefix + name, offset: view.getInt32(pos), size: view.getInt32(pos + 4), gzip: view.getUint8(pos + 8) === 0xfe });
+        pos += 9;
+      }
+    }
+  };
+  walk('');
+  const dataStart = pos;
+  const files = new Map();
+  for (const e of entries) {
+    // FurfSky ships as many small packs ("item_item", "armor_icon", ...) inside one archive.
+    const path = e.path.slice(e.path.indexOf('/') + 1);
+    if (files.has(path)) continue;
+    files.set(path, () => {
+      const raw = bytes.subarray(dataStart + e.offset, dataStart + e.offset + e.size);
+      return e.gzip ? gunzipSync(raw) : raw;
+    });
+  }
+  return files;
+}
+
+/** The first plain model an item definition can show, skipping fallthrough branches. */
+function definitionModel(node) {
+  if (!node || typeof node !== 'object') return null;
+  const type = String(node.type ?? '').replace(/^minecraft:/, '');
+  if (type === 'model') return node.model ?? null;
+  if (type === 'condition') return definitionModel(node.on_false) ?? definitionModel(node.on_true);
+  if (type === 'select') return definitionModel(node.fallback) ?? definitionModel(node.cases?.[0]?.model);
+  if (type === 'range_dispatch') return definitionModel(node.fallback) ?? definitionModel(node.entries?.[0]?.model);
+  if (type === 'composite') return definitionModel(node.models?.[0]);
+  return null;
+}
+
+function resourcePath(ref, kind, ext) {
+  const [ns, rest] = ref.includes(':') ? ref.split(':') : ['minecraft', ref];
+  return 'assets/' + ns + '/' + kind + '/' + rest + ext;
+}
+
+function catsRules(files) {
+  const json = (path) => {
+    const read = files.get(path);
+    if (!read) return null;
+    try {
+      return JSON.parse(decoder.decode(read()));
+    } catch {
+      return null;
+    }
+  };
+  const textureOf = (modelRef, depth = 0) => {
+    const model = depth < 5 && json(resourcePath(modelRef, 'models', '.json'));
+    if (!model) return null;
+    const tex = model.textures ?? {};
+    const ref = tex.layer0 ?? Object.values(tex).find((v) => typeof v === 'string' && !v.startsWith('#'));
+    const png = ref && resourcePath(ref, 'textures', '.png');
+    if (png && files.has(png)) return png;
+    return model.parent ? textureOf(model.parent, depth + 1) : null;
+  };
+  const rules = [];
+  for (const path of files.keys()) {
+    const m = /^assets\/skyblock\/items\/([^/]+)\.json$/.exec(path);
+    if (!m) continue;
+    const modelRef = definitionModel(json(path)?.model);
+    const texture = modelRef && textureOf(modelRef);
+    if (texture) rules.push({ exact: m[1].toUpperCase(), texture });
+  }
+  return rules;
+}
+
+// ------------------------------------------------------------------ loading
+
+function buildLookup(rules, readTexture) {
   const exact = new Map();
   const skulls = new Map(); // skull texture hash -> texture path
   const patterns = [];
@@ -154,7 +234,7 @@ export async function loadPackTextures(file) {
   const urls = new Map(); // texture path -> object URL
   const resolved = new Map(); // id -> texture path | null
   const urlFor = (path) => {
-    if (!urls.has(path)) urls.set(path, URL.createObjectURL(new Blob([files[path]], { type: 'image/png' })));
+    if (!urls.has(path)) urls.set(path, URL.createObjectURL(new Blob([readTexture(path)], { type: 'image/png' })));
     return urls.get(path);
   };
 
@@ -179,5 +259,40 @@ export async function loadPackTextures(file) {
       for (const url of urls.values()) URL.revokeObjectURL(url);
       urls.clear();
     },
+  };
+}
+
+function catsLookup(bytes) {
+  const files = readCats(bytes);
+  return buildLookup(catsRules(files), (path) => files.get(path)());
+}
+
+/**
+ * Turn a pack (File or Blob: a .zip, a .cats.zip or a raw .cats) into a
+ * lookup with get(id) -> object URL. Exact ids are a map lookup; regex and
+ * pattern rules are tried after that and the answer is cached. Object URLs
+ * are made on first use. Animated textures (tall strips of frames) show their
+ * first frame because slot images crop to a square from the top.
+ */
+export async function loadPackTextures(file) {
+  const bytes = new Uint8Array(await file.arrayBuffer());
+  if (bytes[0] === 0x43 && bytes[1] === 0x41 && bytes[2] === 0x54 && bytes[3] === 0x53) return catsLookup(bytes);
+  const files = await unzipAsync(bytes);
+  if (files['pack.cats']) return catsLookup(files['pack.cats']);
+  const rules = [...firmamentRules(files), ...citRules(files)];
+  return buildLookup(rules, (path) => files[path]);
+}
+
+/** Several packs as one lookup; earlier packs win. */
+export function combinePacks(packs) {
+  const list = packs.filter(Boolean);
+  return {
+    size: list.reduce((n, p) => n + p.size, 0),
+    get: (id) => list.reduce((hit, p) => hit ?? p.get(id), undefined),
+    getSkull: (hash) => list.reduce((hit, p) => hit ?? p.getSkull(hash), undefined),
+    has(id) {
+      return Boolean(this.get(id));
+    },
+    revoke: () => list.forEach((p) => p.revoke()),
   };
 }
