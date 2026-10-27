@@ -2,7 +2,7 @@
 // the selected tab. Farming, hunting and consumables use the new advisor
 // layout; the other tabs reuse their views, restyled by bridge.css.
 import { ArrowClockwiseIcon, ArrowUpRightIcon, WarningIcon } from '@phosphor-icons/react';
-import { lazy, Suspense } from 'react';
+import { lazy, Suspense, useEffect, useRef } from 'react';
 import { openCount, TABS } from '../components/Report.jsx';
 import { ago } from '../lib/format.js';
 import { load, save } from '../lib/storage.js';
@@ -71,9 +71,16 @@ function ProfileHeader({ report, refreshing, onRefresh, onPickProfile }) {
 }
 
 function SectionTabs({ report, tab, onTab }) {
+  const listRef = useRef(null);
+  // Keep the selected tab visible in the scrolling row (it starts off-screen on phones).
+  useEffect(() => {
+    const list = listRef.current;
+    const el = list?.querySelector('[aria-selected="true"]');
+    if (el) list.scrollTo({ left: el.offsetLeft - (list.clientWidth - el.offsetWidth) / 2, behavior: 'smooth' });
+  }, [tab.id]);
   return (
     <nav className="nx-tabbar nx-rise" style={{ '--i': 1 }} aria-label="Profile sections">
-      <div className="nx-tabs" role="tablist">
+      <div ref={listRef} className="nx-tabs" role="tablist">
         {TABS.map((t) => {
           const open = t.section ? openCount(report.sections[t.section]) : 0;
           return (
