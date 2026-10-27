@@ -91,3 +91,23 @@ test('bestArmorLoadout mixes sets and loose pieces', async () => {
   const across = bestArmorLoadout(own('SQUASH_HELMET', 'CROPIE_CHESTPLATE', 'CROPIE_LEGGINGS', 'CROPIE_BOOTS'), 0);
   assert.equal(across.value, 25 + 70 + 30);
 });
+
+test('shardStats values held shards and reads attribute levels', async () => {
+  const { shardStats } = await import('../stats/shards.js');
+  const constants = {
+    attributes: [
+      { bazaarName: 'SHARD_CRICKET', displayName: 'Cricket', rarity: 'UNCOMMON', internalName: 'ATTRIBUTE_SHARD_PEST_FORTUNE;1', abilityName: 'Pest Fortune', family: ['Bug'], shardId: 'U19' },
+      { bazaarName: 'SHARD_PUCK', displayName: 'Puck', rarity: 'COMMON', internalName: 'ATTRIBUTE_SHARD_VISITOR_BAIT;1', abilityName: 'Visitor Speed', family: [], shardId: 'C9' },
+    ],
+  };
+  const book = { value: (id) => ({ SHARD_CRICKET: 40_000 })[id] ?? null, price: (id) => (id === 'SHARD_CRICKET' ? { unit: 50_000 } : null) };
+  const member = { shards: { owned: [{ type: 'CRICKET', amount_owned: 3 }, { type: 'PUCK', amount_owned: 2 }], fused: 7 }, attributes: { stacks: { pest_fortune: 3, visitor_bait: 1 } } };
+  const s = shardStats(member, book, constants);
+  assert.equal(s.value, 120_000);
+  assert.equal(s.buyValue, 150_000);
+  assert.equal(s.owned, 5);
+  assert.equal(s.unpriced, 1);
+  // Matched by internal name even though the ability is "Visitor Speed".
+  assert.equal(s.list.find((r) => r.id === 'SHARD_PUCK').syphoned, 1);
+  assert.equal(s.list.find((r) => r.id === 'SHARD_CRICKET').level, 2); // uncommon: 1 + 2 shards
+});

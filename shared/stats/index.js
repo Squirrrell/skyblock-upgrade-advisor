@@ -7,6 +7,7 @@ import { prettyId } from '../analyze/helpers.js';
 import { MINION_MAX_TIER } from './constants.js';
 import { SKILLS, catacombsLevel, hotfLevel, hotmLevel, levelFrom, skillCap, skillTable, slayerLevel, SKILL_MAX } from './levels.js';
 import { computeNetworth, itemValue } from './networth.js';
+import { shardStats } from './shards.js';
 
 const RARITY_RANK = { COMMON: 0, UNCOMMON: 1, RARE: 2, EPIC: 3, LEGENDARY: 4, MYTHIC: 5, DIVINE: 6, SPECIAL: 7, VERY_SPECIAL: 8 };
 const sum = (values) => values.reduce((a, b) => a + (Number(b) || 0), 0);
@@ -583,6 +584,7 @@ export function buildStats(ctx) {
     mining: mn,
     foraging: fg,
     hunting: huntingStats(member),
+    shards: shardStats(member, book, ctx.attrConstants),
     pets: pt,
     collections: collections(member, profile),
     minions: minions(profile),

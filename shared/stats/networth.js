@@ -94,6 +94,10 @@ export function computeNetworth({ items, pets, member, profile, book }) {
   for (const [id, count] of Object.entries(member.inventory?.sacks_counts ?? {})) {
     if (count > 0) add('Sacks', (book.value(id) ?? 0) * count);
   }
+  // Hunting shards in the Hunting Box, at bazaar instant-sell.
+  for (const shard of member.shards?.owned ?? []) {
+    if (shard?.type && shard.amount_owned > 0) add('Shards', (book.value(`SHARD_${shard.type}`) ?? 0) * shard.amount_owned);
+  }
   for (const [type, data] of Object.entries(member.currencies?.essence ?? {})) {
     add('Essence', (book.value(`ESSENCE_${type}`) ?? 0) * (data?.current ?? 0));
   }

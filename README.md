@@ -12,6 +12,7 @@ One lookup loads every tab; each tab's code is fetched the first time you open i
 - **Dungeons**: catacombs (with overflow past 50), classes, secrets, and a per-floor table for normal and master mode.
 - **Mining & Foraging**: Heart of the Mountain and of the Forest, powders, forge slots, crystals, glacite corpses, tree gifts and Starlyn bests.
 - **Farming / Hunting / Consumables**: the original upgrade advisor (details below), plus garden, Jacob's contests, shards and the safari.
+- **Shards**: every hunting shard in the Hunting Box with its bazaar value (instant-sell, plus what buying them all would cost), and every attribute you have syphoned shards into, with its level.
 - **Collections & Minions**: every collection with coop totals and tier progress, and crafted minions with the next minion slot.
 - **Inventory**: armor, equipment, inventory, loadouts, ender chest, backpacks, vault, bags and both toolkits, searchable, with values.
 - **Accessories**: magical power, power and tuning, the bag by rarity, and every missing accessory or upgrade ranked by coins per magical power.
@@ -19,7 +20,7 @@ One lookup loads every tab; each tab's code is fetched the first time you open i
 - **Crimson & Rift**: faction reputation, Kuudra tiers, dojo grades and belt, trophy fish, and Rift progress.
 - **Events & Misc**: Chocolate Factory, fairy souls, bestiary, essence, experiments, auction stats, kills, deaths and races.
 
-Networth is an estimate: what base items, pets, sacks and essence would sell for now, plus recombobulators, potato books, gems and pet items. Enchantments, reforges and stars are not added.
+Networth is an estimate: what base items, pets, sacks, essence and hunting shards would sell for now, plus recombobulators, potato books, gems and pet items. Enchantments, reforges and stars are not added.
 
 ## Tools that need no username
 

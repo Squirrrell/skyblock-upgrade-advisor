@@ -65,10 +65,17 @@ const petHeads = await pool(
 );
 
 const shardList = shards?.attributes ?? [];
+// A few shards are not heads in game but plain items (Obsidian Defender is
+// obsidian); for those keep the Minecraft item they show as.
+const shardModels = {};
 const shardHeads = await pool(
   shardList.map((s) => async () => {
     const hash = await headOf(s.internalName);
-    return hash ? [s.bazaarName, hash] : null;
+    if (hash) return [s.bazaarName, hash];
+    const item = await getJson(`${NEU}/items/${encodeURIComponent(s.internalName)}.json`);
+    const model = /ItemModel:"minecraft:([a-z0-9_]+)"/.exec(item?.nbttag ?? '')?.[1];
+    if (model) shardModels[s.bazaarName] = model;
+    return null;
   }),
 );
 
@@ -86,6 +93,7 @@ const out = {
   pets: Object.fromEntries(petHeads.filter(Boolean)),
   shards: Object.fromEntries(shardHeads.filter(Boolean)),
   items: Object.fromEntries(itemHeads.filter(Boolean)),
+  models: shardModels,
 };
 writeFileSync(new URL('../web/public/heads.json', import.meta.url), JSON.stringify(out));
-console.log(`heads.json: ${Object.keys(out.pets).length}/${petTypes.length} pets, ${Object.keys(out.shards).length}/${shardList.length} shards, ${Object.keys(out.items).length} other heads`);
+console.log(`heads.json: ${Object.keys(out.pets).length}/${petTypes.length} pets, ${Object.keys(out.shards).length}/${shardList.length} shards, ${Object.keys(out.items).length} other heads, ${Object.keys(out.models).length} shards drawn as items`);

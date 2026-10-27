@@ -11,6 +11,7 @@ const PROFILE = [
   ['CHEST', 'Inventory, storage and accessory bag'],
   ['EMERALD', 'Missing accessories, ranked by coins per magical power'],
   ['WHEAT', 'Farming and hunting fortune upgrades, priced'],
+  ['PRISMARINE_SHARD', 'Every hunting shard you hold, with its value'],
   ['DIAMOND_PICKAXE', 'Mining, foraging, collections, minions and pets'],
   ['BLAZE_POWDER', 'Crimson Isle, Kuudra, the Rift and the Chocolate Factory'],
 ];
@@ -87,7 +88,7 @@ export default function Landing({ onSearch, onPage }) {
           <div className="nx-core h-full p-6 sm:p-7">
             <div className="nx-eyebrow">In a profile lookup</div>
             <h2 id="nx-profile-title" className="nx-h2 mt-1.5">
-              Fourteen tabs of stats and advice
+              Fifteen tabs of stats and advice
             </h2>
             <ul className="mt-5 flex flex-col gap-3">
               {PROFILE.map(([icon, line]) => (

@@ -155,7 +155,8 @@ export function itemInfo(id) {
     tier: item?.tier ?? null,
     glowing: Boolean(item?.glowing) || id?.startsWith('ENCHANTMENT_'),
     skull: item?.skull ?? headHash(id),
-    mat: item?.mat ?? null,
+    // Shards shown as a plain item (Obsidian Defender: obsidian) use its modern name.
+    mat: item?.mat ?? (heads?.models?.[id] ? `${heads.models[id].toUpperCase()}:0` : null),
     color: item?.color ?? null,
   };
 }

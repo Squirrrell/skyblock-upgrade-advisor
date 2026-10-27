@@ -18,6 +18,7 @@ const Pets = lazy(() => import('../profile/Pets.jsx'));
 const Advisor = lazy(() => import('../profile/Advisor.jsx'));
 const Crimson = lazy(() => import('../profile/Crimson.jsx'));
 const Misc = lazy(() => import('../profile/Misc.jsx'));
+const Shards = lazy(() => import('../profile/Shards.jsx'));
 
 export function openCount(section) {
   return section.groups.reduce((n, g) => n + g.items.filter((s) => s.status === 'missing' || s.status === 'partial').length, 0);
@@ -31,6 +32,7 @@ export const TABS = [
   { id: 'mining', label: 'Mining & Foraging', icon: 'DIAMOND_PICKAXE', view: Mining },
   { id: 'farming', label: 'Farming', icon: 'WHEAT', view: Advisor, section: 'farming' },
   { id: 'hunting', label: 'Hunting', icon: 'BOW', view: Advisor, section: 'hunting' },
+  { id: 'shards', label: 'Shards', icon: 'PRISMARINE_SHARD', view: Shards },
   { id: 'consumables', label: 'Consumables', icon: 'POTION', view: Advisor, section: 'consumables' },
   { id: 'collections', label: 'Collections & Minions', icon: 'PAINTING', view: Collections },
   { id: 'inventory', label: 'Inventory', icon: 'CHEST', view: Inventory },
