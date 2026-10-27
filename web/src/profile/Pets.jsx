@@ -46,7 +46,7 @@ export default function Pets({ stats }) {
               />
               <div className="min-w-0 flex-1">
                 <div className="flex items-baseline justify-between gap-2">
-                  <span className={`truncate font-bold ${rarityClass(pet.tier)}`}>{pet.name}</span>
+                  <span className={`truncate font-semibold ${rarityClass(pet.tier)}`}>{pet.name}</span>
                   <span className="shrink-0 font-mono text-sm tabular">
                     {pet.level != null ? `Lvl ${pet.level}` : '?'}
                     <span className="text-muted">/{pet.maxLevel}</span>

@@ -85,7 +85,7 @@ function CollectionsPanel({ stats }) {
               />
               <div className="min-w-0 flex-1">
                 <div className="flex items-baseline justify-between gap-3 text-sm">
-                  <span className="truncate font-bold">{r.name}</span>
+                  <span className="truncate font-semibold">{r.name}</span>
                   <span className={`font-mono tabular ${r.tier >= r.maxTier ? 'text-accent' : ''}`}>
                     {r.tier} / {r.maxTier}
                   </span>

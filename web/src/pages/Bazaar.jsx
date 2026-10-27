@@ -187,7 +187,7 @@ export default function Bazaar() {
                               label: 'BAZAAR',
                             }}
                           />
-                          <span className={`font-bold ${rarityClass(data.items.get(r.id)?.tier)}`}>{r.name}</span>
+                          <span className={`font-semibold ${rarityClass(data.items.get(r.id)?.tier)}`}>{r.name}</span>
                         </span>
                       </td>
                       <td className="px-3 py-1 text-right text-warn tabular">{num(r.buy, 1)}</td>

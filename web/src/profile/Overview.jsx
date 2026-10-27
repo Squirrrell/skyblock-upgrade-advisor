@@ -74,7 +74,7 @@ export default function Overview({ report, stats, onTab }) {
                     }}
                   />
                   <span className="min-w-0 flex-1 truncate">
-                    <span className={`font-bold ${rarityClass(t.rarity)}`}>{t.name}</span>
+                    <span className={`font-semibold ${rarityClass(t.rarity)}`}>{t.name}</span>
                     <span className="ml-2 text-sm text-muted">{t.location}</span>
                   </span>
                   <span className="shrink-0 text-warn tabular">{coins(t.value)}</span>

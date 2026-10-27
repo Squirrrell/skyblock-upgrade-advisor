@@ -57,7 +57,7 @@ function Missing({ missing }) {
                       }}
                     />
                     <span className="min-w-0">
-                      <span className={`font-bold ${rarityClass(r.tier)}`}>{r.name}</span>
+                      <span className={`font-semibold ${rarityClass(r.tier)}`}>{r.name}</span>
                       {r.upgradeFrom && <span className="ml-2 text-sm text-muted">upgrade from {r.upgradeFrom}</span>}
                     </span>
                   </span>

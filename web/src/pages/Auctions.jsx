@@ -86,7 +86,7 @@ export default function Auctions() {
                   }}
                 />
                 <span className="min-w-0 flex-1 truncate">
-                  <span className={`font-bold ${r.rarity ? rarityClass(r.rarity) : ''}`}>{r.name}</span>
+                  <span className={`font-semibold ${r.rarity ? rarityClass(r.rarity) : ''}`}>{r.name}</span>
                   {r.pet && <span className="ml-2 text-sm text-muted">{rarityLabel(r.rarity)} pet</span>}
                 </span>
                 <span className="shrink-0 text-warn tabular">{coins(r.price)}</span>

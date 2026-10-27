@@ -48,7 +48,7 @@ function ItemRow({ item }) {
           }}
         />
         <span className="min-w-0 flex-1 truncate">
-          <span className={`font-bold ${rarityClass(item.rarity)}`}>{item.name}</span>
+          <span className={`font-semibold ${rarityClass(item.rarity)}`}>{item.name}</span>
           {item.count > 1 && <span className="ml-1 text-muted">x{item.count}</span>}
           {tags.length > 0 && <span className="ml-2 hidden text-xs text-muted sm:inline">{tags.slice(0, 2).join(' · ')}</span>}
         </span>
