@@ -1,4 +1,6 @@
 import { coins, int } from '../lib/format.js';
+import { ItemSlot } from '../mc.jsx';
+import { SLAYER_ICONS } from '../theme.js';
 import { LevelRow, Panel, Stat, StatGrid } from '../ui.jsx';
 
 const TIER = ['I', 'II', 'III', 'IV', 'V'];
@@ -16,7 +18,15 @@ export default function Slayers({ stats }) {
       </StatGrid>
       <div className="grid gap-4 md:grid-cols-2">
         {list.map((s) => (
-          <Panel key={s.id} title={s.name}>
+          <Panel
+            key={s.id}
+            title={
+              <span className="flex items-center gap-3">
+                <ItemSlot id={SLAYER_ICONS[s.id]} alt={s.name} tooltip={false} />
+                {s.name}
+              </span>
+            }
+          >
             <LevelRow name="Level" info={s} />
             <table className="mt-2 w-full text-sm">
               <caption className="sr-only">Boss kills by tier</caption>

@@ -102,6 +102,19 @@ export function drawFlat(layers) {
   return c.toDataURL('image/png');
 }
 
+/**
+ * Whether the hat area of a skin has any see-through pixel. Like Minecraft,
+ * a hat area that is fully opaque (common on old 64x32 skins) counts as no
+ * hat, otherwise it would cover the face with a solid block.
+ */
+function hasHat(skin) {
+  const [, ctx] = canvas(32, 16);
+  ctx.drawImage(skin, 32, 0, 32, 16, 0, 0, 32, 16);
+  const { data } = ctx.getImageData(0, 0, 32, 16);
+  for (let i = 3; i < data.length; i += 4) if (data[i] < 128) return true;
+  return false;
+}
+
 /** A Minecraft head from a 64x64 (or old 64x32) skin: base cube plus the hat layer. */
 export function drawHead(skin) {
   // Skin regions of the 8x8 head faces; the hat layer sits 32px to the right.
@@ -110,11 +123,8 @@ export function drawHead(skin) {
     left: (s) => tile([{ img: skin, sx: 8 + dx, sy: 8, size: 8 }], s),
     right: (s) => tile([{ img: skin, sx: 16 + dx, sy: 8, size: 8 }], s),
   });
-  return drawCubes(
-    [
-      { lo: 0, hi: 1, ...faces(0) },
-      { lo: -1 / 16, hi: 1 + 1 / 16, ...faces(32) },
-    ],
-    { grow: 1.125 },
-  );
+  const cubes = [{ lo: 0, hi: 1, ...faces(0) }];
+  if (hasHat(skin)) cubes.push({ lo: -1 / 16, hi: 1 + 1 / 16, ...faces(32) });
+  // Same size with or without the hat, so heads line up in a list.
+  return drawCubes(cubes, { grow: 1.125 });
 }

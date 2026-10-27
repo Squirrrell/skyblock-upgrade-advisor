@@ -63,9 +63,19 @@ export function Bar({ value, className = '', gold = false }) {
   );
 }
 
-/** One leveled thing: skill, slayer, class, HOTM. */
-export function LevelRow({ name, info, extra, note }) {
+/** One leveled thing: skill, slayer, class, HOTM. `icon` is an optional item slot beside it. */
+export function LevelRow({ name, info, extra, note, icon }) {
   const maxed = info.maxed;
+  if (icon) {
+    return (
+      <div className="flex items-start gap-3 py-3">
+        <div className="shrink-0 pt-0.5">{icon}</div>
+        <div className="min-w-0 flex-1">
+          <LevelRow name={name} info={info} extra={extra} note={note} />
+        </div>
+      </div>
+    );
+  }
   return (
     <div className="py-3">
       <div className="flex items-baseline justify-between gap-3">

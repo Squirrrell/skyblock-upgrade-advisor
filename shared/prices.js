@@ -138,8 +138,9 @@ export function slimItems(items) {
 export function skullHash(value) {
   if (!value) return null;
   try {
-    const json = JSON.parse(atob(value));
-    return json?.textures?.SKIN?.url?.split('/').pop() ?? null;
+    // Read the URL rather than parsing: some skins (in NEU's data) are written
+    // with unquoted keys, {textures:{SKIN:{url:"..."}}}, which isn't JSON.
+    return /textures\.minecraft\.net\/texture\/([0-9a-f]+)/i.exec(atob(value))?.[1] ?? null;
   } catch {
     return null;
   }

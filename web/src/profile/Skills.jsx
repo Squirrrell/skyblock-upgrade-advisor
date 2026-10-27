@@ -1,5 +1,9 @@
 import { int, num } from '../lib/format.js';
+import { ItemSlot } from '../mc.jsx';
+import { SKILL_ICONS } from '../theme.js';
 import { Empty, LevelRow, Panel, Stat, StatGrid } from '../ui.jsx';
+
+const icon = (x) => <ItemSlot id={SKILL_ICONS[x.id]} alt={`${x.name} skill`} tooltip={false} />;
 
 export default function Skills({ stats }) {
   const s = stats.skills;
@@ -18,14 +22,14 @@ export default function Skills({ stats }) {
       <Panel title="Skills" subtitle="Caps include Anita's farming upgrades, George's taming offerings and the foraging cap from the Galatea perks.">
         <div className="grid gap-x-10 md:grid-cols-2">
           {main.map((x) => (
-            <LevelRow key={x.id} name={x.name} info={x} note={x.cap < x.maxLevel ? `cap ${x.cap}, max ${x.maxLevel}` : null} />
+            <LevelRow key={x.id} name={x.name} info={x} icon={icon(x)} note={x.cap < x.maxLevel ? `cap ${x.cap}, max ${x.maxLevel}` : null} />
           ))}
         </div>
       </Panel>
       <Panel title="Cosmetic skills" subtitle="Not counted in the skill average. Social XP is shared by the whole coop.">
         <div className="grid gap-x-10 md:grid-cols-2">
           {cosmetic.map((x) => (
-            <LevelRow key={x.id} name={x.name} info={x} />
+            <LevelRow key={x.id} name={x.name} info={x} icon={icon(x)} />
           ))}
         </div>
       </Panel>

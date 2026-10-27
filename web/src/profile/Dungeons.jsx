@@ -1,5 +1,10 @@
 import { duration, int, num } from '../lib/format.js';
+import { ItemSlot } from '../mc.jsx';
+import { CLASS_ICONS, FLOOR_BOSSES } from '../theme.js';
 import { Empty, LevelRow, Panel, Stat, StatGrid } from '../ui.jsx';
+
+/** "Entrance", "F3" or "M7" -> that floor's boss. */
+const bossOf = (floor) => FLOOR_BOSSES[floor === 'Entrance' ? 0 : Number(floor.slice(1))] ?? null;
 
 function FloorTable({ rows, title }) {
   if (!rows.length) return null;
@@ -19,7 +24,20 @@ function FloorTable({ rows, title }) {
           <tbody>
             {rows.map((r) => (
               <tr key={r.floor} className="border-b border-line/60 last:border-0">
-                <td className="px-4 py-2.5 font-medium">{r.floor}</td>
+                <td className="px-4 py-2 font-medium">
+                  {(() => {
+                    const boss = bossOf(r.floor);
+                    return (
+                      <span className="flex items-center gap-3">
+                        {boss && <ItemSlot id={boss.icon} alt={boss.name} tooltip={{ name: boss.name, lines: [`Boss of ${r.floor}`] }} />}
+                        <span>
+                          <span className="block">{r.floor}</span>
+                          {boss && <span className="block text-xs font-normal text-muted">{boss.name}</span>}
+                        </span>
+                      </span>
+                    );
+                  })()}
+                </td>
                 <td className="px-4 py-2.5 text-right font-mono tabular">{int(r.completions)}</td>
                 <td className="px-4 py-2.5 text-right font-mono tabular">{r.bestScore ?? '-'}</td>
                 <td className="px-4 py-2.5 text-right font-mono tabular">{duration(r.fastest)}</td>
@@ -53,7 +71,13 @@ export default function Dungeons({ stats }) {
         <Panel title="Classes">
           <div className="grid gap-x-8 sm:grid-cols-2">
             {d.classes.map((c) => (
-              <LevelRow key={c.id} name={c.name} info={c} note={c.id === d.selectedClass ? 'selected' : null} />
+              <LevelRow
+                key={c.id}
+                name={c.name}
+                info={c}
+                note={c.id === d.selectedClass ? 'selected' : null}
+                icon={<ItemSlot id={CLASS_ICONS[c.id]?.id} hint={{ color: CLASS_ICONS[c.id]?.color }} alt={`${c.name} class`} tooltip={false} />}
+              />
             ))}
           </div>
         </Panel>

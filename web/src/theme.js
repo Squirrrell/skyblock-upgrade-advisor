@@ -148,6 +148,37 @@ export const SKILL_ICONS = {
   social: 'EMERALD',
 };
 
+/** Each slayer's icon: the boss's head (skins from the NEU repo, scripts/build-heads.mjs). */
+export const SLAYER_ICONS = {
+  zombie: 'REVENANT_HORROR_1_BOSS',
+  spider: 'TARANTULA_BROODFATHER_1_BOSS',
+  wolf: 'SVEN_PACKMASTER_1_BOSS',
+  enderman: 'VOIDGLOOM_SERAPH_1_BOSS',
+  blaze: 'INFERNO_DEMONLORD_1_BOSS',
+  vampire: 'RIFTSTALKER_BLOODFIEND_1_BOSS',
+};
+
+/** Dungeon class icons, as in the class menu. `color` tints potions ("R,G,B"). */
+export const CLASS_ICONS = {
+  healer: { id: 'SPLASH_POTION', color: '248,36,35' },
+  mage: { id: 'BLAZE_ROD' },
+  berserk: { id: 'IRON_SWORD' },
+  archer: { id: 'BOW' },
+  tank: { id: 'LEATHER_CHESTPLATE' },
+};
+
+/** Catacombs floor bosses, by floor number (master mode has the same ones). */
+export const FLOOR_BOSSES = [
+  { name: 'The Watcher', icon: 'SKELETON_SKULL' },
+  { name: 'Bonzo', icon: 'BONZO_BOSS' },
+  { name: 'Scarf', icon: 'SCARF_BOSS' },
+  { name: 'The Professor', icon: 'PROFESSOR_BOSS' },
+  { name: 'Thorn', icon: 'THORN_BOSS' },
+  { name: 'Livid', icon: 'LIVID_BOSS' },
+  { name: 'Sadan', icon: 'SADAN_BOSS' },
+  { name: 'Necron', icon: 'WITHER_SKELETON_SKULL' },
+];
+
 /**
  * Minecraft items drawn for these SkyBlock items when Hypixel's SkyBlock pack
  * could not be read at build time (they are plain paper in its item data).

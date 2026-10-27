@@ -186,7 +186,8 @@ function tintOf(t) {
   if (!t) return null;
   const type = bare(t.type ?? '');
   if (type === 'grass') return '#7cbd6b';
-  if (type === 'dye') return `dye:${hex(t.default ?? -6265536)}`;
+  // Dyes and potions take the colour the page asks for (leather dye, a potion's effect).
+  if (type === 'dye' || type === 'potion') return `dye:${hex(t.default ?? -6265536)}`;
   const value = t.value ?? t.default;
   return value == null ? null : hex(value);
 }

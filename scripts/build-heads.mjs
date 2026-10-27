@@ -79,10 +79,16 @@ const shardHeads = await pool(
   }),
 );
 
-// Head items Hypixel's item list leaves out, such as the essences.
+// Head items Hypixel's item list leaves out: the essences, and the slayer
+// and Catacombs floor bosses (their heads are the bosses' icons).
+const EXTRA_HEADS = [
+  /^ESSENCE_[A-Z]+$/,
+  /^(REVENANT_HORROR|TARANTULA_BROODFATHER|SVEN_PACKMASTER|VOIDGLOOM_SERAPH|INFERNO_DEMONLORD|RIFTSTALKER_BLOODFIEND)_1_BOSS$/,
+  /^(BONZO|SCARF|PROFESSOR|THORN|LIVID|SADAN)_BOSS$/,
+];
 const itemHeads = await pool(
   itemNames
-    .filter((n) => /^ESSENCE_[A-Z]+$/.test(n))
+    .filter((n) => EXTRA_HEADS.some((re) => re.test(n)))
     .map((id) => async () => {
       const hash = await headOf(id);
       return hash ? [id, hash] : null;
