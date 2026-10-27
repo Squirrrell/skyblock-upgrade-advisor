@@ -140,6 +140,9 @@ fetch(`${import.meta.env.BASE_URL}heads.json`, { cache: 'no-cache' })
 
 const PET_ID = /^PET_(.+)_(COMMON|UNCOMMON|RARE|EPIC|LEGENDARY|MYTHIC)$/;
 
+/** Whether a type (SQUID, ELEPHANT...) is a pet, from the pet skins list. */
+export const isPetType = (type) => Boolean(heads?.pets?.[type]);
+
 /** Skull texture for pets, shards and essences, which are not in the item index. */
 function headHash(id) {
   const pet = PET_ID.exec(id);

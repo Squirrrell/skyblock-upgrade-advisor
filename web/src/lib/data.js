@@ -37,6 +37,9 @@ export const loadItems = () =>
 
 export const loadAuctions = () => cached('auctions', 5 * 60_000, () => getJson(dataUrl('prices.json'), 'the auction snapshot'));
 
+/** The cheapest BIN auctions of each accessory, from the last scan. */
+export const loadListings = () => cached('listings', 5 * 60_000, () => getJson(dataUrl('listings.json'), 'the auction listings'));
+
 export const loadBazaar = () => cached('bazaar', 60_000, () => getJson(`${HYPIXEL}/skyblock/bazaar`, 'the Hypixel bazaar'));
 
 export const loadElection = () => cached('election', 5 * 60_000, () => getJson(`${HYPIXEL}/resources/skyblock/election`, 'the Hypixel election'));

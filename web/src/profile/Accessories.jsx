@@ -4,6 +4,7 @@
 import { useMemo, useState } from 'react';
 import { coins, int } from '../lib/format.js';
 import { load, save } from '../lib/storage.js';
+import ItemDialog from '../components/ItemDialog.jsx';
 import { ItemSlot, tooltipProps } from '../mc.jsx';
 import { Chip, Empty, Panel, SearchInput, SortTh, Stat, StatGrid, rarityClass, rarityLabel } from '../ui.jsx';
 
@@ -38,7 +39,7 @@ function missingDetail(r) {
   };
 }
 
-function Missing({ missing }) {
+function Missing({ missing, onOpen }) {
   const [q, setQ] = useState('');
   const [onlyPriced, setOnlyPriced] = useState(true);
   const [topOnly, setTopOnly] = useState(() => load('accTopOnly', false));
@@ -102,12 +103,14 @@ function Missing({ missing }) {
             </thead>
             <tbody>
               {rows.slice(0, limit).map((r) => (
-                <tr key={r.id} {...tooltipProps(missingDetail(r))}>
+                <tr key={r.id} {...tooltipProps(missingDetail(r))} onClick={() => onOpen(r)} className="cursor-pointer">
                   <td className="px-2 py-1">
                     <span className="flex items-center gap-3">
                       <ItemSlot id={r.id} rarity={r.tier} tooltip={missingDetail(r)} />
                       <span className="min-w-0">
-                        <span className={`font-semibold ${rarityClass(r.tier)}`}>{r.name}</span>
+                        <button type="button" className={`text-left font-semibold hover:underline ${rarityClass(r.tier)}`} onClick={(e) => (e.stopPropagation(), onOpen(r))}>
+                          {r.name}
+                        </button>
                         {r.upgradeFrom && <span className="ml-2 text-sm text-muted">from {r.upgradeFrom}</span>}
                       </span>
                     </span>
@@ -153,7 +156,7 @@ function detail(x) {
   };
 }
 
-function Owned({ a }) {
+function Owned({ a, onOpen }) {
   const [q, setQ] = useState('');
   const query = q.trim().toLowerCase();
   // One grid, highest rarity first; the slot border shows each one's rarity.
@@ -165,7 +168,7 @@ function Owned({ a }) {
   // Power and tuning sit with the bag they belong to, as one short line.
   const powers = a.unlockedPowers.map((p) => (p === a.selectedPower ? `${p} (selected)` : p));
   return (
-    <Panel title="Accessory bag" subtitle={`${a.owned.length} accessories, highest rarity first. Hover one for its name.`} pad={false}>
+    <Panel title="Accessory bag" subtitle={`${a.owned.length} accessories, highest rarity first. Hover one for details, click it for its recipe and auctions.`} pad={false}>
       <div className="flex flex-col gap-3 px-5 pt-4 pb-3 sm:px-6">
         <div className="flex flex-wrap items-center gap-2">
           <SearchInput value={q} onChange={setQ} placeholder="Search your accessories" className="w-full sm:w-64" />
@@ -189,13 +192,9 @@ function Owned({ a }) {
         <ul className="acc-grid flex flex-wrap gap-2">
           {list.map((x, i) => (
             <li key={`${x.id}-${i}`}>
-              <ItemSlot
-                id={x.id}
-                rarity={x.rarity}
-                glint={x.recombobulated}
-                alt={x.name}
-                tooltip={detail(x)}
-              />
+              <button type="button" className="block cursor-pointer" onClick={() => onOpen({ id: x.id, name: x.name, tier: x.rarity })} aria-label={`${x.name}: recipe and auctions`}>
+                <ItemSlot id={x.id} rarity={x.rarity} glint={x.recombobulated} alt={x.name} tooltip={detail(x)} focusable={false} />
+              </button>
             </li>
           ))}
         </ul>
@@ -207,6 +206,9 @@ function Owned({ a }) {
 export default function Accessories({ stats }) {
   const a = stats.accessories;
   const [view, setView] = useState(() => (load('accView', 'missing') === 'owned' ? 'owned' : 'missing'));
+  // The accessory whose recipe and auctions popup is open.
+  const [open, setOpen] = useState(null);
+  const openItem = (x) => setOpen({ id: x.id, name: x.name, tier: x.tier ?? x.rarity });
   if (a.apiOff) return <Empty>The inventory API is off for this profile, so accessories can't be read.</Empty>;
   const recombs = a.owned.filter((x) => x.recombobulated).length;
   const enriched = a.owned.filter((x) => x.enrichment).length;
@@ -234,12 +236,13 @@ export default function Accessories({ stats }) {
       </div>
 
       {view === 'owned' ? (
-        <Owned a={a} />
+        <Owned a={a} onOpen={openItem} />
       ) : a.missing ? (
-        <Missing missing={a.missing} />
+        <Missing missing={a.missing} onOpen={openItem} />
       ) : (
         <Empty>The missing-accessory list needs the accessory index, which comes with the next site deploy.</Empty>
       )}
+      {open && <ItemDialog key={open.id} item={open} onClose={() => setOpen(null)} />}
     </div>
   );
 }

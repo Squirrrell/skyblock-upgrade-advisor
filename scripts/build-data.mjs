@@ -1,5 +1,6 @@
 // Writes the data files the static (GitHub Pages) build loads:
 //   prices.json            lowest BIN per item from a full auction house scan
+//   listings.json          the cheapest BIN auctions of each accessory, for its popup
 //   items.json             item names and Peridot slots from the Hypixel items resource
 //   pets.json, attribute_shards.json   NotEnoughUpdates constants
 //   accessories.json       every accessory and its upgrade line, for the missing-accessory list
@@ -19,9 +20,11 @@ async function getJson(url) {
 }
 
 const started = Date.now();
-const [scan, itemsRes, pets, attributes, misc] = await Promise.all([
-  scanAuctionHouse((page) => getJson(`https://api.hypixel.net/v2/skyblock/auctions?page=${page}`)),
-  getJson('https://api.hypixel.net/v2/resources/skyblock/items'),
+const itemsRes = await getJson('https://api.hypixel.net/v2/resources/skyblock/items');
+const accessoryIds = new Set((itemsRes.items ?? []).filter((i) => i.category === 'ACCESSORY').map((i) => i.id));
+const [scan, pets, attributes, misc] = await Promise.all([
+  // Accessories keep their cheapest listings too, for the accessory popup.
+  scanAuctionHouse((page) => getJson(`https://api.hypixel.net/v2/skyblock/auctions?page=${page}`), { listFor: (id) => accessoryIds.has(id) }),
   getJson(`${NEU}/pets.json`),
   getJson(`${NEU}/attribute_shards.json`),
   getJson(`${NEU}/misc.json`).catch(() => ({})),
@@ -33,6 +36,7 @@ const lowest = Object.fromEntries(Object.entries(scan.lowest).map(([k, v]) => [k
 await mkdir(out, { recursive: true });
 const files = {
   'prices.json': { updatedAt: scan.updatedAt, pages: scan.pages, lowest },
+  'listings.json': { updatedAt: scan.updatedAt, listings: scan.listings },
   'items.json': slimItems(itemsRes.items ?? []),
   // Only the fields the analyzers read.
   'pets.json': { pet_rarity_offset: pets.pet_rarity_offset, pet_levels: pets.pet_levels, custom_pet_leveling: pets.custom_pet_leveling },

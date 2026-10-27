@@ -573,6 +573,21 @@ option {
   height: 0.6em;
 }
 
+/* Item popup (recipe and auctions). */
+.item-dialog {
+  /* The CSS reset zeroes margins, which is what centres a modal dialog. */
+  margin: auto;
+  padding: 0;
+  width: min(34rem, calc(100vw - 24px));
+  max-height: calc(100dvh - 48px);
+  overflow: auto;
+  color: var(--text);
+}
+
+.item-dialog::backdrop {
+  background: rgb(0 0 0 / 0.6);
+}
+
 /* ------------------------------------------------------------------ misc */
 
 .skeleton {

@@ -6,13 +6,16 @@ import { getAttributeConstants } from './repo.js';
 
 const AUCTION_REFRESH_MS = 10 * 60_000;
 
-let auctionSnapshot = { lowest: {}, updatedAt: 0, pages: 0 };
+let auctionSnapshot = { lowest: {}, listings: {}, updatedAt: 0, pages: 0 };
 let auctionScan = null;
 
 /** Kick off (or reuse) an auction scan. Resolves once a snapshot exists. */
 export function refreshAuctions() {
   if (!auctionScan) {
-    auctionScan = scanAuctionHouse(getAuctionPage)
+    // Accessories keep their cheapest listings too, for the accessory popup.
+    auctionScan = loadItems()
+      .catch(() => new Map())
+      .then((items) => scanAuctionHouse(getAuctionPage, { listFor: (id) => items.get(id)?.category === 'ACCESSORY' }))
       .then((snap) => {
         auctionSnapshot = snap;
         return snap;
@@ -73,6 +76,10 @@ export async function getDataFile(name) {
   if (name === 'prices.json') {
     const snap = await auctionsReady();
     return { updatedAt: snap.updatedAt, pages: snap.pages, lowest: snap.lowest };
+  }
+  if (name === 'listings.json') {
+    const snap = await auctionsReady();
+    return { updatedAt: snap.updatedAt, listings: snap.listings ?? {} };
   }
   if (name === 'items.json') return slimItems([...(await loadItems()).values()]);
   // The item icons map SHARD_ ids to attribute shard textures with this list.

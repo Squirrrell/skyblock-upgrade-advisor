@@ -19,13 +19,24 @@ function recordLowest(out, key, price) {
   if (out[key] === undefined || price < out[key]) out[key] = price;
 }
 
+/** Keep the `max` cheapest BIN listings of an item, cheapest first. */
+function recordListing(out, key, listing, max) {
+  const list = (out[key] ??= []);
+  if (list.length >= max && listing.price >= list[list.length - 1].price) return;
+  list.push(listing);
+  list.sort((a, b) => a.price - b.price);
+  if (list.length > max) list.pop();
+}
+
 /**
  * Scan every auction page and keep the lowest BIN per item id. Pets are keyed
  * PET_<TYPE>_<TIER>, with level 100/200 listings also stored under "...@MAX".
- * `fetchPage(n)` returns the parsed JSON for one page.
+ * `fetchPage(n)` returns the parsed JSON for one page. For ids where
+ * `listFor(id)` is true, the cheapest `listings` BIN auctions are kept too.
  */
-export async function scanAuctionHouse(fetchPage, { concurrency = 6 } = {}) {
+export async function scanAuctionHouse(fetchPage, { concurrency = 6, listFor = null, listings: maxListings = 5 } = {}) {
   const lowest = {};
+  const listings = {};
   const first = await fetchPage(0);
   if (!first?.success) throw new Error('auction page 0 failed');
   const totalPages = first.totalPages ?? 1;
@@ -43,6 +54,14 @@ export async function scanAuctionHouse(fetchPage, { concurrency = 6 } = {}) {
       if (!key) continue;
       const unit = auction.starting_bid / (item.Count || 1);
       recordLowest(lowest, key, unit);
+      if (listFor?.(key)) {
+        recordListing(
+          listings,
+          key,
+          { uuid: auction.uuid, price: auction.starting_bid, count: item.Count || 1, name: auction.item_name, tier: auction.tier, end: auction.end },
+          maxListings,
+        );
+      }
       // Pets are priced very differently at max level, so track that separately.
       if (key.startsWith('PET_') && /^\[Lvl (100|200)\]/.test(auction.item_name)) {
         recordLowest(lowest, `${key}@MAX`, unit);
@@ -63,7 +82,7 @@ export async function scanAuctionHouse(fetchPage, { concurrency = 6 } = {}) {
     }
   });
   await Promise.all(workers);
-  return { lowest, pages: totalPages, updatedAt: Date.now() };
+  return { lowest, listings, pages: totalPages, updatedAt: Date.now() };
 }
 
 /**

@@ -1,6 +1,7 @@
 // Minecraft-style building blocks: item slots and the hover tooltip.
 import { useEffect, useLayoutEffect, useRef, useState, useSyncExternalStore } from 'react';
 import { iconUrls, itemInfo, useIcons } from './lib/icons.js';
+import { loadNeuItem, neuItemNow } from './lib/neu.js';
 import { RARITY } from './theme.js';
 
 // ------------------------------------------------------------------ tooltip
@@ -161,28 +162,17 @@ const CODE_COLORS = {
 
 const stripCodes = (s) => String(s).replace(/§./g, '');
 
-const NEU_ITEMS = 'https://raw.githubusercontent.com/NotEnoughUpdates/NotEnoughUpdates-REPO/master/items/';
-const loreCache = new Map(); // id -> string[] | null (none) | Promise
-
 /**
- * An item's in-game lore from the NEU repo, or undefined while it loads. When
- * it arrives and the same tooltip is still open, the tooltip redraws with it.
+ * An item's in-game lore from the NEU data repository (lib/neu.js), or
+ * undefined while it loads. When it arrives and the same tooltip is still
+ * open, the tooltip redraws with it.
  */
 function neuLore(id, tipWhenAsked) {
-  const hit = loreCache.get(id);
-  if (Array.isArray(hit) || hit === null) return hit ?? undefined;
-  if (!hit) {
-    loreCache.set(
-      id,
-      fetch(`${NEU_ITEMS}${encodeURIComponent(id)}.json`)
-        .then((r) => (r.ok ? r.json() : null))
-        .then((item) => loreCache.set(id, Array.isArray(item?.lore) && item.lore.length ? item.lore : null))
-        .catch(() => loreCache.set(id, null))
-        .finally(() => {
-          if (tip === tipWhenAsked) setTip({ ...tip });
-        }),
-    );
-  }
+  const item = neuItemNow(id);
+  if (item !== undefined) return Array.isArray(item?.lore) && item.lore.length ? item.lore : null;
+  loadNeuItem(id).then(() => {
+    if (tip === tipWhenAsked) setTip({ ...tip });
+  });
   return undefined;
 }
 
