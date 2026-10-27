@@ -1,6 +1,6 @@
 // Accessories in two views: what is missing (ranked by coins per magical
 // power, with a highest-tier-only option) and what is owned (the bag by
-// rarity, with powers and tuning). Each view has its own search.
+// rarity in one grid, with powers and tuning). Each view has its own search.
 import { useMemo, useState } from 'react';
 import { coins, int } from '../lib/format.js';
 import { load, save } from '../lib/storage.js';
@@ -110,16 +110,16 @@ function Missing({ missing }) {
 function Owned({ a }) {
   const [q, setQ] = useState('');
   const query = q.trim().toLowerCase();
-  const byRarity = useMemo(
-    () =>
-      ORDER.map((r) => [r, a.owned.filter((x) => x.rarity === r && matches(query, x.name, x.enrichment))]).filter(([, l]) => l.length),
-    [a.owned, query],
-  );
-  const shown = byRarity.reduce((n, [, l]) => n + l.length, 0);
+  // One grid, highest rarity first; the slot border shows each one's rarity.
+  const list = useMemo(() => {
+    const rank = (r) => (ORDER.indexOf(r) < 0 ? ORDER.length : ORDER.indexOf(r));
+    return a.owned.filter((x) => matches(query, x.name, x.enrichment)).sort((x, y) => rank(x.rarity) - rank(y.rarity) || x.name.localeCompare(y.name));
+  }, [a.owned, query]);
+  const shown = list.length;
   // Power and tuning sit with the bag they belong to, as one short line.
   const powers = a.unlockedPowers.map((p) => (p === a.selectedPower ? `${p} (selected)` : p));
   return (
-    <Panel title="Accessory bag" subtitle={`${a.owned.length} accessories, grouped by rarity. Hover one for its name.`} pad={false}>
+    <Panel title="Accessory bag" subtitle={`${a.owned.length} accessories, highest rarity first. Hover one for its name.`} pad={false}>
       <div className="flex flex-col gap-3 px-5 pt-4 pb-3 sm:px-6">
         <div className="flex flex-wrap items-center gap-2">
           <SearchInput value={q} onChange={setQ} placeholder="Search your accessories" className="w-full sm:w-64" />
@@ -140,34 +140,27 @@ function Owned({ a }) {
       </div>
       <div className="border-t border-line px-5 py-4 sm:px-6">
         {shown === 0 && <p className="text-sm text-muted">None of your accessories match that search.</p>}
-        {byRarity.map(([r, list]) => (
-          <section key={r} className="mb-4 last:mb-0">
-            <h3 className={`mb-2 text-sm font-bold uppercase ${rarityClass(r)}`}>
-              {rarityLabel(r)} <span className="text-muted">{list.length}</span>
-            </h3>
-            <ul className="flex flex-wrap gap-1.5">
-              {list.map((x, i) => (
-                <li key={`${x.id}-${i}`}>
-                  <ItemSlot
-                    id={x.id}
-                    rarity={x.rarity}
-                    glint={x.recombobulated}
-                    alt={x.name}
-                    tooltip={{
-                      name: x.name,
-                      rarity: x.rarity,
-                      lines: [
-                        x.recombobulated ? { text: 'Recombobulated', color: 'var(--code-gold)' } : null,
-                        x.enrichment ? `Enrichment: ${x.enrichment}` : null,
-                      ],
-                      label: `${rarityLabel(x.rarity).toUpperCase()} ACCESSORY`,
-                    }}
-                  />
-                </li>
-              ))}
-            </ul>
-          </section>
-        ))}
+        <ul className="acc-grid flex flex-wrap gap-2">
+          {list.map((x, i) => (
+            <li key={`${x.id}-${i}`}>
+              <ItemSlot
+                id={x.id}
+                rarity={x.rarity}
+                glint={x.recombobulated}
+                alt={x.name}
+                tooltip={{
+                  name: x.name,
+                  rarity: x.rarity,
+                  lines: [
+                    x.recombobulated ? { text: 'Recombobulated', color: 'var(--code-gold)' } : null,
+                    x.enrichment ? `Enrichment: ${x.enrichment}` : null,
+                  ],
+                  label: `${rarityLabel(x.rarity).toUpperCase()} ACCESSORY`,
+                }}
+              />
+            </li>
+          ))}
+        </ul>
       </div>
     </Panel>
   );

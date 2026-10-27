@@ -554,6 +554,11 @@ option {
 .r-divine { color: var(--r-divine); }
 .r-special { color: var(--r-special); }
 
+/* Owned accessories: one grid of slightly larger slots. */
+.acc-grid {
+  --slot: max(calc(var(--px) * 24), 48px);
+}
+
 .scroll-x {
   overflow-x: auto;
   scrollbar-width: thin;

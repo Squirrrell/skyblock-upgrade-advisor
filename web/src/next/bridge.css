@@ -229,6 +229,10 @@ html[data-theme='light'] .nx {
   box-shadow: inset 0 0 0 1px var(--nx-line);
 }
 
+.nx .acc-grid .mc-slot {
+  --slot: 52px;
+}
+
 .nx .mc-slot[data-rarity] {
   box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--slot-rarity) 45%, transparent);
 }
