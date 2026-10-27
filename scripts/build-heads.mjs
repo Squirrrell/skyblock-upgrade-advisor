@@ -15,8 +15,9 @@ async function getJson(url) {
   return res.ok ? res.json() : null;
 }
 
-async function headOf(internalName) {
+async function headOf(internalName, test) {
   const item = await getJson(`${NEU}/items/${encodeURIComponent(internalName)}.json`);
+  if (test && !test(item)) return null;
   const value = /Value:\\?"([A-Za-z0-9+/=]+)\\?"/.exec(item?.nbttag ?? '')?.[1];
   return skullHash(value);
 }
@@ -41,9 +42,18 @@ const [pets, petnums, shards] = await Promise.all([
   getJson(`${NEU}/constants/attribute_shards.json`),
 ]);
 
+// Every item file in the repo, to catch what the constants files miss.
+const tree = await getJson('https://api.github.com/repos/NotEnoughUpdates/NotEnoughUpdates-REPO/git/trees/master?recursive=1');
+const itemNames = (tree?.tree ?? []).map((t) => /^items\/(.+)\.json$/.exec(t.path)?.[1]).filter(Boolean);
+
 // Try the legendary version first, then any other rarity that exists.
-// pets.json lags behind new pets (Hedgehog, the wisps...); petnums.json has them.
-const petTypes = [...new Set([...Object.keys(pets?.pet_types ?? {}), ...Object.keys(petnums ?? {})])];
+// pets.json lags behind new pets (Hedgehog, the wisps...); petnums.json has
+// more, and any other "NAME;4" item named "[Lvl ...]" is a pet too (Eagle).
+const known = new Set([...Object.keys(pets?.pet_types ?? {}), ...Object.keys(petnums ?? {})]);
+const isPet = (item) => /\[Lvl/.test(item?.displayname ?? '');
+const candidates = [...new Set(itemNames.map((n) => /^([A-Z0-9_]+);4$/.exec(n)?.[1]))].filter((t) => t && !known.has(t) && !t.startsWith('ATTRIBUTE_SHARD'));
+const extraPets = await pool(candidates.map((type) => async () => ((await headOf(`${type};4`, isPet)) ? type : null)));
+const petTypes = [...known, ...extraPets.filter(Boolean)];
 const petHeads = await pool(
   petTypes.map((type) => async () => {
     for (const tier of [4, 5, 3, 2, 1, 0]) {
@@ -62,9 +72,20 @@ const shardHeads = await pool(
   }),
 );
 
+// Head items Hypixel's item list leaves out, such as the essences.
+const itemHeads = await pool(
+  itemNames
+    .filter((n) => /^ESSENCE_[A-Z]+$/.test(n))
+    .map((id) => async () => {
+      const hash = await headOf(id);
+      return hash ? [id, hash] : null;
+    }),
+);
+
 const out = {
   pets: Object.fromEntries(petHeads.filter(Boolean)),
   shards: Object.fromEntries(shardHeads.filter(Boolean)),
+  items: Object.fromEntries(itemHeads.filter(Boolean)),
 };
 writeFileSync(new URL('../web/public/heads.json', import.meta.url), JSON.stringify(out));
-console.log(`heads.json: ${Object.keys(out.pets).length}/${petTypes.length} pets, ${Object.keys(out.shards).length}/${shardList.length} shards`);
+console.log(`heads.json: ${Object.keys(out.pets).length}/${petTypes.length} pets, ${Object.keys(out.shards).length}/${shardList.length} shards, ${Object.keys(out.items).length} other heads`);

@@ -140,11 +140,11 @@ fetch(`${import.meta.env.BASE_URL}heads.json`, { cache: 'no-cache' })
 
 const PET_ID = /^PET_(.+)_(COMMON|UNCOMMON|RARE|EPIC|LEGENDARY|MYTHIC)$/;
 
-/** Skull texture for pets and shards, which are not in the item index. */
+/** Skull texture for pets, shards and essences, which are not in the item index. */
 function headHash(id) {
   const pet = PET_ID.exec(id);
   if (pet) return heads?.pets?.[pet[1]] ?? null;
-  return heads?.shards?.[id] ?? null;
+  return heads?.shards?.[id] ?? heads?.items?.[id] ?? null;
 }
 
 /** What we know about an item: display name, rarity, glint, skull texture, material. */
