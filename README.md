@@ -6,7 +6,7 @@ An all-in-one Hypixel SkyBlock site. Type in a Minecraft username for the player
 
 One lookup loads every tab; each tab's code is fetched the first time you open it.
 
-- **Overview**: SkyBlock level, networth estimate with a breakdown and the most valuable items, skill average, catacombs, slayer XP, magical power, and the fortune summary.
+- **Overview**: SkyBlock level, networth estimate with a breakdown and the most valuable items, catacombs, slayer XP, magical power, and every skill with its Skills-menu icon, level, cap and progress.
 - **Skills**: every skill with per-player caps (Anita, George's taming offerings, the Galatea foraging cap), cosmetic skills, coop-pooled social XP.
 - **Slayers**: level, XP to next, and boss kills by tier for all six slayers.
 - **Dungeons**: catacombs (with overflow past 50), classes, secrets, and a per-floor table for normal and master mode.

@@ -132,6 +132,22 @@ export const SPECIAL_ICONS = {
   ENCHANTED_BOOK: 'ENCHANTED_BOOK',
 };
 
+/** Each skill's icon: the item SkyBlock's Skills menu shows for it. */
+export const SKILL_ICONS = {
+  farming: 'GOLD_HOE',
+  mining: 'STONE_PICKAXE',
+  combat: 'STONE_SWORD',
+  foraging: 'JUNGLE_SAPLING',
+  fishing: 'FISHING_ROD',
+  enchanting: 'ENCHANTING_TABLE',
+  alchemy: 'BREWING_STAND',
+  taming: 'WOLF_SPAWN_EGG',
+  carpentry: 'CRAFTING_TABLE',
+  hunting: 'LEAD',
+  runecrafting: 'MAGMA_CREAM',
+  social: 'EMERALD',
+};
+
 /**
  * Minecraft items drawn for these SkyBlock items when Hypixel's SkyBlock pack
  * could not be read at build time (they are plain paper in its item data).

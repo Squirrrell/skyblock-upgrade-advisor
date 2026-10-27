@@ -1,9 +1,87 @@
-import { coins, date, num } from '../lib/format.js';
-import Summary from '../components/Summary.jsx';
+import { ArrowRightIcon } from '@phosphor-icons/react';
+import { coins, date, int, num } from '../lib/format.js';
 import { ItemSlot } from '../mc.jsx';
+import { SKILL_ICONS } from '../theme.js';
 import { Bar, Facts, Panel, Stat, StatGrid, rarityClass, rarityLabel } from '../ui.jsx';
 
-export default function Overview({ report, stats, onTab }) {
+/** One skill: its menu icon, level against its cap, and progress to the next level. */
+function SkillTile({ skill }) {
+  const maxed = skill.maxed;
+  return (
+    <li className="flex min-w-0 flex-col gap-2.5 py-1">
+      <div className="flex items-center gap-3">
+        <ItemSlot
+          id={SKILL_ICONS[skill.id]}
+          alt={`${skill.name} skill`}
+          tooltip={{
+            name: `${skill.name} ${skill.level}`,
+            lines: [
+              `${int(skill.xp)} XP`,
+              maxed ? (skill.overflow ? `+${num(skill.overflow, 2)} levels of overflow` : 'Maxed') : `${int(skill.toNext)} XP to level ${skill.level + 1}`,
+              skill.cap < skill.maxLevel ? `Cap ${skill.cap}, can be raised to ${skill.maxLevel}` : null,
+            ],
+          }}
+        />
+        <div className="min-w-0">
+          <div className="truncate text-sm text-muted">{skill.name}</div>
+          <div className="tabular leading-tight">
+            <span className={`text-xl font-semibold ${maxed ? 'text-accent' : ''}`}>{skill.level}</span>
+            <span className="text-sm text-muted"> / {skill.cap}</span>
+          </div>
+        </div>
+      </div>
+      <Bar value={maxed ? 1 : skill.progress} gold={maxed} />
+      <div className="truncate text-xs text-muted tabular">{maxed ? 'Maxed' : `${coins(skill.toNext)} XP to ${skill.level + 1}`}</div>
+    </li>
+  );
+}
+
+function SkillsPanel({ skills, onTab }) {
+  if (skills.apiOff) {
+    return (
+      <Panel title="Skills">
+        <p className="text-sm text-muted">The Skills API is off for this profile. Turn it on in SkyBlock settings under API settings.</p>
+      </Panel>
+    );
+  }
+  const main = skills.list.filter((x) => !x.cosmetic);
+  const cosmetic = skills.list.filter((x) => x.cosmetic);
+  const maxed = main.filter((x) => x.maxed).length;
+  return (
+    <Panel
+      title="Skills"
+      subtitle={`Average ${num(skills.average, 2)} (${num(skills.averageExact, 2)} with progress), ${maxed} of ${main.length} at their cap.`}
+      actions={
+        <button type="button" onClick={() => onTab('skills')} className="mc-btn mc-btn-sm">
+          All skill details
+          <ArrowRightIcon size={14} />
+        </button>
+      }
+    >
+      {/* Ten skills: two columns (five rows) or five columns (two rows), never a ragged last row. */}
+      <ul className="grid grid-cols-2 gap-x-6 gap-y-5 lg:grid-cols-5">
+        {main.map((x) => (
+          <SkillTile key={x.id} skill={x} />
+        ))}
+      </ul>
+      {cosmetic.length > 0 && (
+        <div className="mt-6 flex flex-wrap items-center gap-x-6 gap-y-3 border-t border-line pt-4 text-sm">
+          <span className="text-muted">Cosmetic, not in the average</span>
+          {cosmetic.map((x) => (
+            <span key={x.id} className="inline-flex items-center gap-2">
+              <ItemSlot id={SKILL_ICONS[x.id]} alt={`${x.name} skill`} tooltip={{ name: `${x.name} ${x.level}`, lines: [`${int(x.xp)} XP`] }} className="scale-90" />
+              {x.name}
+              <span className="font-semibold tabular">{x.level}</span>
+              <span className="text-muted tabular">/ {x.cap}</span>
+            </span>
+          ))}
+        </div>
+      )}
+    </Panel>
+  );
+}
+
+export default function Overview({ stats, onTab }) {
   const o = stats.overview;
   const nw = stats.networth;
   const maxCat = nw.categories[0]?.value || 1;
@@ -31,7 +109,7 @@ export default function Overview({ report, stats, onTab }) {
         {jump('accessories', <Stat label="Magical power" value={num(o.magicalPower, 0)} sub={stats.accessories.selectedPower ?? 'No power selected'} />)}
       </StatGrid>
 
-      <Summary sections={report.sections} />
+      <SkillsPanel skills={stats.skills} onTab={onTab} />
 
       <div className="grid gap-6 lg:grid-cols-[1.3fr_1fr]">
         <Panel

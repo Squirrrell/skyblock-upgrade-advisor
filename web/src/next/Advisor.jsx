@@ -5,7 +5,7 @@
 import { ArrowRightIcon, CaretDownIcon, CoinsIcon, MagnifyingGlassIcon } from '@phosphor-icons/react';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { rowIcon } from '../components/SourceRow.jsx';
-import { remainingCost } from '../components/Summary.jsx';
+import { remainingCost } from '../lib/sections.js';
 import { coins, int, num } from '../lib/format.js';
 import { load, save } from '../lib/storage.js';
 import { Bar, ItemIcon, StatusBadge } from './parts.jsx';

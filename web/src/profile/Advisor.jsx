@@ -4,7 +4,7 @@
 import { useState } from 'react';
 import BestValue from '../components/BestValue.jsx';
 import SectionView from '../components/SectionView.jsx';
-import { remainingCost } from '../components/Summary.jsx';
+import { remainingCost } from '../lib/sections.js';
 import { coins, int, num } from '../lib/format.js';
 import { load, save } from '../lib/storage.js';
 import { Facts, Panel, Stat, StatGrid } from '../ui.jsx';
