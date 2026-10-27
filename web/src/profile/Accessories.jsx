@@ -5,9 +5,21 @@ import { useMemo, useState } from 'react';
 import { coins, int } from '../lib/format.js';
 import { load, save } from '../lib/storage.js';
 import { ItemSlot, tooltipProps } from '../mc.jsx';
-import { Chip, Empty, Panel, SearchInput, Stat, StatGrid, rarityClass, rarityLabel } from '../ui.jsx';
+import { Chip, Empty, Panel, SearchInput, SortTh, Stat, StatGrid, rarityClass, rarityLabel } from '../ui.jsx';
 
 const ORDER = ['MYTHIC', 'LEGENDARY', 'EPIC', 'RARE', 'UNCOMMON', 'COMMON', 'SPECIAL', 'VERY_SPECIAL'];
+// Missing-table columns. Rows without a value (no price) always sort last.
+const SORT_KEYS = { name: (r) => r.name, mp: (r) => r.mp, price: (r) => r.price, perMp: (r) => r.perMp };
+function sortRows(rows, { key, dir }) {
+  const get = SORT_KEYS[key];
+  return [...rows].sort((a, b) => {
+    const x = get(a);
+    const y = get(b);
+    if (x == null || y == null) return (x == null) - (y == null);
+    return (typeof x === 'string' ? x.localeCompare(y) : x - y) * dir || a.name.localeCompare(b.name);
+  });
+}
+
 const matches = (q, ...fields) => !q || fields.some((f) => f?.toLowerCase().includes(q));
 
 /** Hover card for a missing accessory: its lore (loaded from NEU), then what it would add and cost. */
@@ -33,9 +45,11 @@ function Missing({ missing }) {
   const [limit, setLimit] = useState(40);
   const source = topOnly ? missing.topRows ?? [] : missing.rows;
   const query = q.trim().toLowerCase();
+  // Cheapest coins per magical power first until a column is clicked.
+  const [sort, setSort] = useState({ key: 'perMp', dir: 1 });
   const rows = useMemo(
-    () => source.filter((r) => (!onlyPriced || r.price) && matches(query, r.name, r.upgradeFrom)),
-    [source, query, onlyPriced],
+    () => sortRows(source.filter((r) => (!onlyPriced || r.price) && matches(query, r.name, r.upgradeFrom)), sort),
+    [source, query, onlyPriced, sort],
   );
   const toggleTop = () => {
     setTopOnly((v) => {
@@ -50,8 +64,8 @@ function Missing({ missing }) {
       title="Missing accessories"
       subtitle={
         topOnly
-          ? `The top tier of every accessory line you haven't finished, ${source.length} in all, worth ${int(missing.topMp)} magical power over what you have. Sorted by coins per magical power.`
-          : `${missing.total} accessories or next upgrades you don't own, worth ${int(missing.totalMp)} magical power. Sorted by coins per magical power, cheapest first.`
+          ? `The top tier of every accessory line you haven't finished, ${source.length} in all, worth ${int(missing.topMp)} magical power over what you have. Click a column to sort by it.`
+          : `${missing.total} accessories or next upgrades you don't own, worth ${int(missing.totalMp)} magical power. Click a column to sort by it.`
       }
       pad={false}
     >
@@ -72,10 +86,18 @@ function Missing({ missing }) {
           <table className="w-full min-w-[560px] text-sm">
             <thead>
               <tr className="text-sm">
-                <th className="px-3 py-2 text-left">Accessory</th>
-                <th className="px-3 py-2 text-right">MP</th>
-                <th className="px-3 py-2 text-right">Price</th>
-                <th className="px-3 py-2 text-right">Coins / MP</th>
+                <SortTh id="name" sort={sort} setSort={setSort}>
+                  Accessory
+                </SortTh>
+                <SortTh id="mp" sort={sort} setSort={setSort} align="right">
+                  MP
+                </SortTh>
+                <SortTh id="price" sort={sort} setSort={setSort} align="right">
+                  Price
+                </SortTh>
+                <SortTh id="perMp" sort={sort} setSort={setSort} align="right">
+                  Coins / MP
+                </SortTh>
               </tr>
             </thead>
             <tbody>
