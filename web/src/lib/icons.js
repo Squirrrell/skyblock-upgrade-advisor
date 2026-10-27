@@ -1,12 +1,16 @@
 // Item icon state: which pack is selected, textures from a loaded FurfSky
 // pack, and per-item hints (skull texture, rarity, glint) from the item index.
 import { useSyncExternalStore } from 'react';
-import { ICON_PACKS } from '../theme.js';
+import { DEFAULT_ICON_PACK, ICON_PACKS } from '../theme.js';
+import { STATIC_MODE } from './api.js';
 import { dataUrl, loadItems } from './data.js';
+import { combinePacks, loadPackTextures } from './furfsky.js';
+import { loadSavedPacks, savePacks } from './packStore.js';
 
 let pack = readPack();
-let packTextures = null; // { get(id) -> objectURL } once a FurfSky zip is loaded
-let packInfo = null; // { name, count }
+let packTextures = null; // { get(id), getSkull(hash) } once a FurfSky pack is loaded
+let packInfo = null; // { names, count, source: 'minecraft' | 'saved' | 'picked' }
+let packLoading = false;
 let items = null; // Map<id, item> from the item index
 let shardIds = null; // Map<SHARD_X, ATTRIBUTE_SHARD_Y;1>
 // { pets: { TYPE: hash }, shards: { SHARD_X: hash } }, from scripts/build-heads.mjs.
@@ -17,9 +21,9 @@ const listeners = new Set();
 function readPack() {
   try {
     const saved = localStorage.getItem('iconPack');
-    return ICON_PACKS[saved] ? saved : 'default';
+    return ICON_PACKS[saved] ? saved : DEFAULT_ICON_PACK;
   } catch {
-    return 'default';
+    return DEFAULT_ICON_PACK;
   }
 }
 
@@ -37,7 +41,7 @@ const subscribe = (fn) => {
 /** Re-render when the pack, pack textures or item hints change. */
 export function useIcons() {
   useSyncExternalStore(subscribe, () => version);
-  return { pack, packInfo };
+  return { pack, packInfo, packLoading };
 }
 
 export function setIconPack(next) {
@@ -57,6 +61,54 @@ export function setPackTextures(map, info) {
   packInfo = info;
   emit();
 }
+
+/**
+ * Load FurfSky pack files ([{ name, blob }]) as the icon textures. The newer
+ * .cats release goes first so it wins over the older FULL zip.
+ */
+export async function loadPackFiles(files, source) {
+  packLoading = true;
+  emit();
+  try {
+    const ordered = [...files].sort((a, b) => /.cats/i.test(b.name) - /.cats/i.test(a.name));
+    const packs = await Promise.all(ordered.map((f) => loadPackTextures(f.blob).catch(() => null)));
+    const combined = combinePacks(packs);
+    if (!combined.size) {
+      setPackTextures(null, null);
+      return 0;
+    }
+    setPackTextures(combined, { names: ordered.map((f) => f.name), count: combined.size, source });
+    if (source === 'picked') await savePacks(ordered);
+    return combined.size;
+  } finally {
+    packLoading = false;
+    emit();
+  }
+}
+
+// FurfSky textures load by themselves: the local server serves the packs in
+// your Minecraft folder, and the public site remembers a pack you picked once.
+async function autoLoadPacks() {
+  if (!STATIC_MODE) {
+    try {
+      const list = await (await fetch('/api/packs')).json();
+      if (list.packs?.length) {
+        const files = await Promise.all(
+          list.packs.map(async (p) => {
+            const res = await fetch(p.url);
+            return res.ok ? { name: p.name, blob: await res.blob() } : null;
+          }),
+        );
+        if (files.some(Boolean)) return loadPackFiles(files.filter(Boolean), 'minecraft');
+      }
+    } catch {
+      // no local packs: fall through to anything saved in the browser
+    }
+  }
+  const saved = await loadSavedPacks();
+  if (saved.length) return loadPackFiles(saved, 'saved');
+}
+autoLoadPacks();
 
 // Item hints load once, in the background; icons re-render when they arrive.
 loadItems()

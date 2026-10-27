@@ -4,6 +4,7 @@ import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { ApiError } from '../shared/errors.js';
 import { analyzePlayer } from './report.js';
+import { registerPackRoutes } from './packs.js';
 import { getDataFile, getPriceBook, startAuctionPolling } from './prices.js';
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
@@ -44,6 +45,8 @@ app.get('/api/data/:file', async (req, res) => {
     sendError(res, err);
   }
 });
+
+registerPackRoutes(app);
 
 function sendError(res, err) {
   const status = err instanceof ApiError ? err.status : 500;

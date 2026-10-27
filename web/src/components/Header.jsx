@@ -1,6 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { loadPackTextures } from '../lib/furfsky.js';
-import { setIconPack, setPackTextures, useIcons } from '../lib/icons.js';
+import { loadPackFiles, setIconPack, useIcons } from '../lib/icons.js';
 import { ItemSlot } from '../mc.jsx';
 import { BACKGROUNDS, ICON_PACKS } from '../theme.js';
 import SearchForm from './SearchForm.jsx';
@@ -28,26 +27,38 @@ const NAV = [
   { id: 'tools', label: 'Tools' },
 ];
 
-/** Icon pack picker, plus a file input for the visitor's own FurfSky zip. */
+const SOURCE_LABEL = { minecraft: 'from your Minecraft folder', saved: 'saved in this browser', picked: 'saved in this browser' };
+
+/**
+ * Icon pack picker. FurfSky loads by itself (local server: your Minecraft
+ * folder; public site: a pack picked once and kept in this browser), so the
+ * file button only matters the first time.
+ */
 function PackPicker() {
-  const { pack, packInfo } = useIcons();
+  const { pack, packInfo, packLoading } = useIcons();
   const [status, setStatus] = useState(null);
   const fileRef = useRef(null);
 
   const onFile = async (e) => {
-    const file = e.target.files?.[0];
+    const picked = [...(e.target.files ?? [])];
     e.target.value = '';
-    if (!file) return;
-    setStatus('Reading pack...');
+    if (!picked.length) return;
+    setStatus(null);
     try {
-      const textures = await loadPackTextures(file);
-      setPackTextures(textures, { name: file.name, count: textures.size });
+      const count = await loadPackFiles(
+        picked.map((file) => ({ name: file.name, blob: file })),
+        'picked',
+      );
       setIconPack('furfsky');
-      setStatus(textures.size ? null : 'No SkyBlock item textures found in that zip.');
+      if (!count) setStatus('No SkyBlock item textures found in that file.');
     } catch {
-      setStatus('That file is not a readable resource pack zip.');
+      setStatus('That file is not a readable resource pack.');
     }
   };
+
+  const title = packInfo
+    ? `${packInfo.count.toLocaleString('en-US')} FurfSky textures ${SOURCE_LABEL[packInfo.source]}: ${packInfo.names.join(', ')}. Click to pick different pack files.`
+    : 'Pick FurfSky Reborn from .minecraft/resourcepacks (the .cats.zip, the FULL .zip, or both). It stays on your computer and is remembered here.';
 
   return (
     <div className="flex items-center gap-2">
@@ -63,15 +74,10 @@ function PackPicker() {
       </select>
       {pack === 'furfsky' && (
         <>
-          <button
-            type="button"
-            className="mc-btn mc-btn-sm"
-            onClick={() => fileRef.current?.click()}
-            title={packInfo ? `${packInfo.count} textures from ${packInfo.name}` : 'Pick your FurfSky Reborn .zip. It stays on your computer.'}
-          >
-            {packInfo ? `${packInfo.count} textures` : 'Load pack .zip'}
+          <button type="button" className="mc-btn mc-btn-sm" onClick={() => fileRef.current?.click()} title={title} disabled={packLoading}>
+            {packLoading ? 'Loading pack...' : packInfo ? `${packInfo.count.toLocaleString('en-US')} textures` : 'Load FurfSky pack'}
           </button>
-          <input ref={fileRef} type="file" accept=".zip,application/zip" className="hidden" onChange={onFile} />
+          <input ref={fileRef} type="file" multiple accept=".zip,.cats,application/zip" className="hidden" onChange={onFile} />
         </>
       )}
       {status && (

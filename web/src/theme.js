@@ -18,8 +18,8 @@ export const PALETTE = {
   wellShadow: '#141414',
   field: '#000000', // chat / anvil text field
   fieldBorder: '#A0A0A0',
-  label: '#404040', // text on light panels, as in vanilla GUIs
-  labelMuted: '#555555',
+  label: '#2E2E2E', // text on light panels (vanilla uses #404040; a bit darker reads better in a sans)
+  labelMuted: '#4F4F4F',
   button: '#7A7A7A', // stone button face (under the stone texture)
   buttonHover: '#7E88BF', // classic highlighted button
   buttonDisabled: '#2C2C2C',
@@ -39,7 +39,7 @@ export const MC = {
   darkRed: '#AA0000', // §4
   darkPurple: '#AA00AA', // §5
   gold: '#FFAA00', // §6 coins
-  grey: '#AAAAAA', // §7 secondary text
+  grey: '#B4B4B4', // §7 secondary text (vanilla #AAAAAA, lifted for long text)
   darkGrey: '#555555', // §8
   blue: '#5555FF', // §9
   green: '#55FF55', // §a profit
@@ -91,9 +91,14 @@ export const RARITY_ON_PANEL = {
   SUPREME: '#7A0000',
 };
 
-/** Fonts. Monocraft is self-hosted from /fonts (SIL OFL); the rest are fallbacks. */
+/**
+ * Fonts. The pixel font is for headings, buttons, tabs and numbers; body text
+ * uses Geist so long descriptions stay easy to read. Monocraft is self-hosted
+ * from /fonts (SIL OFL); Geist comes from @fontsource-variable/geist.
+ */
 export const FONTS = {
   pixel: "'Monocraft', 'Minecraftia', 'Press Start 2P', ui-monospace, monospace",
+  body: "'Geist Variable', ui-sans-serif, system-ui, sans-serif",
 };
 
 /**
@@ -115,6 +120,9 @@ export const BACKGROUNDS = {
   dark: { label: 'Deepslate', texture: 'textures/deepslate.png', tint: 'rgba(0, 0, 0, 0.45)' },
   light: { label: 'Dirt', texture: 'textures/dirt.png', tint: 'rgba(0, 0, 0, 0.55)' },
 };
+
+/** Icon pack used until the visitor picks another. Falls back to default per item. */
+export const DEFAULT_ICON_PACK = 'furfsky';
 
 /** Special icons for things that are not items. */
 export const SPECIAL_ICONS = {
@@ -178,6 +186,7 @@ export function applyTheme(root = document.documentElement) {
   for (const [k, v] of Object.entries(RARITY)) set(`--rarity-${k.toLowerCase()}`, v);
   for (const [k, v] of Object.entries(RARITY_ON_PANEL)) set(`--rarity-panel-${k.toLowerCase()}`, v);
   set('--font-pixel', FONTS.pixel);
+  set('--font-body', FONTS.body);
   for (const [k, bg] of Object.entries(BACKGROUNDS)) {
     set(`--bg-${k}`, `linear-gradient(${bg.tint}, ${bg.tint}), url("${import.meta.env.BASE_URL}${bg.texture}")`);
   }
