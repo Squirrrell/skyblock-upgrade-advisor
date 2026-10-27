@@ -125,9 +125,10 @@ npm test
 
 ## Look and item icons
 
-The site is styled like Minecraft's inventory screens: grey bevelled panels, item slots, stone buttons, creative-inventory tabs, XP bars and purple item tooltips. Headings, buttons, tabs and numbers use the Monocraft pixel font; reading text uses Geist so long lists stay easy on the eyes. Everything that decides the look (palette, chat colour codes, rarity colours, font, GUI scale, backgrounds and the icon packs) lives in `web/src/theme.js`, and `web/src/styles.css` only reads those values.
+The site has two designs, switched from the footer (new to classic) or the header (classic to new), and the choice is remembered. `?ui=classic` or `?ui=next` in a link picks one.
 
-A new design is being tried out on the Farming tab: click "Preview the new design" there, or add `&ui=next` to a profile link. It lives in `web/src/next/`, scoped under the `.nx` class so it doesn't touch the Minecraft theme.
+- **New design** (the default): calm dark or light neutrals with one green accent, amber for coin prices, the Geist font throughout, a floating top bar and sticky profile tabs. Farming, hunting and consumables use a dedicated advisor layout (overview, best buys per coin, a sticky category index, filters and cost breakdowns). Everything lives in `web/src/next/`, scoped under `<body class="nx">`; `bridge.css` restyles the shared building blocks the other tabs and pages use, so they need no changes of their own.
+- **Classic design**: styled like Minecraft's inventory screens, with grey bevelled panels, item slots, stone buttons, creative-inventory tabs, XP bars and purple item tooltips, in the Monocraft pixel font for headings and numbers. Its palette, chat colour codes, rarity colours, font, GUI scale and backgrounds live in `web/src/theme.js`, and `web/src/styles.css` only reads those values.
 
 Every icon is the site's own; nothing comes from a third-party renderer.
 

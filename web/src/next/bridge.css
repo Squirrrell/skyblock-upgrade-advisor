@@ -1,0 +1,431 @@
+/*
+ * Bridge: the shared building blocks (ui.jsx Panel/Stat/Facts/Bar, item
+ * slots, tables, buttons, tabs, tooltips, fields) drawn in the new design
+ * whenever they sit inside .nx. The tabs and tool pages keep their markup;
+ * only the look changes. Outside .nx the Minecraft theme is untouched.
+ */
+
+/* ------------------------------------------------------------------ colours */
+
+/* The Minecraft palette and §-codes, remapped to the new palette, so inline
+   uses like text-[var(--code-gold)] follow along. */
+.nx,
+.nx :is(.scope-dark, .scope-panel, .bg-surface, .bg-surface-2, .mc-panel, .mc-well, .mc-window, .mc-readout, .mc-tooltip, .mc-field, table) {
+  --text: var(--nx-text);
+  --muted: var(--nx-text-2);
+  --accent: var(--nx-accent);
+  --accent-soft: var(--nx-accent-soft);
+  --accent-ink: var(--nx-accent-ink);
+  --warn: var(--nx-coin);
+  --danger: var(--nx-miss);
+  --link: var(--nx-accent);
+  --line: var(--nx-line);
+  --tshadow: none;
+  --r-common: var(--nx-r-common);
+  --r-uncommon: var(--nx-r-uncommon);
+  --r-rare: var(--nx-r-rare);
+  --r-epic: var(--nx-r-epic);
+  --r-legendary: var(--nx-r-legendary);
+  --r-mythic: var(--nx-r-mythic);
+  --r-divine: var(--nx-r-divine);
+  --r-special: var(--nx-r-special);
+  color: var(--nx-text);
+  text-shadow: none;
+}
+
+.nx {
+  --nx-r-common: #d4d7dc;
+  --nx-r-uncommon: #5fd88a;
+  --nx-r-rare: #6aa8ff;
+  --nx-r-epic: #b98af7;
+  --nx-r-legendary: #f2b44d;
+  --nx-r-mythic: #f06ccf;
+  --nx-r-divine: #56d0e6;
+  --nx-r-special: #f0716b;
+
+  --code-white: var(--nx-text);
+  --code-grey: var(--nx-text-2);
+  --code-dark-grey: var(--nx-text-3);
+  --code-black: var(--nx-accent-ink);
+  --code-gold: var(--nx-coin);
+  --code-yellow: #f1d98a;
+  --code-green: var(--nx-accent);
+  --code-dark-green: #3fae6a;
+  --code-aqua: #67d4e8;
+  --code-dark-aqua: #3aa6b8;
+  --code-red: var(--nx-miss);
+  --code-dark-red: #d0605a;
+  --code-blue: #7aa8ff;
+  --code-dark-blue: #5b7fe0;
+  --code-pink: #e08cf0;
+  --code-dark-purple: #b98af7;
+  --panel-green: var(--nx-accent);
+  --panel-red: var(--nx-miss);
+  --panel-gold: var(--nx-coin);
+  --panel-yellow: #f1d98a;
+  --panel-grey: var(--nx-text-2);
+
+  --mc-panel: var(--nx-surface);
+  --mc-well: var(--nx-surface-2);
+  --mc-slot: var(--nx-surface-2);
+  --mc-field: var(--nx-surface-2);
+  --mc-label: var(--nx-text);
+  --mc-label-muted: var(--nx-text-2);
+  --mc-outline: var(--nx-line);
+}
+
+html[data-theme='light'] .nx {
+  --nx-r-common: #3b4049;
+  --nx-r-uncommon: #1c8a46;
+  --nx-r-rare: #2563c9;
+  --nx-r-epic: #7c3aed;
+  --nx-r-legendary: #b26a00;
+  --nx-r-mythic: #b8338f;
+  --nx-r-divine: #0e8aa3;
+  --nx-r-special: #c43c32;
+  --code-yellow: #8a6400;
+  --code-aqua: #0e8aa3;
+  --code-dark-aqua: #0b6f82;
+  --code-dark-green: #1c7a40;
+  --code-dark-red: #a83a32;
+  --code-blue: #2563c9;
+  --code-dark-blue: #1e4fa3;
+  --code-pink: #a2309a;
+  --code-dark-purple: #7c3aed;
+  --panel-yellow: #8a6400;
+}
+
+.nx .text-muted {
+  color: var(--nx-text-2);
+}
+
+/* ------------------------------------------------------------------ type */
+
+.nx :is(h1, h2, h3, h4, th, .mc-btn, .mc-tab, .mc-readout, .mc-count, .mc-missing, .mc-tt-name, .mc-tt-rarity, .tabular, .font-mono, .font-pixel) {
+  font-family: inherit;
+  text-shadow: none;
+  -webkit-font-smoothing: antialiased;
+  letter-spacing: normal;
+}
+
+.nx :is(.tabular, .font-mono, .mc-readout, td) {
+  font-variant-numeric: tabular-nums;
+}
+
+.nx .text-xs {
+  font-size: 12px;
+}
+
+.nx h2 {
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+
+/* ------------------------------------------------------------------ surfaces */
+
+/* Panel and Stat: one card with a soft ring and highlight. */
+.nx .bg-surface,
+.nx .mc-panel {
+  background-color: var(--nx-surface);
+  border: 0;
+  border-radius: 18px;
+  box-shadow:
+    inset 0 0 0 1px var(--nx-shell-ring),
+    inset 0 1px 0 var(--nx-highlight),
+    var(--nx-shadow);
+}
+
+.nx .bg-surface .bg-surface,
+.nx .mc-panel .bg-surface {
+  background-color: var(--nx-surface-2);
+  border-radius: 14px;
+  box-shadow: inset 0 0 0 1px var(--nx-line);
+}
+
+.nx :is(.bg-surface-2, .mc-well, .skeleton) {
+  background-color: var(--nx-surface-2);
+  border-radius: 14px;
+  box-shadow: inset 0 0 0 1px var(--nx-line);
+}
+
+/* The window the profile tabs used to sit on: just spacing now. */
+.nx .mc-window {
+  background: none;
+  border: 0;
+  box-shadow: none;
+  padding: 0;
+}
+
+.nx .border-line {
+  border-color: var(--nx-line);
+}
+
+/* Stat numbers: no black field, just a large figure. */
+.nx .mc-readout {
+  background: none;
+  border: 0;
+  padding: 0;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+}
+
+.nx .skeleton {
+  background: linear-gradient(90deg, var(--nx-surface-2), var(--nx-surface-3), var(--nx-surface-2));
+  background-size: 200% 100%;
+  animation: nx-shimmer 1.4s var(--nx-ease) infinite;
+}
+
+/* ------------------------------------------------------------------ tables */
+
+.nx table {
+  background: none;
+  box-shadow: none;
+  border-collapse: collapse;
+}
+
+.nx thead th {
+  color: var(--nx-text-3);
+  font-size: 12px;
+  font-weight: 500;
+  border-bottom: 1px solid var(--nx-line);
+}
+
+.nx tbody tr {
+  border-top: 1px solid var(--nx-line);
+  transition: background-color 200ms var(--nx-ease);
+}
+
+.nx tbody tr:nth-child(even) {
+  background: none;
+}
+
+.nx tbody tr:hover {
+  background-color: color-mix(in srgb, var(--nx-surface-2) 70%, transparent);
+}
+
+/* ------------------------------------------------------------------ progress */
+
+.nx .mc-xpbar {
+  height: 6px;
+  border: 0;
+  border-radius: 999px;
+  background: var(--nx-surface-3);
+}
+
+.nx .mc-xpbar > span,
+.nx .mc-xpbar.is-gold > span {
+  border-radius: inherit;
+  background: var(--nx-accent);
+  transform-origin: left;
+  animation: nx-grow 900ms var(--nx-ease) both;
+}
+
+/* ------------------------------------------------------------------ item slots */
+
+.nx .mc-slot {
+  --slot: 40px;
+  border-radius: 11px;
+  background-color: var(--nx-surface-2);
+  box-shadow: inset 0 0 0 1px var(--nx-line);
+}
+
+.nx .mc-slot[data-rarity] {
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--slot-rarity) 45%, transparent);
+}
+
+.nx .mc-slot img,
+.nx .mc-slot .mc-missing {
+  width: 66%;
+  height: 66%;
+}
+
+.nx .mc-slot.mc-glint {
+  overflow: hidden;
+}
+
+.nx .mc-count {
+  right: 3px;
+  bottom: 1px;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--nx-text);
+  text-shadow: 0 1px 2px rgb(0 0 0 / 0.8);
+}
+
+.nx .mc-missing {
+  border-radius: 4px;
+  background: var(--nx-surface-3);
+  color: var(--nx-text-3);
+  font-size: 12px;
+}
+
+/* ------------------------------------------------------------------ controls */
+
+/* The new design resets every <button>, so these restate their layout. */
+.nx .mc-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  white-space: nowrap;
+  cursor: pointer;
+  min-height: 36px;
+  padding: 0 14px;
+  gap: 8px;
+  border: 0;
+  border-radius: 999px;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--nx-text);
+  background: var(--nx-surface-2);
+  box-shadow: inset 0 0 0 1px var(--nx-line);
+  transition:
+    background-color 250ms var(--nx-ease),
+    box-shadow 250ms var(--nx-ease),
+    transform 250ms var(--nx-ease);
+}
+
+.nx .mc-btn:hover:not(:disabled) {
+  color: var(--nx-text);
+  background: var(--nx-surface-3);
+  box-shadow: inset 0 0 0 1px var(--nx-line-strong);
+}
+
+.nx .mc-btn:active:not(:disabled) {
+  transform: scale(0.97);
+}
+
+.nx .mc-btn[aria-pressed='true'],
+.nx .mc-btn[aria-current='page'] {
+  color: var(--nx-accent-ink);
+  background: var(--nx-accent);
+  box-shadow: none;
+}
+
+.nx .mc-btn:disabled {
+  color: var(--nx-text-3);
+  background: var(--nx-surface-2);
+  opacity: 0.7;
+}
+
+.nx .mc-btn-sm {
+  min-height: 30px;
+  padding: 0 12px;
+  font-size: 13px;
+}
+
+.nx .mc-link {
+  color: var(--nx-accent);
+  text-underline-offset: 3px;
+}
+
+/* Classic text fields and selects; the new design's own carry .nx-plain. */
+.nx :is(input:not([type='checkbox'], [type='radio']), select, textarea, .mc-field):not(.nx-plain, .nx-select) {
+  min-height: 36px;
+  padding: 0 12px;
+  border: 0;
+  border-radius: 10px;
+  font: inherit;
+  font-size: 14px;
+  color: var(--nx-text);
+  background: var(--nx-surface-2);
+  box-shadow: inset 0 0 0 1px var(--nx-line);
+  text-shadow: none;
+  transition: box-shadow 250ms var(--nx-ease);
+}
+
+.nx :is(input:not([type='checkbox'], [type='radio']), select, textarea):not(.nx-plain, .nx-select):focus {
+  outline: none;
+  box-shadow: inset 0 0 0 1px var(--nx-accent);
+}
+
+.nx input::placeholder {
+  color: var(--nx-text-3);
+}
+
+.nx option {
+  background: var(--nx-surface);
+  color: var(--nx-text);
+}
+
+.nx input[type='checkbox'] {
+  accent-color: var(--nx-accent);
+}
+
+/* Creative tabs become pill tabs. */
+.nx .mc-tabs {
+  gap: 4px;
+  padding: 4px 0;
+}
+
+.nx .mc-tab,
+.nx .mc-tab[aria-selected='true'] {
+  display: inline-flex;
+  flex-shrink: 0;
+  align-items: center;
+  gap: 8px;
+  white-space: nowrap;
+  cursor: pointer;
+  min-height: 36px;
+  padding: 0 14px;
+  margin: 0;
+  border: 0;
+  border-radius: 999px;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--nx-text-2);
+  background: none;
+  box-shadow: none;
+}
+
+.nx .mc-tab:hover {
+  color: var(--nx-text);
+  background: var(--nx-surface-2);
+}
+
+.nx .mc-tab[aria-selected='true'] {
+  color: var(--nx-text);
+  background: var(--nx-surface);
+  box-shadow: inset 0 0 0 1px var(--nx-line-strong);
+}
+
+.nx .mc-tab .mc-slot {
+  --slot: 22px;
+  background: none;
+  box-shadow: none;
+}
+
+/* ------------------------------------------------------------------ tooltip */
+
+.nx .mc-tooltip {
+  padding: 10px 12px;
+  border: 0;
+  border-radius: 12px;
+  outline: 0;
+  background: color-mix(in srgb, var(--nx-surface) 94%, transparent);
+  backdrop-filter: blur(12px);
+  box-shadow:
+    inset 0 0 0 1px var(--nx-line-strong),
+    0 16px 32px -12px rgb(0 0 0 / 0.6);
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.nx .mc-tooltip .mc-tt-name {
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.nx .mc-tooltip .mc-tt-line {
+  color: var(--nx-text-2);
+}
+
+.nx .mc-tooltip .mc-tt-rarity {
+  margin-top: 6px;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+}
+
+.nx * {
+  scrollbar-color: var(--nx-surface-3) transparent;
+}

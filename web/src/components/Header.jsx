@@ -100,7 +100,7 @@ function useHeaderHeight(ref) {
   }, [ref]);
 }
 
-export default function Header({ onHome, onSearch, onPage, onProfile, page, current, lastPlayer }) {
+export default function Header({ onHome, onSearch, onPage, onProfile, onNewDesign, page, current, lastPlayer }) {
   const [bg, toggleBg] = useBackground();
   const headerRef = useRef(null);
   useHeaderHeight(headerRef);
@@ -135,6 +135,9 @@ export default function Header({ onHome, onSearch, onPage, onProfile, page, curr
           </div>
           <button type="button" onClick={toggleBg} className="mc-btn mc-btn-sm shrink-0" title={`Switch to the ${BACKGROUNDS[other].label} background`}>
             {BACKGROUNDS[other].label}
+          </button>
+          <button type="button" onClick={onNewDesign} className="mc-btn mc-btn-sm shrink-0" title="Switch to the new design">
+            New design
           </button>
         </div>
       </div>

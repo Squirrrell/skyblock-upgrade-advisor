@@ -77,12 +77,19 @@ html[data-theme='light'] .nx {
     var(--nx-bg);
 }
 
-html.nx-root body {
-  background: var(--nx-page, #0b0c0e);
-  image-rendering: auto;
+/* The design sits on <body>, so the Minecraft page background must yield. */
+html body.nx {
+  background:
+    radial-gradient(1200px 600px at 12% -10%, rgb(86 207 161 / 0.07), transparent 60%),
+    radial-gradient(900px 500px at 100% 0%, rgb(120 140 170 / 0.06), transparent 60%),
+    var(--nx-bg);
+  background-attachment: fixed;
 }
-html.nx-root[data-theme='light'] body {
-  --nx-page: #f3f4f6;
+html[data-theme='light'] body.nx {
+  background:
+    radial-gradient(1200px 600px at 12% -10%, rgb(19 135 95 / 0.06), transparent 60%),
+    var(--nx-bg);
+  background-attachment: fixed;
 }
 
 .nx,
@@ -208,7 +215,7 @@ html.nx-root[data-theme='light'] body {
   width: min(1240px, calc(100% - 24px));
   padding: 6px 6px 6px 10px;
   border-radius: 999px;
-  background: color-mix(in srgb, var(--nx-surface) 78%, transparent);
+  background: color-mix(in srgb, var(--nx-surface) 96%, transparent);
   backdrop-filter: blur(16px) saturate(1.2);
   -webkit-backdrop-filter: blur(16px) saturate(1.2);
   box-shadow:
@@ -266,6 +273,44 @@ html.nx-root[data-theme='light'] body {
 }
 .nx .nx-search input::placeholder {
   color: var(--nx-text-3);
+}
+
+/* Phones: the site links scroll in a row under the top bar. */
+.nx-subnav {
+  width: min(1240px, calc(100% - 24px));
+  margin: 8px auto 0;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+.nx-subnav::-webkit-scrollbar {
+  display: none;
+}
+
+/* Profile tabs stay in reach while scrolling. */
+.nx-tabbar {
+  position: sticky;
+  top: 66px;
+  z-index: 20;
+  margin-top: 32px;
+  padding: 4px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--nx-surface) 97%, transparent);
+  backdrop-filter: blur(16px) saturate(1.2);
+  -webkit-backdrop-filter: blur(16px) saturate(1.2);
+  box-shadow: inset 0 0 0 1px var(--nx-line);
+}
+.nx-tabbar .nx-tabs {
+  margin: 0;
+  padding: 0;
+}
+.nx-tabbar .nx-tab .nx-icon {
+  background: none;
+  box-shadow: none;
+  margin-left: -4px;
+}
+.nx-tabbar .nx-tab .nx-icon img {
+  width: 100%;
+  height: 100%;
 }
 
 /* ------------------------------------------------------------------ buttons */

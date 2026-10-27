@@ -1,6 +1,7 @@
-// Farming fortune in the new design: an overview of where the fortune comes
-// from, the best buys, garden and contest stats, then every source by
-// category with a sticky index to jump around.
+// The upgrade advisor (farming fortune, hunting fortune, consumables) in the
+// new design: an overview of where the fortune comes from, the best buys,
+// the section's own stats (garden and contests, or shards and the safari),
+// then every source by category with a sticky index to jump around.
 import { ArrowRightIcon, CaretDownIcon, CoinsIcon, MagnifyingGlassIcon } from '@phosphor-icons/react';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { rowIcon } from '../components/SourceRow.jsx';
@@ -30,8 +31,12 @@ const shade = (i) => `color-mix(in srgb, var(--nx-accent) ${Math.max(28, 100 - i
 
 // ------------------------------------------------------------------ overview
 
+const LABEL = { farming: 'Farming fortune', hunting: 'Hunting fortune', consumables: 'Consumables' };
+
 function Overview({ section, groups }) {
-  const { totals } = section;
+  const isCount = section.id === 'consumables';
+  const usable = section.groups.flatMap((g) => g.items).filter((s) => s.unit === 'used' && s.status !== 'unknown');
+  const totals = isCount ? { current: usable.filter((s) => s.status === 'done').length, max: usable.length } : section.totals;
   const cost = remainingCost(section);
   const left = Math.max(0, totals.max - totals.current);
   const parts = groups.filter((g) => g.t.current > 0).sort((a, b) => b.t.current - a.t.current);
@@ -43,13 +48,16 @@ function Overview({ section, groups }) {
   return (
     <div className="nx-shell nx-rise h-full">
       <div className="nx-core flex h-full flex-col p-6 sm:p-8">
-        <div className="nx-eyebrow">Farming fortune</div>
+        <div className="nx-eyebrow">{LABEL[section.id]}</div>
         <div className="mt-4 flex flex-wrap items-baseline gap-x-3 gap-y-1">
           <span className="nx-num text-[56px] leading-none font-semibold tracking-[-0.04em] sm:text-[72px]">{num(totals.current)}</span>
-          <span className="nx-num nx-muted text-xl">of {num(totals.max)}</span>
+          <span className="nx-num nx-muted text-xl">
+            of {num(totals.max)}
+            {isCount ? ' used up' : ''}
+          </span>
         </div>
         <p className="nx-muted mt-3 max-w-[56ch] text-[15px]">
-          <span className="nx-num text-[var(--nx-text)]">{num(left)}</span> fortune left to unlock
+          <span className="nx-num text-[var(--nx-text)]">{num(left)}</span> {isCount ? (left === 1 ? 'consumable' : 'consumables') + ' still to use' : 'fortune left to unlock'}
           {cost > 0 && (
             <>
               , about <span className="nx-coin nx-num">{coins(cost)} coins</span> to buy the rest
@@ -62,7 +70,7 @@ function Overview({ section, groups }) {
           {[
             ['Sources maxed', `${maxed} / ${tracked}`],
             ['Upgrades to buy', buyable],
-            ['Biggest gap', biggest ? `+${num(biggest.gain)}` : '-', biggest?.name],
+            isCount ? ['To buy', cost > 0 ? coins(cost) : '-', 'coins for the rest'] : ['Biggest gap', biggest ? `+${num(biggest.gain)}` : '-', biggest?.name],
           ].map(([label, value, sub]) => (
             <div key={label} className="nx-inset px-4 py-3">
               <dt className="nx-faint text-[12px]">{label}</dt>
@@ -72,7 +80,7 @@ function Overview({ section, groups }) {
           ))}
         </dl>
 
-        <div className="mt-auto pt-8">
+        {!isCount && parts.length > 0 && <div className="mt-auto pt-8">
           <div className="nx-stack" aria-hidden="true">
             {parts.map((g, i) => (
               <span key={g.id} title={`${g.title}: +${num(g.t.current)}`} style={{ width: `${(g.t.current / totals.max) * 100}%`, background: shade(i), animationDelay: `${i * 40}ms` }} />
@@ -92,7 +100,7 @@ function Overview({ section, groups }) {
               {num(totals.unreadable)} of the maximum comes from sources Hypixel doesn't share, so check those in game.
             </p>
           )}
-        </div>
+        </div>}
       </div>
     </div>
   );
@@ -234,6 +242,45 @@ function GardenCards({ stats }) {
   );
 }
 
+function HuntingCards({ stats }) {
+  const h = stats.hunting;
+  const tiles = [
+    ['Shards fused', int(h.shardsFused)],
+    ['Unique shards', int(h.uniqueShards), `${h.shardTypesOwned} types held`],
+    ['Attributes unlocked', h.attributesUnlocked],
+    ['Safari captures', int(h.safariCaptures), `${h.critters} critters found`],
+  ];
+  const activity = [
+    ['Combat shard hunts', int(h.hunts.combat)],
+    ['Fishing shard hunts', int(h.hunts.fishing)],
+    ['Forest shard hunts', int(h.hunts.forest)],
+    ['Salt shard hunts', int(h.hunts.salt)],
+    ...h.biomes.map((b) => [`${b.name} captures`, `${int(b.captures)} (milestone ${b.milestone})`]),
+    ['Trapper pelts', int(h.pelts)],
+  ];
+  return (
+    <div className="grid gap-4 md:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
+      <div className="nx-shell nx-rise" style={{ '--i': 2 }}>
+        <div className="nx-core grid h-full grid-cols-2 gap-3 p-4">
+          {tiles.map(([label, value, sub]) => (
+            <div key={label} className="nx-inset px-4 py-3">
+              <div className="nx-faint text-[12px]">{label}</div>
+              <div className="nx-num mt-1 text-[22px] font-semibold tracking-[-0.02em]">{value}</div>
+              {sub && <div className="nx-faint text-[12px]">{sub}</div>}
+            </div>
+          ))}
+        </div>
+      </div>
+      <div className="nx-shell nx-rise" style={{ '--i': 3 }}>
+        <div className="nx-core p-6">
+          <div className="nx-eyebrow mb-3">Hunting activity</div>
+          <Facts rows={activity} />
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // ------------------------------------------------------------------ rows
 
 function CostLines({ cost }) {
@@ -264,7 +311,7 @@ function CostLines({ cost }) {
   );
 }
 
-function Row({ item, flash }) {
+function Row({ item, flash, sectionId }) {
   const [open, setOpen] = useState(false);
   const showNumbers = item.max > 0 && item.status !== 'tip';
   const cost = item.cost;
@@ -273,7 +320,7 @@ function Row({ item, flash }) {
 
   return (
     <li id={`nx-row-${item.id}`} className={`nx-row ${flash ? 'is-flash' : ''}`}>
-      <ItemIcon id={rowIcon(item, 'farming')} alt={item.name} />
+      <ItemIcon id={rowIcon(item, sectionId)} alt={item.name} />
 
       <div className="min-w-0">
         <div className="flex flex-wrap items-center gap-x-2.5 gap-y-1.5">
@@ -363,8 +410,9 @@ function useActiveGroup(ids) {
   return active;
 }
 
-export default function Farming({ report, stats }) {
-  const section = report.sections.farming;
+export default function Advisor({ report, stats, sectionId = 'farming' }) {
+  const section = report.sections[sectionId];
+  const picks = report.bestValue[sectionId];
   const [filter, setFilter] = useState(() => load('nxFilter', 'all'));
   const [sort, setSort] = useState('default');
   const [query, setQuery] = useState('');
@@ -412,19 +460,22 @@ export default function Farming({ report, stats }) {
   return (
     <div className="flex flex-col gap-4">
       <div className="grid gap-4 lg:grid-cols-12">
-        <div className="lg:col-span-7">
+        <div className={picks ? 'lg:col-span-7' : 'lg:col-span-12'}>
           <Overview section={section} groups={groups} />
         </div>
-        <div className="lg:col-span-5">
-          <BestBuys picks={report.bestValue.farming} onJump={jumpToRow} />
-        </div>
+        {picks && (
+          <div className="lg:col-span-5">
+            <BestBuys picks={picks} onJump={jumpToRow} />
+          </div>
+        )}
       </div>
 
-      <GardenCards stats={stats} />
+      {sectionId === 'farming' && <GardenCards stats={stats} />}
+      {sectionId === 'hunting' && <HuntingCards stats={stats} />}
 
       <div className="mt-10 grid gap-8 lg:grid-cols-[220px_minmax(0,1fr)]">
         <aside className="hidden lg:block">
-          <nav className="nx-rail" aria-label="Fortune categories">
+          <nav className="nx-rail" aria-label="Categories">
             <div className="nx-eyebrow mb-3 px-3">Categories</div>
             <ul className="flex flex-col gap-0.5">
               {groups.map((g) => {
@@ -466,7 +517,7 @@ export default function Farming({ report, stats }) {
             <label className="nx-search !ml-0 max-w-[260px] min-w-[180px]">
               <MagnifyingGlassIcon size={15} weight="regular" aria-hidden="true" />
               <span className="sr-only">Filter sources</span>
-              <input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Filter sources" />
+              <input className="nx-plain" value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Filter sources" />
             </label>
             <label className="ml-auto inline-flex items-center gap-2">
               <span className="nx-muted text-[13px]">Sort</span>
@@ -512,7 +563,7 @@ export default function Farming({ report, stats }) {
                     </header>
                     <ul className="nx-divide">
                       {g.items.map((item) => (
-                        <Row key={item.id} item={item} flash={flash === item.id} />
+                        <Row key={item.id} item={item} flash={flash === item.id} sectionId={section.id} />
                       ))}
                     </ul>
                   </div>

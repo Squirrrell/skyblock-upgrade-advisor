@@ -1,47 +1,16 @@
-// The new design's page frame: floating top bar, profile header and section
-// tabs. Only Farming is redesigned so far; the other tabs open in the classic
-// Minecraft design.
-import { ArrowClockwiseIcon, ArrowUpRightIcon, ChartBarIcon, MagnifyingGlassIcon } from '@phosphor-icons/react';
-import { IconContext } from '@phosphor-icons/react';
-import { useEffect, useState } from 'react';
+// A profile in the new design: the player header, sticky section tabs and
+// the selected tab. Farming, hunting and consumables use the new advisor
+// layout; the other tabs reuse their views, restyled by bridge.css.
+import { ArrowClockwiseIcon, ArrowUpRightIcon, WarningIcon } from '@phosphor-icons/react';
+import { lazy, Suspense } from 'react';
 import { openCount, TABS } from '../components/Report.jsx';
 import { ago } from '../lib/format.js';
-import Farming from './Farming.jsx';
-import './next.css';
+import { load, save } from '../lib/storage.js';
+import { Loading } from '../ui.jsx';
+import { ItemIcon } from './parts.jsx';
 
+const Advisor = lazy(() => import('./Advisor.jsx'));
 const MODE_LABEL = { ironman: 'Ironman', island: 'Stranded', bingo: 'Bingo' };
-
-function TopBar({ onHome, onSearch, onClassic }) {
-  const [value, setValue] = useState('');
-  return (
-    <header className="nx-topbar">
-      <button type="button" className="nx-brand" onClick={onHome}>
-        <span className="nx-brand-mark">
-          <ChartBarIcon size={15} weight="fill" />
-        </span>
-        <span className="hidden sm:inline">SkyBlock Advisor</span>
-      </button>
-      <form
-        className="nx-search"
-        role="search"
-        onSubmit={(e) => {
-          e.preventDefault();
-          if (value.trim()) onSearch(value.trim());
-        }}
-      >
-        <MagnifyingGlassIcon size={15} weight="regular" aria-hidden="true" />
-        <label htmlFor="nx-player" className="sr-only">
-          Look up a player
-        </label>
-        <input id="nx-player" value={value} onChange={(e) => setValue(e.target.value)} placeholder="Look up a player" autoComplete="off" spellCheck="false" />
-      </form>
-      <button type="button" className="nx-btn nx-btn-ghost nx-btn-sm shrink-0" onClick={() => onClassic()}>
-        <span className="sm:hidden">Classic</span>
-        <span className="hidden sm:inline">Classic design</span>
-      </button>
-    </header>
-  );
-}
 
 function ProfileHeader({ report, refreshing, onRefresh, onPickProfile }) {
   const { player, profile, profiles, prices } = report;
@@ -84,49 +53,45 @@ function ProfileHeader({ report, refreshing, onRefresh, onPickProfile }) {
           ))}
         </select>
         <button type="button" onClick={onRefresh} disabled={refreshing} className="nx-btn">
-          <ArrowClockwiseIcon size={15} weight="regular" className={refreshing ? 'animate-spin' : ''} />
+          <ArrowClockwiseIcon size={15} className={refreshing ? 'animate-spin' : ''} />
           {refreshing ? 'Refreshing' : 'Refresh'}
         </button>
-        <a href={`https://sky.shiiyu.moe/stats/${player.name}/${profile.name}`} target="_blank" rel="noreferrer" className="nx-btn nx-btn-ghost">
-          SkyCrypt
-          <ArrowUpRightIcon size={14} weight="regular" />
-        </a>
+        {[
+          ['SkyCrypt', `https://sky.shiiyu.moe/stats/${player.name}/${profile.name}`],
+          ['Elite', `https://elitebot.dev/@${player.name}/${profile.name}`],
+        ].map(([label, href]) => (
+          <a key={label} href={href} target="_blank" rel="noreferrer" className="nx-btn nx-btn-ghost">
+            {label}
+            <ArrowUpRightIcon size={14} />
+          </a>
+        ))}
       </div>
     </section>
   );
 }
 
-function SectionTabs({ report, onClassic }) {
+function SectionTabs({ report, tab, onTab }) {
   return (
-    <nav className="nx-rise mt-8" style={{ '--i': 1 }} aria-label="Profile sections">
+    <nav className="nx-tabbar nx-rise" style={{ '--i': 1 }} aria-label="Profile sections">
       <div className="nx-tabs" role="tablist">
         {TABS.map((t) => {
-          const active = t.id === 'farming';
           const open = t.section ? openCount(report.sections[t.section]) : 0;
           return (
-            <button
-              key={t.id}
-              type="button"
-              role="tab"
-              aria-selected={active}
-              className="nx-tab"
-              onClick={() => !active && onClassic(t.id)}
-              title={active ? undefined : 'Opens in the classic design for now'}
-            >
+            <button key={t.id} type="button" role="tab" aria-selected={t.id === tab.id} className="nx-tab" onClick={() => onTab(t.id)}>
+              <ItemIcon id={t.icon} size={22} />
               {t.label}
               {open > 0 && <span className="nx-tab-count nx-num">{open}</span>}
             </button>
           );
         })}
       </div>
-      <p className="nx-faint mt-2 px-1 text-[12px]">Preview: only Farming uses the new design so far. Other tabs open in the classic design.</p>
     </nav>
   );
 }
 
 export function NextSkeleton() {
   return (
-    <div className="mx-auto w-full max-w-[1240px] px-4 pt-10 sm:px-6">
+    <div className="pt-10" aria-busy="true" aria-label="Loading profile">
       <div className="flex items-center gap-5">
         <div className="nx-skeleton size-16 rounded-[18px]" />
         <div className="flex flex-col gap-2">
@@ -134,7 +99,8 @@ export function NextSkeleton() {
           <div className="nx-skeleton h-8 w-56" />
         </div>
       </div>
-      <div className="mt-10 grid gap-4 lg:grid-cols-12">
+      <div className="nx-skeleton mt-8 h-11 w-full" />
+      <div className="mt-6 grid gap-4 lg:grid-cols-12">
         <div className="nx-skeleton h-72 lg:col-span-7" />
         <div className="nx-skeleton h-72 lg:col-span-5" />
       </div>
@@ -142,31 +108,38 @@ export function NextSkeleton() {
   );
 }
 
-export default function NextReport({ report, loading, refreshing, onRefresh, onPickProfile, onSearch, onClassic, onHome }) {
-  useEffect(() => {
-    document.documentElement.classList.add('nx-root');
-    return () => document.documentElement.classList.remove('nx-root');
-  }, []);
+export default function NextReport({ report, tab: urlTab, onTab, refreshing, onRefresh, onPickProfile }) {
+  const tab = TABS.find((t) => t.id === (urlTab || load('profileTab', 'overview'))) ?? TABS[0];
+  const changeTab = (id) => {
+    save('profileTab', id);
+    onTab(id);
+    const top = document.getElementById('nx-tab-panel')?.getBoundingClientRect().top;
+    if (top != null && top < 0) window.scrollTo({ top: window.scrollY + top - 150, behavior: 'instant' });
+  };
+  const View = tab.section ? Advisor : tab.view;
 
   return (
-    <IconContext.Provider value={{ size: 16, weight: 'regular' }}>
-      <div className="nx">
-        <TopBar onHome={onHome} onSearch={onSearch} onClassic={onClassic} />
-        {!report && loading ? (
-          <NextSkeleton />
-        ) : (
-          <main className={`mx-auto w-full max-w-[1240px] px-4 pb-32 sm:px-6 ${refreshing ? 'opacity-70' : ''} transition-opacity duration-300`}>
-            <ProfileHeader report={report} refreshing={refreshing} onRefresh={onRefresh} onPickProfile={onPickProfile} />
-            <SectionTabs report={report} onClassic={onClassic} />
-            <div className="mt-6">
-              <Farming report={report} stats={report.stats} />
-            </div>
-            <footer className="nx-faint mt-20 max-w-[72ch] text-[13px]">
-              Numbers come from the Hypixel API and the community SkyBlock wiki, and can lag behind game patches. Prices are bazaar instant-buy and lowest BIN.
-            </footer>
-          </main>
-        )}
+    <div className={`transition-opacity duration-300 ${refreshing ? 'opacity-70' : ''}`}>
+      <ProfileHeader report={report} refreshing={refreshing} onRefresh={onRefresh} onPickProfile={onPickProfile} />
+
+      {report.warnings.length > 0 && (
+        <div className="nx-inset mt-6 flex gap-3 p-4 text-[14px]" role="status">
+          <WarningIcon className="nx-coin mt-0.5 shrink-0" size={18} />
+          <div className="nx-muted">
+            {report.warnings.map((w) => (
+              <p key={w}>{w}</p>
+            ))}
+          </div>
+        </div>
+      )}
+
+      <SectionTabs report={report} tab={tab} onTab={changeTab} />
+
+      <div id="nx-tab-panel" className="mt-6" role="tabpanel" aria-label={tab.label}>
+        <Suspense fallback={<Loading />}>
+          <View key={tab.id} report={report} stats={report.stats} sectionId={tab.section} onTab={changeTab} />
+        </Suspense>
       </div>
-    </IconContext.Provider>
+    </div>
   );
 }
