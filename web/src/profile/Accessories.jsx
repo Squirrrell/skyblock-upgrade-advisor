@@ -4,11 +4,27 @@
 import { useMemo, useState } from 'react';
 import { coins, int } from '../lib/format.js';
 import { load, save } from '../lib/storage.js';
-import { ItemSlot } from '../mc.jsx';
+import { ItemSlot, tooltipProps } from '../mc.jsx';
 import { Chip, Empty, Panel, SearchInput, Stat, StatGrid, rarityClass, rarityLabel } from '../ui.jsx';
 
 const ORDER = ['MYTHIC', 'LEGENDARY', 'EPIC', 'RARE', 'UNCOMMON', 'COMMON', 'SPECIAL', 'VERY_SPECIAL'];
 const matches = (q, ...fields) => !q || fields.some((f) => f?.toLowerCase().includes(q));
+
+/** Hover card for a missing accessory: its lore (loaded from NEU), then what it would add and cost. */
+function missingDetail(r) {
+  return {
+    name: r.name,
+    rarity: r.tier,
+    icon: r.id,
+    loreId: r.id,
+    lines: [
+      { text: `+${r.mp} magical power${r.upgradeFrom ? ` over your ${r.upgradeFrom}` : ''}`, color: 'var(--code-green)' },
+      r.price ? { text: `Price: ${int(r.price)} coins (${coins(r.price)})`, color: 'var(--code-gold)' } : { text: 'Not sold on the bazaar or auction house', color: 'var(--code-grey)' },
+      r.perMp ? { text: `${coins(r.perMp)} coins per magical power`, color: 'var(--code-gold)' } : null,
+    ],
+    label: `${rarityLabel(r.tier).toUpperCase()} ACCESSORY`,
+  };
+}
 
 function Missing({ missing }) {
   const [q, setQ] = useState('');
@@ -64,23 +80,10 @@ function Missing({ missing }) {
             </thead>
             <tbody>
               {rows.slice(0, limit).map((r) => (
-                <tr key={r.id}>
+                <tr key={r.id} {...tooltipProps(missingDetail(r))}>
                   <td className="px-2 py-1">
                     <span className="flex items-center gap-3">
-                      <ItemSlot
-                        id={r.id}
-                        rarity={r.tier}
-                        tooltip={{
-                          name: r.name,
-                          rarity: r.tier,
-                          lines: [
-                            { text: `+${r.mp} magical power`, color: 'var(--code-green)' },
-                            r.price ? { text: `Price: ${coins(r.price)}`, color: 'var(--code-gold)' } : 'Not for sale',
-                            r.upgradeFrom ? `You have ${r.upgradeFrom}` : null,
-                          ],
-                          label: `${rarityLabel(r.tier).toUpperCase()} ACCESSORY`,
-                        }}
-                      />
+                      <ItemSlot id={r.id} rarity={r.tier} tooltip={missingDetail(r)} />
                       <span className="min-w-0">
                         <span className={`font-semibold ${rarityClass(r.tier)}`}>{r.name}</span>
                         {r.upgradeFrom && <span className="ml-2 text-sm text-muted">from {r.upgradeFrom}</span>}

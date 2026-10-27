@@ -61,7 +61,10 @@ export function TooltipLayer() {
   }, []);
 
   if (!current) return null;
-  const { name, rarity, lines = [], label, lore, icon } = current.content;
+  const { name, rarity, lines = [], label, icon, loreId } = current.content;
+  // Items not on the profile (missing accessories) get their lore from the
+  // NEU repo on first hover; the short tooltip shows until it arrives.
+  const lore = current.content.lore ?? (loreId ? neuLore(loreId, current) : null);
   const color = RARITY[rarity] ?? RARITY.COMMON;
   const line = (l, i) =>
     typeof l === 'string' ? (
@@ -157,6 +160,31 @@ const CODE_COLORS = {
 };
 
 const stripCodes = (s) => String(s).replace(/§./g, '');
+
+const NEU_ITEMS = 'https://raw.githubusercontent.com/NotEnoughUpdates/NotEnoughUpdates-REPO/master/items/';
+const loreCache = new Map(); // id -> string[] | null (none) | Promise
+
+/**
+ * An item's in-game lore from the NEU repo, or undefined while it loads. When
+ * it arrives and the same tooltip is still open, the tooltip redraws with it.
+ */
+function neuLore(id, tipWhenAsked) {
+  const hit = loreCache.get(id);
+  if (Array.isArray(hit) || hit === null) return hit ?? undefined;
+  if (!hit) {
+    loreCache.set(
+      id,
+      fetch(`${NEU_ITEMS}${encodeURIComponent(id)}.json`)
+        .then((r) => (r.ok ? r.json() : null))
+        .then((item) => loreCache.set(id, Array.isArray(item?.lore) && item.lore.length ? item.lore : null))
+        .catch(() => loreCache.set(id, null))
+        .finally(() => {
+          if (tip === tipWhenAsked) setTip({ ...tip });
+        }),
+    );
+  }
+  return undefined;
+}
 
 /** A lore line with § codes as styled spans. */
 function mcText(s) {
