@@ -70,6 +70,8 @@ export function source(fields) {
     costNote: status === 'done' ? null : fields.costNote ?? null,
     counted: fields.counted ?? !fields.condition,
     tags: fields.tags ?? [],
+    // Item to show as the row's icon, when the cost lines don't name one.
+    icon: fields.icon ?? null,
   };
 }
 

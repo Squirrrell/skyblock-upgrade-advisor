@@ -5,6 +5,7 @@ import { DEFAULT_ICON_PACK, ICON_PACKS } from '../theme.js';
 import { STATIC_MODE } from './api.js';
 import { dataUrl, loadItems } from './data.js';
 import { bundledLookup, combinePacks, loadPackTextures } from './furfsky.js';
+import { PENDING_HEAD, renderedHead } from './heads3d.js';
 import { loadSavedPacks, savePacks } from './packStore.js';
 
 let pack = readPack();
@@ -171,5 +172,12 @@ export function iconUrls(id, extraHint = {}) {
   if (!id) return [];
   const info = itemInfo(id);
   const hint = { skull: info.skull, isPet: PET_ID.test(id), shardInternal: shardIds?.get(id), ...extraHint };
-  return ICON_PACKS[pack].urls(id, hint, packTextures);
+  const urls = ICON_PACKS[pack].urls(id, hint, packTextures);
+  // Pets are always 3D heads, drawn here from their skin like the in-game pet menu.
+  if (hint.isPet && hint.skull) {
+    const head = renderedHead(hint.skull, emit);
+    if (head === undefined) return [PENDING_HEAD];
+    if (head) return [head, ...urls];
+  }
+  return urls;
 }

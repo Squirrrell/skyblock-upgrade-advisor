@@ -140,26 +140,29 @@ const RARITY_INDEX = { COMMON: 0, UNCOMMON: 1, RARE: 2, EPIC: 3, LEGENDARY: 4, M
  * `hint` carries what the caller knows: skull texture hash, shard internal id.
  *
  * - default: Hypixel's own textures, rendered by SkyCrypt's public item API
- *   (sky.shiiyu.moe). Player heads and pets come back as 3D heads. Only if
- *   that fails does a non-pet head fall back to a flat face from mc-heads;
- *   pets never use the flat face.
+ *   (sky.shiiyu.moe). Player heads and pets come back as 3D heads. If that
+ *   fails, a pet falls back to mc-heads' 3D head and other heads to a flat
+ *   face. Pets are drawn as 3D heads first anyway (lib/heads3d.js).
  * - furfsky: FurfSky Reborn textures, bundled with the site with the FurfSky
  *   team's permission (or read from the visitor's own copy, see
- *   lib/furfsky.js), matched by item id or, for pets and other heads, by skull
- *   texture. Items the pack lacks fall back to default.
+ *   lib/furfsky.js), matched by item id or, for other heads, by skull
+ *   texture. Pets always use the default 3D heads, since the pack draws them
+ *   flat. Items the pack lacks fall back to default.
  */
 export const ICON_PACKS = {
   default: {
     label: 'Hypixel default',
     urls(id, hint = {}) {
       const out = [`https://sky.shiiyu.moe/api/item/${encodeURIComponent(skyCryptId(id, hint))}`];
-      if (hint.skull && !hint.isPet) out.push(`https://mc-heads.net/avatar/${hint.skull}/64`);
+      // Pets fall back to mc-heads' 3D head render, other heads to a flat face.
+      if (hint.skull) out.push(hint.isPet ? `https://mc-heads.net/head/${hint.skull}/128` : `https://mc-heads.net/avatar/${hint.skull}/64`);
       return out;
     },
   },
   furfsky: {
     label: 'FurfSky Reborn',
     urls(id, hint = {}, packTextures) {
+      if (hint.isPet) return ICON_PACKS.default.urls(id, hint);
       const own = packTextures?.get(id) ?? packTextures?.getSkull?.(hint.skull);
       return own ? [own, ...ICON_PACKS.default.urls(id, hint)] : ICON_PACKS.default.urls(id, hint);
     },

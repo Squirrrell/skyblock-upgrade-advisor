@@ -576,6 +576,7 @@ function petsGroup(ctx) {
     source({
       id: 'farming-pet',
       name: best ? `${prettyId(best.pet.tier)} ${best.def.name}` : 'Farming pet',
+      icon: best ? `PET_${best.pet.type}_${best.pet.tier}` : nextUp ? `PET_${nextUp.type}_${nextUp.tier}` : null,
       current: best?.value ?? 0,
       max: top.value,
       detail: best
@@ -632,6 +633,7 @@ function petsGroup(ctx) {
       source({
         id: `pet-${def.type.toLowerCase()}`,
         name: `${def.name} pet`,
+        icon: `PET_${def.type}_${owned?.tier ?? maxTier}`,
         current: owned ? petValue(def, owned) : 0,
         max: def.values[maxTier],
         unit: def.unit ?? 'fortune',

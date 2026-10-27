@@ -1,6 +1,7 @@
 // Collects the skull textures of every pet and attribute shard from the
 // NotEnoughUpdates repo. FurfSky Reborn retextures pets by skull texture, so
-// this is how the icon code finds a pet's texture in a loaded pack.
+// this is how the icon code finds a pet's texture in a loaded pack. The
+// pet skins are also what lib/heads3d.js draws the 3D pet heads from.
 // Pets and shards change rarely, so the result is committed; rerun this after
 // a SkyBlock update adds new ones.
 // Usage: node scripts/build-heads.mjs   (writes web/public/heads.json)
@@ -34,10 +35,15 @@ async function pool(tasks, size = 8) {
   return out;
 }
 
-const [pets, shards] = await Promise.all([getJson(`${NEU}/constants/pets.json`), getJson(`${NEU}/constants/attribute_shards.json`)]);
+const [pets, petnums, shards] = await Promise.all([
+  getJson(`${NEU}/constants/pets.json`),
+  getJson(`${NEU}/constants/petnums.json`),
+  getJson(`${NEU}/constants/attribute_shards.json`),
+]);
 
 // Try the legendary version first, then any other rarity that exists.
-const petTypes = Object.keys(pets?.pet_types ?? {});
+// pets.json lags behind new pets (Hedgehog, the wisps...); petnums.json has them.
+const petTypes = [...new Set([...Object.keys(pets?.pet_types ?? {}), ...Object.keys(petnums ?? {})])];
 const petHeads = await pool(
   petTypes.map((type) => async () => {
     for (const tier of [4, 5, 3, 2, 1, 0]) {
