@@ -117,6 +117,9 @@ export default function App() {
   const pickTab = useCallback((tab) => go({ ...route, tab }, true), [go, route]);
   const openPage = useCallback((page) => go(page ? { page } : {}), [go]);
   const openProfile = useCallback(() => state.report && go({ player: state.report.player.name }), [go, state.report]);
+  // Another member of the same coop: same profile (by id, since a member can
+  // have another profile with the same name), same tab.
+  const viewMember = useCallback((player) => go({ player, profile: state.report?.profile.id, tab: route.tab }), [go, state.report, route.tab]);
   const retry = () => setReloadKey((k) => k + 1);
 
   const Page = PAGES[route.page];
@@ -149,7 +152,7 @@ export default function App() {
           </div>
         )}
         {!Page && lookup && showReport && (
-          <NextReport report={state.report} tab={route.tab} onTab={pickTab} refreshing={state.status === 'loading'} onRefresh={retry} onPickProfile={pickProfile} />
+          <NextReport report={state.report} tab={route.tab} onTab={pickTab} refreshing={state.status === 'loading'} onRefresh={retry} onPickProfile={pickProfile} onViewMember={viewMember} />
         )}
       </Shell>
     );
@@ -173,7 +176,7 @@ export default function App() {
         {!Page && lookup && state.status === 'loading' && !state.report && <ReportSkeleton />}
         {!Page && lookup && state.status === 'error' && <ReportError error={state.error} player={lookup} onRetry={retry} />}
         {!Page && lookup && showReport && (
-          <Report report={state.report} tab={route.tab} onTab={pickTab} refreshing={state.status === 'loading'} onRefresh={retry} onPickProfile={pickProfile} />
+          <Report report={state.report} tab={route.tab} onTab={pickTab} refreshing={state.status === 'loading'} onRefresh={retry} onPickProfile={pickProfile} onViewMember={viewMember} />
         )}
       </main>
     </div>

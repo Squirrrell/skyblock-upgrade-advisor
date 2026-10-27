@@ -3,6 +3,7 @@ import { existsSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { ApiError } from '../shared/errors.js';
+import { resolvePlayer } from './hypixel.js';
 import { analyzePlayer } from './report.js';
 import { registerPackRoutes } from './packs.js';
 import { getDataFile, getPriceBook, startAuctionPolling } from './prices.js';
@@ -21,6 +22,15 @@ app.get('/api/player/:name', async (req, res) => {
   try {
     const report = await analyzePlayer(req.params.name, req.query.profile);
     res.set('Cache-Control', 'no-store').json(report);
+  } catch (err) {
+    sendError(res, err);
+  }
+});
+
+// Username or UUID -> { uuid, name }, for coop member names.
+app.get('/api/resolve/:query', async (req, res) => {
+  try {
+    res.set('Cache-Control', 'public, max-age=3600').json(await resolvePlayer(req.params.query));
   } catch (err) {
     sendError(res, err);
   }

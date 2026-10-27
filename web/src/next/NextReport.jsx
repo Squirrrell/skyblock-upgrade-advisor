@@ -3,6 +3,7 @@
 // layout; the other tabs reuse their views, restyled by bridge.css.
 import { ArrowClockwiseIcon, ArrowUpRightIcon, WarningIcon } from '@phosphor-icons/react';
 import { lazy, Suspense, useEffect, useRef } from 'react';
+import CoopMembers from '../components/CoopMembers.jsx';
 import { openCount, TABS } from '../components/Report.jsx';
 import { ago } from '../lib/format.js';
 import { load, save } from '../lib/storage.js';
@@ -115,7 +116,7 @@ export function NextSkeleton() {
   );
 }
 
-export default function NextReport({ report, tab: urlTab, onTab, refreshing, onRefresh, onPickProfile }) {
+export default function NextReport({ report, tab: urlTab, onTab, refreshing, onRefresh, onPickProfile, onViewMember }) {
   const tab = TABS.find((t) => t.id === (urlTab || load('profileTab', 'overview'))) ?? TABS[0];
   const changeTab = (id) => {
     save('profileTab', id);
@@ -128,6 +129,9 @@ export default function NextReport({ report, tab: urlTab, onTab, refreshing, onR
   return (
     <div className={`transition-opacity duration-300 ${refreshing ? 'opacity-70' : ''}`}>
       <ProfileHeader report={report} refreshing={refreshing} onRefresh={onRefresh} onPickProfile={onPickProfile} />
+      <div className="nx-rise mt-5" style={{ '--i': 1 }}>
+        <CoopMembers report={report} onView={onViewMember} />
+      </div>
 
       {report.warnings.length > 0 && (
         <div className="nx-inset mt-6 flex gap-3 p-4 text-[14px]" role="status">

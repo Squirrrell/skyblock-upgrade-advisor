@@ -3,6 +3,7 @@ import { lazy, Suspense, useRef } from 'react';
 import { load, save } from '../lib/storage.js';
 import { Loading } from '../ui.jsx';
 import { ItemSlot } from '../mc.jsx';
+import CoopMembers from './CoopMembers.jsx';
 import ProfileBar from './ProfileBar.jsx';
 
 // Each tab is its own chunk, fetched the first time it opens.
@@ -42,7 +43,7 @@ export const TABS = [
   { id: 'misc', label: 'Events & Misc', icon: 'CAKE', view: Misc },
 ];
 
-export default function Report({ report, tab: urlTab, onTab, refreshing, onRefresh, onPickProfile }) {
+export default function Report({ report, tab: urlTab, onTab, refreshing, onRefresh, onPickProfile, onViewMember }) {
   const tabsRef = useRef(null);
   const panelRef = useRef(null);
   const tab = TABS.find((t) => t.id === (urlTab || load('profileTab', 'overview'))) ?? TABS[0];
@@ -59,6 +60,9 @@ export default function Report({ report, tab: urlTab, onTab, refreshing, onRefre
   return (
     <div className={refreshing ? 'opacity-70 transition-opacity' : 'transition-opacity'}>
       <ProfileBar report={report} refreshing={refreshing} onRefresh={onRefresh} onPickProfile={onPickProfile} />
+      <div className="mt-4">
+        <CoopMembers report={report} onView={onViewMember} design="classic" />
+      </div>
 
       {report.warnings.length > 0 && (
         <div className="mc-panel mt-6 flex gap-3 p-4 text-sm leading-relaxed" role="status">

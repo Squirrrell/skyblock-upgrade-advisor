@@ -29,6 +29,18 @@ function apiWarnings(member, profile) {
   return warnings;
 }
 
+/**
+ * Everyone on the profile's island, oldest member first: UUIDs only (Hypixel
+ * has no names; the page looks those up). Members who left and invites not
+ * yet accepted are left out.
+ */
+function coopMembers(profile, viewing) {
+  return Object.entries(profile.members ?? {})
+    .filter(([, m]) => !m.profile?.deletion_notice && m.profile?.coop_invitation?.confirmed !== false)
+    .map(([uuid, m]) => ({ uuid, joinedAt: m.profile?.first_join ?? null, viewing: uuid === viewing }))
+    .sort((a, b) => (a.joinedAt ?? 0) - (b.joinedAt ?? 0));
+}
+
 /** Cheapest fortune per coin within one fortune section. */
 function bestValue(section) {
   const picks = [];
@@ -70,6 +82,7 @@ export function buildReport({ player, profiles, profile, garden, book, petConsta
     player,
     profile: { id: profile.profile_id, name: profile.cute_name, gameMode: profile.game_mode ?? 'normal' },
     profiles: profiles.map((p) => ({ id: p.profile_id, name: p.cute_name, selected: Boolean(p.selected), gameMode: p.game_mode ?? 'normal' })),
+    coop: coopMembers(profile, player.uuid),
     sections: { farming, hunting, consumables },
     stats,
     bestValue: { farming: bestValue(farming), hunting: bestValue(hunting) },

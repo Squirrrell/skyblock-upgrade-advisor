@@ -75,11 +75,26 @@ async function hypixelError(res, origin) {
 async function resolvePlayer(query, origin, ctx) {
   const clean = query.replace(/-/g, '');
   if (UUID.test(clean)) {
-    const res = await cachedFetch(`https://sessionserver.mojang.com/session/minecraft/profile/${clean}`, {}, 3600, ctx);
-    if (res.status === 204 || res.status === 404) return fail(404, 'No Minecraft account has that UUID.', 'NO_PLAYER', origin);
-    if (!res.ok) return fail(502, 'Mojang lookup failed', null, origin);
-    const data = await res.json();
-    return json({ uuid: data.id, name: data.name }, 200, origin);
+    // Same as names below: Mojang often refuses Cloudflare, so try mirrors too.
+    const sources = [
+      [`https://sessionserver.mojang.com/session/minecraft/profile/${clean}`, (d) => d],
+      [`https://api.minecraftservices.com/minecraft/profile/lookup/${clean}`, (d) => d],
+      [`https://playerdb.co/api/player/minecraft/${clean}`, (d) => d?.data?.player && { id: d.data.player.raw_id, name: d.data.player.username }],
+      [`https://mowojang.matdoes.dev/session/minecraft/profile/${clean}`, (d) => d],
+    ];
+    for (const [url, map] of sources) {
+      let res;
+      try {
+        res = await cachedFetch(url, { headers: { 'User-Agent': UA } }, 3600, ctx);
+      } catch {
+        continue;
+      }
+      if (res.status === 204 || res.status === 404) return fail(404, 'No Minecraft account has that UUID.', 'NO_PLAYER', origin);
+      if (!res.ok) continue;
+      const data = map(await res.json().catch(() => null));
+      if (data?.id && data?.name) return json({ uuid: data.id.replace(/-/g, ''), name: data.name }, 200, origin);
+    }
+    return fail(502, 'Mojang lookup failed', null, origin);
   }
   if (!USERNAME.test(query)) return fail(400, 'That does not look like a Minecraft username.', null, origin);
 
