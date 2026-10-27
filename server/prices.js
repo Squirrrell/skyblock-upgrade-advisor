@@ -2,6 +2,7 @@
 // from a full auction house scan, refreshed in the background.
 import { createPriceBook, scanAuctionHouse, slimItems } from '../shared/prices.js';
 import { getAuctionPage, getBazaar, getItemsResource } from './hypixel.js';
+import { getAttributeConstants } from './repo.js';
 
 const AUCTION_REFRESH_MS = 10 * 60_000;
 
@@ -74,6 +75,8 @@ export async function getDataFile(name) {
     return { updatedAt: snap.updatedAt, pages: snap.pages, lowest: snap.lowest };
   }
   if (name === 'items.json') return slimItems([...(await loadItems()).values()]);
+  // The item icons map SHARD_ ids to attribute shard textures with this list.
+  if (name === 'attribute_shards.json') return getAttributeConstants();
   return null;
 }
 

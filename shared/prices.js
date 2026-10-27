@@ -120,6 +120,22 @@ export function slimItems(items) {
     const out = { id: item.id, name: item.name };
     const slots = item.gemstone_slots?.filter((s) => s.slot_type === 'PERIDOT');
     if (slots?.length) out.gemstone_slots = slots;
+    // Used by the item icons: rarity colour, enchant glint and player-head texture.
+    if (item.tier) out.tier = item.tier;
+    if (item.glowing) out.glowing = true;
+    const skull = skullHash(item.skin?.value);
+    if (skull) out.skull = skull;
     return out;
   });
+}
+
+/** The textures.minecraft.net hash inside a base64 skin property, or null. */
+export function skullHash(value) {
+  if (!value) return null;
+  try {
+    const json = JSON.parse(atob(value));
+    return json?.textures?.SKIN?.url?.split('/').pop() ?? null;
+  } catch {
+    return null;
+  }
 }

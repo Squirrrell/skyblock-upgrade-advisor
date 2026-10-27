@@ -38,7 +38,7 @@ function bestValue(section) {
       if (!['missing', 'partial'].includes(s.status) || s.gain <= 0) continue;
       if (!s.cost?.total || s.cost.unpriced) continue;
       if (s.costGain <= 0) continue;
-      picks.push({ section: section.id, group: g.title, id: s.id, name: s.name, gain: s.costGain, total: s.cost.total, perPoint: s.cost.total / s.costGain, action: s.action });
+      picks.push({ section: section.id, group: g.title, id: s.id, name: s.name, icon: s.cost.lines?.find((l) => l.id)?.id ?? null, gain: s.costGain, total: s.cost.total, perPoint: s.cost.total / s.costGain, action: s.action });
     }
   }
   return picks.sort((a, b) => a.perPoint - b.perPoint).slice(0, 8);

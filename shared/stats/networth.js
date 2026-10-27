@@ -88,7 +88,7 @@ export function computeNetworth({ items, pets, member, profile, book }) {
   for (const pet of pets) {
     const v = petValue(pet, book, pet);
     add('Pets', v);
-    if (v) top.push({ name: `${pet.name} (Lvl ${pet.level ?? '?'})`, id: `PET_${pet.type}`, rarity: pet.tier, value: v, location: 'Pets', count: 1 });
+    if (v) top.push({ name: `${pet.name} (Lvl ${pet.level ?? '?'})`, id: `PET_${pet.type}_${pet.tier}`, rarity: pet.tier, value: v, location: 'Pets', count: 1 });
   }
 
   for (const [id, count] of Object.entries(member.inventory?.sacks_counts ?? {})) {
