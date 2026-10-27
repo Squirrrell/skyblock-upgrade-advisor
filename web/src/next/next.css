@@ -118,10 +118,10 @@ html[data-theme='light'] body.nx {
   color: inherit;
 }
 
+/* The ring follows each element's own corners, so pills stay pills. */
 .nx :focus-visible {
   outline: 2px solid var(--nx-accent);
   outline-offset: 2px;
-  border-radius: 8px;
 }
 
 .nx ::selection {
@@ -309,8 +309,8 @@ html[data-theme='light'] body.nx {
   margin-left: -4px;
 }
 .nx-tabbar .nx-tab .nx-icon img {
-  width: 100%;
-  height: 100%;
+  width: var(--size, 22px);
+  height: var(--size, 22px);
 }
 
 /* ------------------------------------------------------------------ buttons */
@@ -507,10 +507,11 @@ html[data-theme='light'] body.nx {
   background: var(--nx-surface-2);
   box-shadow: inset 0 0 0 1px var(--nx-line);
 }
+/* Sized from --size, not in %, so animated textures (tall strips) can't overflow. */
 .nx-icon img,
 .nx-icon .nx-icon-missing {
-  width: 66%;
-  height: 66%;
+  width: calc(var(--size, 40px) * 0.66);
+  height: calc(var(--size, 40px) * 0.66);
   object-fit: cover;
   object-position: top;
   image-rendering: pixelated;
