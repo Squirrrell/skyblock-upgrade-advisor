@@ -18,6 +18,16 @@ export function buildAccessoryIndex(items, misc = {}) {
   for (const [id, better] of Object.entries(misc.talisman_upgrades ?? {})) {
     if (known.has(id)) upgrades[id] = better.filter((b) => known.has(b));
   }
+  // The lists run lowest to highest, and NEU sometimes leaves out a middle
+  // tier's own entry (Pesthunter Artifact): fill it from the lower tiers' lists.
+  for (const better of Object.values(upgrades)) {
+    better.forEach((b, i) => {
+      const above = better.slice(i + 1);
+      if (!above.length) return;
+      const own = (upgrades[b] ??= []);
+      for (const x of above) if (!own.includes(x)) own.push(x);
+    });
+  }
   return { list, upgrades };
 }
 
@@ -43,9 +53,25 @@ export function missingAccessories(ownedItems, index, book) {
     // For an upgrade, skip it when an in-between tier is still missing.
     if (from && (index.upgrades[from] ?? []).some((b) => b !== acc.id && !owned.has(b) && (index.upgrades[b] ?? []).includes(acc.id))) continue;
 
+    rows.push(row(acc, from));
+  }
+
+  // The same, but only the top tier of each line (or the accessory itself if
+  // it has no line), counted from the best tier you own of it. The upgrade
+  // lists are cumulative, so the top is the one with nothing above it.
+  const topRows = [];
+  for (const acc of index.list) {
+    if (owned.has(acc.id) || index.upgrades[acc.id]?.length) continue;
+    const from = (lower[acc.id] ?? [])
+      .filter((b) => owned.has(b))
+      .sort((a, b) => (MAGICAL_POWER[owned.get(b)] ?? 0) - (MAGICAL_POWER[owned.get(a)] ?? 0))[0];
+    topRows.push(row(acc, from));
+  }
+
+  function row(acc, from) {
     const mp = (MAGICAL_POWER[acc.tier] ?? 0) - (from ? MAGICAL_POWER[owned.get(from)] ?? 0 : 0);
     const p = book.price(acc.id);
-    rows.push({
+    return {
       id: acc.id,
       name: acc.name,
       tier: acc.tier,
@@ -54,13 +80,19 @@ export function missingAccessories(ownedItems, index, book) {
       price: p?.unit ?? null,
       source: p?.source ?? null,
       perMp: p?.unit && mp > 0 ? p.unit / mp : null,
-    });
+    };
   }
-  rows.sort((a, b) => (a.perMp ?? Infinity) - (b.perMp ?? Infinity) || a.name.localeCompare(b.name));
+
+  const byValue = (a, b) => (a.perMp ?? Infinity) - (b.perMp ?? Infinity) || a.name.localeCompare(b.name);
+  rows.sort(byValue);
+  topRows.sort(byValue);
+  const sum = (list, f) => list.reduce((n, r) => n + f(r), 0);
   return {
     rows,
     total: rows.length,
-    totalMp: rows.reduce((n, r) => n + Math.max(0, r.mp), 0),
-    totalCost: Math.round(rows.reduce((n, r) => n + (r.price ?? 0), 0)),
+    totalMp: sum(rows, (r) => Math.max(0, r.mp)),
+    totalCost: Math.round(sum(rows, (r) => r.price ?? 0)),
+    topRows,
+    topMp: sum(topRows, (r) => Math.max(0, r.mp)),
   };
 }

@@ -15,7 +15,7 @@ One lookup loads every tab; each tab's code is fetched the first time you open i
 - **Shards**: every hunting shard the account has, in the Hunting Box and syphoned into attributes, with attribute levels and the total value at bazaar instant-sell (plus what buying them all again would cost). Only held shards count toward networth, since syphoned ones can't be sold.
 - **Collections & Minions**: every collection with coop totals and tier progress, and crafted minions with the next minion slot.
 - **Inventory**: armor, equipment, inventory, loadouts, ender chest, backpacks, vault, bags and both toolkits, searchable, with values.
-- **Accessories**: magical power, power and tuning, the bag by rarity, and every missing accessory or upgrade ranked by coins per magical power.
+- **Accessories**: magical power, power and tuning, and two searchable views: Missing (every accessory or next upgrade you lack, ranked by coins per magical power, or only the top tier of each line) and Owned (the bag by rarity).
 - **Pets**: levels, held items, skins, pet score.
 - **Crimson & Rift**: faction reputation, Kuudra tiers, dojo grades and belt, trophy fish, and Rift progress.
 - **Events & Misc**: Chocolate Factory, fairy souls, bestiary, essence, experiments, auction stats, kills, deaths and races.

@@ -114,3 +114,33 @@ test('shardStats values held shards and reads attribute levels', async () => {
   assert.equal(s.list.find((r) => r.id === 'SHARD_PUCK').syphoned, 1);
   assert.equal(s.list.find((r) => r.id === 'SHARD_CRICKET').level, 2); // uncommon: 1 + 2 shards
 });
+
+test('missingAccessories lists the next tier and the top tier of each line', async () => {
+  const { missingAccessories } = await import('../accessories.js');
+  const index = {
+    list: [
+      { id: 'SPEED_TALISMAN', name: 'Speed Talisman', tier: 'COMMON' },
+      { id: 'SPEED_RING', name: 'Speed Ring', tier: 'UNCOMMON' },
+      { id: 'SPEED_ARTIFACT', name: 'Speed Artifact', tier: 'RARE' },
+      { id: 'LONE_RING', name: 'Lone Ring', tier: 'EPIC' },
+    ],
+    upgrades: { SPEED_TALISMAN: ['SPEED_RING', 'SPEED_ARTIFACT'], SPEED_RING: ['SPEED_ARTIFACT'] },
+  };
+  const book = { price: () => null };
+  const m = missingAccessories([{ id: 'SPEED_TALISMAN', rarity: 'COMMON' }], index, book);
+  // Next step: the ring (not the artifact), plus the standalone ring.
+  assert.deepEqual(m.rows.map((r) => r.id).sort(), ['LONE_RING', 'SPEED_RING']);
+  // Highest tier: the artifact, counted up from the talisman you own.
+  assert.deepEqual(m.topRows.map((r) => r.id).sort(), ['LONE_RING', 'SPEED_ARTIFACT']);
+  const artifact = m.topRows.find((r) => r.id === 'SPEED_ARTIFACT');
+  assert.equal(artifact.upgradeFrom, 'Speed Talisman');
+  assert.equal(artifact.mp, 8 - 3); // rare 8 MP minus common 3 MP
+});
+
+test('buildAccessoryIndex fills in a middle tier missing from NEU', async () => {
+  const { buildAccessoryIndex } = await import('../accessories.js');
+  const items = ['PEST_BADGE', 'PEST_RING', 'PEST_ARTIFACT', 'PEST_RELIC'].map((id) => ({ id, name: id, category: 'ACCESSORY' }));
+  const misc = { talisman_upgrades: { PEST_BADGE: ['PEST_RING', 'PEST_ARTIFACT', 'PEST_RELIC'], PEST_RING: ['PEST_ARTIFACT', 'PEST_RELIC'] } };
+  const { upgrades } = buildAccessoryIndex(items, misc);
+  assert.deepEqual(upgrades.PEST_ARTIFACT, ['PEST_RELIC']);
+});
