@@ -74,3 +74,20 @@ test('decodeInventory reads a gzipped NBT item list', () => {
   assert.equal(items.length, 1);
   assert.equal(items[0].tag.ExtraAttributes.id, 'FERMENTO_HELMET');
 });
+
+test('bestArmorLoadout mixes sets and loose pieces', async () => {
+  const { bestArmorLoadout } = await import('./farming.js');
+  const own = (...ids) => ids.map((id) => ({ id, rarity: 'RARE', name: id }));
+  const cropie = ['CROPIE_HELMET', 'CROPIE_CHESTPLATE', 'CROPIE_LEGGINGS', 'CROPIE_BOOTS'];
+  // Full Cropie: 90 + 3 bonus steps of 15.
+  assert.equal(bestArmorLoadout(own(...cropie), 30).value, 135);
+  // Rancher's Boots at Farming 60 (+60) beat Cropie boots plus one bonus step (20 + 15).
+  const mixed = bestArmorLoadout(own(...cropie, 'RANCHERS_BOOTS'), 60);
+  assert.equal(mixed.value, 70 + 30 + 60);
+  assert.equal(mixed.slots[3].id, 'RANCHERS_BOOTS');
+  // At Farming 20 the boots are worth less than keeping the set together.
+  assert.equal(bestArmorLoadout(own(...cropie, 'RANCHERS_BOOTS'), 20).slots[3].id, 'CROPIE_BOOTS');
+  // Best piece per slot across sets: Squash helmet with Cropie chest/legs/boots.
+  const across = bestArmorLoadout(own('SQUASH_HELMET', 'CROPIE_CHESTPLATE', 'CROPIE_LEGGINGS', 'CROPIE_BOOTS'), 0);
+  assert.equal(across.value, 25 + 70 + 30);
+});

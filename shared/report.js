@@ -34,7 +34,8 @@ function bestValue(section) {
   const picks = [];
   for (const g of section.groups) {
     for (const s of g.items) {
-      if (s.unit !== 'fortune' || !s.counted) continue;
+      // `rank` lets an alternative purchase (left out of the totals) still compete on price.
+      if (s.unit !== 'fortune' || !(s.counted || s.tags.includes('rank'))) continue;
       if (!['missing', 'partial'].includes(s.status) || s.gain <= 0) continue;
       if (!s.cost?.total || s.cost.unpriced) continue;
       if (s.costGain <= 0) continue;

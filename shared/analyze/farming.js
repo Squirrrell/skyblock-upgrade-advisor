@@ -2,6 +2,7 @@ import {
   ACCESSORY_FAMILIES,
   ARMOR_SETS,
   ARMOR_SLOTS,
+  LOOSE_ARMOR,
   CHIP_MAX_LEVEL,
   CROP_UPGRADE_KEYS,
   EQUIPMENT_MAX_VISITORS,
@@ -172,52 +173,149 @@ function gardenGroup(ctx) {
 
 // ---------------------------------------------------------------- armor
 
-function setValue(set, owned) {
-  let value = 0;
-  set.pieces.forEach((v, i) => {
-    if (owned[i]) value += v;
-  });
-  if (owned.every(Boolean)) value = set.total;
-  return value;
+function farmingLevel(ctx) {
+  const cap = 50 + (ctx.member.jacobs_contest?.perks?.farming_level_cap ?? 0);
+  return skillLevel(ctx.member.player_data?.experience?.SKILL_FARMING ?? 0, cap).level;
 }
 
-function ownedSetPieces(items, set) {
-  return ARMOR_SLOTS.map((slot) => {
-    const id = `${set.prefix}_${slot}`;
-    const candidates = items.filter((i) => i.id === id);
-    candidates.sort((a, b) => rarityIdx(b) - rarityIdx(a));
-    return candidates[0] ?? null;
+const bestOwned = (items, id) => items.filter((i) => i.id === id).sort((a, b) => rarityIdx(b) - rarityIdx(a))[0] ?? null;
+
+/**
+ * The strongest armor a player can put together from what they own, mixing
+ * sets freely: every slot takes a set piece, a loose piece (Rancher's Boots)
+ * or nothing, and each set adds its tiered bonus for 2+ pieces worn.
+ * Returns { value, slots: [{ id, piece, set, loose, value } | null] x4 }.
+ */
+export function bestArmorLoadout(items, level) {
+  const options = ARMOR_SLOTS.map((slot, i) => {
+    const list = [null];
+    for (const set of ARMOR_SETS) {
+      const piece = bestOwned(items, `${set.prefix}_${slot}`);
+      if (piece) list.push({ id: piece.id, piece, set, value: set.pieces[i] });
+    }
+    for (const loose of LOOSE_ARMOR) {
+      const piece = loose.slot === i && bestOwned(items, loose.id);
+      if (piece) list.push({ id: piece.id, piece, loose, value: loose.perLevel * level });
+    }
+    return list;
   });
+
+  const score = (slots) => {
+    let value = 0;
+    const perSet = new Map();
+    for (const s of slots) {
+      if (!s) continue;
+      value += s.value;
+      if (s.set) perSet.set(s.set, (perSet.get(s.set) ?? 0) + 1);
+    }
+    for (const [set, n] of perSet) value += set.bonus * Math.max(0, n - 1);
+    return value;
+  };
+
+  // At most ~10 options per slot, so trying every combination is cheap.
+  let best = { value: 0, slots: [null, null, null, null] };
+  const walk = (i, picked) => {
+    if (i === 4) {
+      const value = score(picked);
+      if (value > best.value) best = { value, slots: [...picked] };
+      return;
+    }
+    for (const o of options[i]) {
+      picked.push(o);
+      walk(i + 1, picked);
+      picked.pop();
+    }
+  };
+  walk(0, []);
+  return best;
+}
+
+/** Loadout name: the set name for a full set, else "Mixed farming armor". */
+function loadoutName(loadout) {
+  const sets = new Set(loadout.slots.map((s) => s?.set ?? s?.loose ?? null));
+  const only = sets.size === 1 ? [...sets][0] : null;
+  if (only?.prefix) return only.name;
+  return loadout.slots.some(Boolean) ? 'Mixed farming armor' : 'Farming armor';
+}
+
+/** What buying `ids` (pieces you don't own) would add, and which of them the best loadout would wear. */
+function armorWith(items, level, base, ids) {
+  const extra = ids.filter((id) => !bestOwned(items, id)).map((id) => ({ id, rarity: 'COMMON', name: prettyId(id), hypothetical: true }));
+  const loadout = bestArmorLoadout([...items, ...extra], level);
+  const worn = loadout.slots.filter((s) => s?.piece.hypothetical).map((s) => s.id);
+  return { gain: loadout.value - base.value, worn, loadout };
 }
 
 function armorGroup(ctx) {
   const { items, book } = ctx;
-  const evaluated = ARMOR_SETS.map((set) => {
-    const owned = ownedSetPieces(items, set);
-    return { set, owned, value: setValue(set, owned) };
-  });
-  const best = evaluated.reduce((a, b) => (b.value > a.value ? b : a), { value: 0, set: null, owned: [] });
+  const level = farmingLevel(ctx);
+  const best = bestArmorLoadout(items, level);
   const top = ARMOR_SETS[ARMOR_SETS.length - 1];
-  const next = ARMOR_SETS.find((s) => s.total > best.value);
+  const worn = best.slots.filter(Boolean);
+  const wornText = worn.map((s) => `${s.piece.name ?? prettyId(s.id)} +${s.value}`).join(', ');
+  const looseWorn = worn.filter((s) => s.loose);
+
+  // Next step: the first set tier that beats what you have, buying only the
+  // pieces the best mix would actually wear (keep Rancher's Boots, say).
+  let next = null;
+  for (const set of ARMOR_SETS) {
+    if (set.total <= best.value) continue;
+    const step = armorWith(items, level, best, ARMOR_SLOTS.map((slot) => `${set.prefix}_${slot}`));
+    if (step.gain > 0 && step.worn.length) {
+      next = { set, ...step };
+      break;
+    }
+  }
+  const kept = next?.loadout.slots.filter((s) => s?.loose) ?? [];
 
   const rows = [];
-  const ownedCount = best.owned.filter(Boolean).length;
-  const missingNext = next ? ownedSetPieces(items, next).map((p, i) => (p ? null : `${next.prefix}_${ARMOR_SLOTS[i]}`)).filter(Boolean) : [];
   rows.push(
     source({
       id: 'armor-set',
-      name: best.set ? best.set.name : 'Farming armor',
+      name: loadoutName(best),
       current: best.value,
       max: top.total,
-      detail: best.set ? `${ownedCount}/4 pieces owned, worth +${best.value}` : 'No farming armor found anywhere on this profile',
-      action: next ? `Next step: ${next.name} (+${next.total} as a full set)` : null,
-      cost: next ? priceLines(book, missingNext.map((id) => ({ id, qty: 1 }))) : null,
-      costGain: next ? next.total - best.value : 0,
-      costNote: next && next.prefix !== 'MELON' && next.prefix !== 'CROPIE' ? 'Usually upgraded from the tier below, AH price shown' : null,
+      detail: worn.length
+        ? `Best mix you own: ${wornText}${best.value > worn.reduce((n, s) => n + s.value, 0) ? `, plus the set bonus` : ''}. Worth +${best.value}.`
+        : 'No farming armor found anywhere on this profile',
+      action: next
+        ? `Next step: ${next.worn.length === 4 ? `the full ${next.set.name}` : `${next.worn.length} ${next.set.name} piece${next.worn.length === 1 ? '' : 's'}`}` +
+          (kept.length ? `, keeping your ${kept.map((s) => s.loose.name).join(' and ')}` : '') +
+          ` (+${round(next.gain)})`
+        : null,
+      cost: next ? priceLines(book, next.worn.map((id) => ({ id, qty: 1 }))) : null,
+      costGain: next ? next.gain : 0,
+      costNote: next && next.set.prefix !== 'MELON' && next.set.prefix !== 'CROPIE' ? 'Usually upgraded from the tier below, AH price shown' : null,
     }),
   );
-  if (next && next !== top) {
-    const missingTop = ownedSetPieces(items, top).map((p, i) => (p ? null : `${top.prefix}_${ARMOR_SLOTS[i]}`)).filter(Boolean);
+
+  // Rancher's or Farmer Boots: +1 per Farming level in the Garden, which can
+  // beat the boots of a set even after losing a step of its set bonus.
+  if (!looseWorn.length && !LOOSE_ARMOR.some((l) => bestOwned(items, l.id)) && level >= 18) {
+    const boots = LOOSE_ARMOR.map((l) => ({ l, price: book.price(l.id)?.unit ?? Infinity }))
+      .filter((b) => b.l.id !== 'RANCHERS_BOOTS' || level >= 21)
+      .sort((a, b) => a.price - b.price)[0];
+    const step = boots && armorWith(items, level, best, [boots.l.id]);
+    if (step?.gain > 0) {
+      rows.push(
+        source({
+          id: 'armor-loose-boots',
+          name: boots.l.name,
+          current: best.value,
+          max: best.value + step.gain,
+          detail: `+1 Farming Fortune per Farming level in the Garden (+${level} for you). Worn in place of your current boots, even without their set bonus step.`,
+          action: `Wear ${boots.l.name} with the rest of your armor`,
+          cost: priceLines(book, [{ id: boots.l.id, qty: 1 }]),
+          costNote: boots.l.id === 'FARMER_BOOTS' ? "Rancher's Boots give the same fortune" : null,
+          counted: false,
+          tags: ['alternative', 'rank'],
+        }),
+      );
+    }
+  }
+
+  if (next && next.set !== top) {
+    const step = armorWith(items, level, best, ARMOR_SLOTS.map((slot) => `${top.prefix}_${slot}`));
     rows.push(
       source({
         id: 'armor-top',
@@ -226,15 +324,15 @@ function armorGroup(ctx) {
         max: top.total,
         detail: `Full set gives +${top.total}`,
         action: 'Skip ahead to the strongest farming armor',
-        cost: priceLines(book, missingTop.map((id) => ({ id, qty: 1 }))),
+        cost: priceLines(book, step.worn.map((id) => ({ id, qty: 1 }))),
         counted: false,
         tags: ['alternative'],
       }),
     );
   }
 
-  // Per-piece upgrades only make sense on the set you actually wear.
-  rows.push(...pieceUpgrades(ctx, best.owned.filter(Boolean), 'armor', 'mossy', MAX_BUILD.armor));
+  // Per-piece upgrades only make sense on the pieces you actually wear.
+  rows.push(...pieceUpgrades(ctx, worn.map((s) => s.piece), 'armor', 'mossy', MAX_BUILD.armor));
   return group('armor', 'Armor', rows);
 }
 

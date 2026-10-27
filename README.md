@@ -34,7 +34,7 @@ Networth is an estimate: what base items, pets, sacks and essence would sell for
 
 - Farming level, the level cap and Anita's fortune tiers
 - Garden plots, crop upgrades, garden level and visitors served
-- Armor: which farming set you own and the next tier up, then Mossy reforges, Peridot gems and Pesterminator on the pieces you have
+- Armor: the strongest mix of pieces you own (sets can be mixed, set bonuses counted per set, and Rancher's or Farmer Boots at +1 per Farming level), the next tier up, then Mossy reforges, Peridot gems and Pesterminator on the pieces you wear
 - Equipment: Peony and Blossom pieces, Rooted reforges, Green Thumb, Zorro's Cape
 - Pets: your best farming pet, the next pet worth buying, the best pet item for it, and the situational pets (Hedgehog, Slug, Mosquito, Pig)
 - Accessories: Helianthus Relic, the Fermento and Anita lines, Farming Talisman, Atmospheric Filter, Magic 8 Ball
@@ -126,6 +126,8 @@ npm test
 ## Look and item icons
 
 The site is styled like Minecraft's inventory screens: grey bevelled panels, item slots, stone buttons, creative-inventory tabs, XP bars and purple item tooltips. Headings, buttons, tabs and numbers use the Monocraft pixel font; reading text uses Geist so long lists stay easy on the eyes. Everything that decides the look (palette, chat colour codes, rarity colours, font, GUI scale, backgrounds and the icon packs) lives in `web/src/theme.js`, and `web/src/styles.css` only reads those values.
+
+A new design is being tried out on the Farming tab: click "Preview the new design" there, or add `&ui=next` to a profile link. It lives in `web/src/next/`, scoped under the `.nx` class so it doesn't touch the Minecraft theme.
 
 Item icons come in two packs, picked from the header:
 

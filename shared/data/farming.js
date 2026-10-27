@@ -5,16 +5,26 @@
 export const ARMOR_SLOTS = ['HELMET', 'CHESTPLATE', 'LEGGINGS', 'BOOTS'];
 
 // Ordered weakest to strongest. `pieces` is base fortune per slot (helmet,
-// chest, legs, boots); `total` is the full-set value including the set bonus.
+// chest, legs, boots). `bonus` is the tiered set bonus step: wearing 2, 3 or
+// 4 pieces of the same set adds 1, 2 or 3 steps. `total` is the full set.
+// Sets can be mixed: the analyzer picks the best piece for every slot.
 export const ARMOR_SETS = [
-  { prefix: 'FARM_SUIT', name: 'Farmhand Armor', pieces: [5, 5, 5, 5], total: 20 },
-  { prefix: 'FARM_ARMOR', name: 'Haymaker Armor', pieces: [10, 10, 10, 10], total: 40 },
-  { prefix: 'PUMPKIN', name: 'Sprout Armor', pieces: [15, 15, 15, 15], total: 60 },
-  { prefix: 'MELON', name: 'Tater Armor', pieces: [15, 20, 20, 15], total: 100 },
-  { prefix: 'CROPIE', name: 'Cropie Armor', pieces: [20, 25, 25, 20], total: 135 },
-  { prefix: 'SQUASH', name: 'Squash Armor', pieces: [25, 30, 30, 25], total: 170 },
-  { prefix: 'FERMENTO', name: 'Fermento Armor', pieces: [30, 35, 35, 30], total: 205 },
-  { prefix: 'HELIANTHUS', name: 'Helianthus Armor', pieces: [35, 40, 40, 35], total: 225 },
+  { prefix: 'FARM_SUIT', name: 'Farmhand Armor', pieces: [5, 5, 5, 5], bonus: 0, total: 20 },
+  { prefix: 'FARM_ARMOR', name: 'Haymaker Armor', pieces: [10, 10, 10, 10], bonus: 0, total: 40 },
+  { prefix: 'PUMPKIN', name: 'Sprout Armor', pieces: [15, 15, 15, 15], bonus: 0, total: 60 },
+  { prefix: 'MELON', name: 'Tater Armor', pieces: [15, 20, 20, 15], bonus: 10, total: 100 },
+  { prefix: 'CROPIE', name: 'Cropie Armor', pieces: [20, 25, 25, 20], bonus: 15, total: 135 },
+  { prefix: 'SQUASH', name: 'Squash Armor', pieces: [25, 30, 30, 25], bonus: 20, total: 170 },
+  { prefix: 'FERMENTO', name: 'Fermento Armor', pieces: [30, 35, 35, 30], bonus: 25, total: 205 },
+  { prefix: 'HELIANTHUS', name: 'Helianthus Armor', pieces: [35, 40, 40, 35], bonus: 25, total: 225 },
+];
+
+// Single pieces that are not part of a set. They give +1 Farming Fortune per
+// Farming level in the Garden, so a high-level player often wears them in
+// place of a set piece (Rancher's Boots with three Cropie pieces, say).
+export const LOOSE_ARMOR = [
+  { id: 'RANCHERS_BOOTS', name: "Rancher's Boots", slot: 3, perLevel: 1 },
+  { id: 'FARMER_BOOTS', name: 'Farmer Boots', slot: 3, perLevel: 1 },
 ];
 
 // Farming fortune from one Peridot gem, by gem quality and item rarity
