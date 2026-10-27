@@ -4,12 +4,12 @@ import { useSyncExternalStore } from 'react';
 import { DEFAULT_ICON_PACK, ICON_PACKS } from '../theme.js';
 import { STATIC_MODE } from './api.js';
 import { dataUrl, loadItems } from './data.js';
-import { combinePacks, loadPackTextures } from './furfsky.js';
+import { bundledLookup, combinePacks, loadPackTextures } from './furfsky.js';
 import { loadSavedPacks, savePacks } from './packStore.js';
 
 let pack = readPack();
 let packTextures = null; // { get(id), getSkull(hash) } once a FurfSky pack is loaded
-let packInfo = null; // { names, count, source: 'minecraft' | 'saved' | 'picked' }
+let packInfo = null; // { names, count, source: 'minecraft' | 'saved' | 'picked' | 'bundled' }
 let packLoading = false;
 let items = null; // Map<id, item> from the item index
 let shardIds = null; // Map<SHARD_X, ATTRIBUTE_SHARD_Y;1>
@@ -86,8 +86,18 @@ export async function loadPackFiles(files, source) {
   }
 }
 
-// FurfSky textures load by themselves: the local server serves the packs in
-// your Minecraft folder, and the public site remembers a pack you picked once.
+/** The FurfSky textures bundled with the site (scripts/build-furfsky.mjs). */
+async function loadBundledPack() {
+  const base = `${import.meta.env.BASE_URL}furfsky/`;
+  const res = await fetch(`${base}index.json`);
+  if (!res.ok) return;
+  const index = await res.json();
+  const lookup = bundledLookup(index, base);
+  if (lookup.size) setPackTextures(lookup, { names: index.packs ?? ['FurfSky Reborn'], count: lookup.size, source: 'bundled' });
+}
+
+// FurfSky textures load by themselves. A pack in your Minecraft folder (local
+// server) or one you picked earlier wins; otherwise the bundled copy is used.
 async function autoLoadPacks() {
   if (!STATIC_MODE) {
     try {
@@ -106,9 +116,10 @@ async function autoLoadPacks() {
     }
   }
   const saved = await loadSavedPacks();
-  if (saved.length) return loadPackFiles(saved, 'saved');
+  if (saved.length && (await loadPackFiles(saved, 'saved'))) return;
+  await loadBundledPack();
 }
-autoLoadPacks();
+autoLoadPacks().catch(() => {});
 
 // Item hints load once, in the background; icons re-render when they arrive.
 loadItems()

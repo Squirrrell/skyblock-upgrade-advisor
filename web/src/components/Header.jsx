@@ -27,12 +27,12 @@ const NAV = [
   { id: 'tools', label: 'Tools' },
 ];
 
-const SOURCE_LABEL = { minecraft: 'from your Minecraft folder', saved: 'saved in this browser', picked: 'saved in this browser' };
+const SOURCE_LABEL = { minecraft: 'from your Minecraft folder', saved: 'saved in this browser', picked: 'saved in this browser', bundled: 'bundled with the site' };
 
 /**
- * Icon pack picker. FurfSky loads by itself (local server: your Minecraft
- * folder; public site: a pack picked once and kept in this browser), so the
- * file button only matters the first time.
+ * Icon pack picker. FurfSky loads by itself (the copy bundled with the site,
+ * or a newer one from your Minecraft folder), so the file button is only for
+ * using a different copy of the pack.
  */
 function PackPicker() {
   const { pack, packInfo, packLoading } = useIcons();

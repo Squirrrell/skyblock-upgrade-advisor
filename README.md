@@ -130,10 +130,11 @@ The site is styled like Minecraft's inventory screens: grey bevelled panels, ite
 Item icons come in two packs, picked from the header:
 
 - **Hypixel default**: textures rendered by SkyCrypt's public item API. Pets and other player-head items show as 3D heads; a non-pet head only falls back to a flat face from mc-heads if that render fails.
-- **FurfSky Reborn** (the default): textures from your own copy of the pack. Both the current Catharsis release (`FurSky Reborn.cats.zip`) and the older OptiFine "FULL" zip work, and with both loaded the `.cats` textures win. Pets are matched by their skull texture, the way the FULL pack does it. Items the packs don't cover use the default icons.
-  - Running locally, the server finds the packs in your Minecraft `resourcepacks` folder by itself (or set `FURFSKY_PACKS` to their paths, separated by `;`). Those routes only answer requests from your own computer.
-  - On the public site, click "Load FurfSky pack" once and pick the files from `.minecraft/resourcepacks`. They are read in the browser, never uploaded, and kept in that browser so they load by themselves next time.
-  - FurfSky Reborn is "All Rights Reserved", so its textures are not included in this repo or on the hosted site. Bundling them for every visitor would need the FurfSky team's permission ([discord.gg/fsr](https://discord.gg/fsr)).
+- **FurfSky Reborn** (the default): textures from [FurfSky Reborn](https://furfsky.net), bundled with the site with the FurfSky Reborn team's permission, so every visitor sees them without loading anything. Pets are matched by their skull texture, the way the pack does it. Items the pack doesn't cover use the default icons.
+  - The bundled set lives in `web/public/furfsky/` and is built from both the current Catharsis release (`FurSky Reborn.cats.zip`) and the older OptiFine "FULL" zip; where both have a texture, the `.cats` one wins.
+  - Running locally, the server also finds the packs in your Minecraft `resourcepacks` folder (or set `FURFSKY_PACKS` to their paths, separated by `;`) and uses them instead, so a newer copy shows up straight away. Those routes only answer requests from your own computer.
+  - The texture button in the header lets you pick a different copy of the pack. It is read in the browser, never uploaded, and kept in that browser.
+  - The textures are not covered by this repo's MIT license; all rights stay with the FurfSky Reborn team (see `web/public/furfsky/NOTICE.txt`).
 
 Missing icons show the purple and black missing-texture square.
 
@@ -145,8 +146,11 @@ node scripts/make-textures.mjs
 ```bash
 node scripts/build-heads.mjs
 ```
+```bash
+node scripts/build-furfsky.mjs
+```
 
-The first redraws the background and button tiles. The second refreshes `web/public/heads.json`, the pet and shard skull textures from the NotEnoughUpdates repo that FurfSky matching uses, after an update adds new ones.
+The first redraws the background and button tiles. The second refreshes `web/public/heads.json`, the pet and shard skull textures from the NotEnoughUpdates repo that FurfSky matching uses, after an update adds new ones. The third rebuilds the bundled FurfSky textures from the packs in your Minecraft folder after a FurfSky update.
 
 Monocraft is by Idrees Hassan under the SIL Open Font License; the license is in `web/public/fonts/`.
 

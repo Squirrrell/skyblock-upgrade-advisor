@@ -143,10 +143,10 @@ const RARITY_INDEX = { COMMON: 0, UNCOMMON: 1, RARE: 2, EPIC: 3, LEGENDARY: 4, M
  *   (sky.shiiyu.moe). Player heads and pets come back as 3D heads. Only if
  *   that fails does a non-pet head fall back to a flat face from mc-heads;
  *   pets never use the flat face.
- * - furfsky: FurfSky Reborn textures the visitor loads from their own copy of
- *   the pack (see lib/furfsky.js), matched by item id or, for pets and other
- *   heads, by skull texture. The pack's license does not allow hosting its
- *   files, so nothing is uploaded; items it lacks fall back to default.
+ * - furfsky: FurfSky Reborn textures, bundled with the site with the FurfSky
+ *   team's permission (or read from the visitor's own copy, see
+ *   lib/furfsky.js), matched by item id or, for pets and other heads, by skull
+ *   texture. Items the pack lacks fall back to default.
  */
 export const ICON_PACKS = {
   default: {

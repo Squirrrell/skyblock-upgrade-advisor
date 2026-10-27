@@ -1,5 +1,6 @@
-// Reads a FurfSky Reborn resource pack from the visitor's own computer.
-// Everything happens in the browser; nothing is uploaded.
+// Reads FurfSky Reborn resource packs: the copy bundled with the site
+// (built by scripts/build-furfsky.mjs, with the FurfSky team's permission) or
+// one the visitor picks from their own computer, read in the browser.
 //
 // Three layouts are understood:
 //  - Catharsis .cats (the current FurfSky Reborn release, raw or inside a
@@ -262,9 +263,20 @@ function buildLookup(rules, readTexture) {
   };
 }
 
-function catsLookup(bytes) {
+/**
+ * The texture rules in a pack (a .zip, a .cats.zip or raw .cats bytes), plus
+ * read(path) for a texture's PNG bytes. Runs in Node too, for the build script.
+ */
+export async function readPackRules(bytes) {
+  if (bytes[0] === 0x43 && bytes[1] === 0x41 && bytes[2] === 0x54 && bytes[3] === 0x53) return catsPack(bytes);
+  const files = await unzipAsync(bytes);
+  if (files['pack.cats']) return catsPack(files['pack.cats']);
+  return { rules: [...firmamentRules(files), ...citRules(files)], read: (path) => files[path] };
+}
+
+function catsPack(bytes) {
   const files = readCats(bytes);
-  return buildLookup(catsRules(files), (path) => files.get(path)());
+  return { rules: catsRules(files), read: (path) => files.get(path)() };
 }
 
 /**
@@ -275,12 +287,32 @@ function catsLookup(bytes) {
  * first frame because slot images crop to a square from the top.
  */
 export async function loadPackTextures(file) {
-  const bytes = new Uint8Array(await file.arrayBuffer());
-  if (bytes[0] === 0x43 && bytes[1] === 0x41 && bytes[2] === 0x54 && bytes[3] === 0x53) return catsLookup(bytes);
-  const files = await unzipAsync(bytes);
-  if (files['pack.cats']) return catsLookup(files['pack.cats']);
-  const rules = [...firmamentRules(files), ...citRules(files)];
-  return buildLookup(rules, (path) => files[path]);
+  const { rules, read } = await readPackRules(new Uint8Array(await file.arrayBuffer()));
+  return buildLookup(rules, read);
+}
+
+/**
+ * The bundled textures: index.json from scripts/build-furfsky.mjs maps ids
+ * and skull hashes to PNG names in the same folder, fetched by the browser
+ * only when an icon is shown.
+ */
+export function bundledLookup(index, base) {
+  const url = (name) => (name ? base + name + '.png' : undefined);
+  const patterns = (index.patterns ?? []).map(([source, flags, name]) => ({ re: new RegExp(source, flags), name }));
+  const resolved = new Map();
+  return {
+    size: Object.keys(index.items).length + Object.keys(index.skulls).length + patterns.length,
+    get(id) {
+      if (!id) return undefined;
+      if (!resolved.has(id)) resolved.set(id, index.items[id] ?? patterns.find((p) => p.re.test(id))?.name ?? null);
+      return url(resolved.get(id));
+    },
+    getSkull: (hash) => url(hash && index.skulls[hash]),
+    has(id) {
+      return Boolean(this.get(id));
+    },
+    revoke() {},
+  };
 }
 
 /** Several packs as one lookup; earlier packs win. */
