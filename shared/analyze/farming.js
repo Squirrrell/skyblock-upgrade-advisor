@@ -33,6 +33,9 @@ function gardenLevel(xp = 0) {
   return level;
 }
 
+// Carrolyn takes exactly 3,000 of each exportable crop item, +12 crop fortune each.
+const CARROLYN_EXPORTS = 3000;
+
 // ---------------------------------------------------------------- skill
 
 function skillGroup(ctx) {
@@ -876,12 +879,12 @@ function boostsGroup(ctx) {
       max: 12,
       unit: 'crop fortune',
       condition: 'Per crop, +12 each',
-      detail: 'Give Carrolyn one of each export for +12 fortune on that crop. Not visible in the API.',
+      detail: 'Give Carrolyn 3,000 of an export for +12 fortune on that crop (she takes no more than 3,000). Not visible in the API.',
       cost: priceLines(book, [
         'EXPORTABLE_CARROTS', 'EXPIRED_PUMPKIN', 'SUPREME_CHOCOLATE_BAR', 'FINE_FLOUR',
         'HALF_EATEN_MUSHROOM', 'WARTY', 'PRICKLY_KISS', 'POTTED_CACTUS',
-      ].map((id) => ({ id, qty: 1 }))),
-      costNote: 'Price for all 8 exports',
+      ].map((id) => ({ id, qty: CARROLYN_EXPORTS }))),
+      costNote: 'Price for 3,000 of each of the 8 exports',
     }),
   ]);
 }
