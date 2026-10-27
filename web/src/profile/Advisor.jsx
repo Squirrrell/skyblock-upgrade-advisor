@@ -9,6 +9,27 @@ import { coins, int, num } from '../lib/format.js';
 import { load, save } from '../lib/storage.js';
 import { Facts, Panel, Stat, StatGrid } from '../ui.jsx';
 
+// Switch to the new design preview without reloading the profile.
+function openPreview() {
+  const params = new URLSearchParams(window.location.search);
+  params.set('ui', 'next');
+  params.set('tab', 'farming');
+  window.history.pushState(null, '', `?${params}`);
+  window.dispatchEvent(new PopStateEvent('popstate'));
+  window.scrollTo({ top: 0, behavior: 'instant' });
+}
+
+function PreviewBanner() {
+  return (
+    <div className="mc-well mb-6 flex flex-wrap items-center justify-between gap-3 p-4">
+      <p className="text-sm">A new, cleaner design is being tried out on this tab.</p>
+      <button type="button" className="mc-btn" onClick={openPreview}>
+        Preview the new design
+      </button>
+    </div>
+  );
+}
+
 function GardenPanel({ stats }) {
   const g = stats.garden;
   const j = stats.jacob;
@@ -106,6 +127,7 @@ export default function Advisor({ report, stats, sectionId }) {
   const cost = remainingCost(section);
   return (
     <div className="fade-in">
+      {sectionId === 'farming' && <PreviewBanner />}
       {sectionId === 'farming' && <GardenPanel stats={stats} />}
       {sectionId === 'hunting' && <HuntingPanel stats={stats} />}
 

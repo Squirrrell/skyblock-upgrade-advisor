@@ -19,11 +19,11 @@ const Advisor = lazy(() => import('../profile/Advisor.jsx'));
 const Crimson = lazy(() => import('../profile/Crimson.jsx'));
 const Misc = lazy(() => import('../profile/Misc.jsx'));
 
-function openCount(section) {
+export function openCount(section) {
   return section.groups.reduce((n, g) => n + g.items.filter((s) => s.status === 'missing' || s.status === 'partial').length, 0);
 }
 
-const TABS = [
+export const TABS = [
   { id: 'overview', label: 'Overview', icon: 'BOOK_AND_QUILL', view: Overview },
   { id: 'skills', label: 'Skills', icon: 'EXP_BOTTLE', view: Skills },
   { id: 'slayers', label: 'Slayers', icon: 'GOLD_SWORD', view: Slayers },

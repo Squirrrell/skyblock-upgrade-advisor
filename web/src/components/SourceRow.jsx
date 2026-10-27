@@ -33,7 +33,7 @@ const ROW_ICONS = [
 ];
 const SECTION_ICON = { farming: 'WHEAT', hunting: 'BOW', consumables: 'POTION' };
 
-function rowIcon(item, sectionId) {
+export function rowIcon(item, sectionId) {
   const fromCost = item.cost?.lines?.find((l) => l.id)?.id;
   if (fromCost) return fromCost;
   return ROW_ICONS.find(([re]) => re.test(item.id))?.[1] ?? SECTION_ICON[sectionId] ?? 'BOOK';

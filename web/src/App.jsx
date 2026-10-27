@@ -18,6 +18,9 @@ const PAGES = {
 const TITLES = { bazaar: 'Bazaar', auctions: 'Auctions', calendar: 'Mayor & calendar', tools: 'Calculators & links' };
 const SITE = 'SkyBlock Advisor';
 
+// Preview of the new design (?ui=next), one page at a time.
+const NextReport = lazy(() => import('./next/NextReport.jsx'));
+
 function readUrl() {
   const params = new URLSearchParams(window.location.search);
   return {
@@ -25,12 +28,13 @@ function readUrl() {
     profile: params.get('profile') || '',
     tab: params.get('tab') || '',
     page: params.get('page') || '',
+    ui: params.get('ui') === 'next' ? 'next' : '',
   };
 }
 
 function writeUrl(route, replace = false) {
   const params = new URLSearchParams();
-  for (const key of ['page', 'player', 'profile', 'tab']) if (route[key]) params.set(key, route[key]);
+  for (const key of ['page', 'player', 'profile', 'tab', 'ui']) if (route[key]) params.set(key, route[key]);
   const url = params.toString() ? `?${params}` : window.location.pathname;
   window.history[replace ? 'replaceState' : 'pushState'](null, '', url);
 }
@@ -90,6 +94,24 @@ export default function App() {
 
   const Page = PAGES[route.page];
   const showReport = state.report && (state.status === 'ready' || state.status === 'loading');
+  const preview = route.ui === 'next' && lookup && state.status !== 'error';
+
+  if (preview) {
+    return (
+      <Suspense fallback={null}>
+        <NextReport
+          report={showReport ? state.report : null}
+          loading={state.status === 'loading'}
+          refreshing={state.status === 'loading' && Boolean(state.report)}
+          onRefresh={() => setReloadKey((k) => k + 1)}
+          onPickProfile={pickProfile}
+          onSearch={(player) => go({ player, ui: 'next' })}
+          onClassic={(tab) => go({ ...route, ui: '', tab: tab ?? 'farming' })}
+          onHome={() => openPage('')}
+        />
+      </Suspense>
+    );
+  }
 
   return (
     <div className="min-h-[100dvh]">

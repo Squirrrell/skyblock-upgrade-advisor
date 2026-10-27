@@ -1,0 +1,715 @@
+/*
+ * The new design, scoped to .nx so it can be previewed one page at a time
+ * next to the Minecraft theme.
+ *
+ * Calm dark (or light) neutrals from one cool grey family, one accent (jade)
+ * for progress and gains, amber only for coin prices. Geist throughout with
+ * tabular figures for numbers. Cards are a thin outer shell around an inner
+ * core; rows inside them are separated by hairlines, not boxes.
+ *
+ * The Minecraft stylesheet sets some properties on every element without a
+ * cascade layer (square corners, no transitions, pixel font on headings).
+ * revert-layer hands those back to Tailwind and to the rules below.
+ */
+
+.nx {
+  --nx-bg: #0b0c0e;
+  --nx-shell: rgb(255 255 255 / 0.025);
+  --nx-shell-ring: rgb(255 255 255 / 0.06);
+  --nx-surface: #131518;
+  --nx-surface-2: #1a1d21;
+  --nx-surface-3: #22262b;
+  --nx-line: rgb(255 255 255 / 0.07);
+  --nx-line-strong: rgb(255 255 255 / 0.12);
+  --nx-highlight: rgb(255 255 255 / 0.06);
+  --nx-text: #e9ebee;
+  --nx-text-2: #a4a9b1;
+  --nx-text-3: #6d737c;
+  --nx-accent: #56cfa1;
+  --nx-accent-soft: rgb(86 207 161 / 0.12);
+  --nx-accent-ink: #062018;
+  --nx-coin: #e2b45c;
+  --nx-miss: #e98a80;
+  --nx-miss-soft: rgb(233 138 128 / 0.1);
+  --nx-shadow: 0 1px 0 rgb(0 0 0 / 0.4), 0 24px 48px -24px rgb(0 0 0 / 0.6);
+  --nx-ease: cubic-bezier(0.32, 0.72, 0, 1);
+  --nx-r-lg: 22px;
+  --nx-r-md: 14px;
+  --nx-r-sm: 9px;
+
+  color-scheme: dark;
+  min-height: 100dvh;
+  background:
+    radial-gradient(1200px 600px at 12% -10%, rgb(86 207 161 / 0.07), transparent 60%),
+    radial-gradient(900px 500px at 100% 0%, rgb(120 140 170 / 0.06), transparent 60%),
+    var(--nx-bg);
+  color: var(--nx-text);
+  font-family: 'Geist Variable', ui-sans-serif, system-ui, sans-serif;
+  font-size: 15px;
+  line-height: 1.55;
+  font-feature-settings: 'ss01', 'cv11';
+  -webkit-font-smoothing: antialiased;
+}
+
+html[data-theme='light'] .nx {
+  --nx-bg: #f3f4f6;
+  --nx-shell: rgb(15 20 30 / 0.03);
+  --nx-shell-ring: rgb(15 20 30 / 0.07);
+  --nx-surface: #ffffff;
+  --nx-surface-2: #f5f6f8;
+  --nx-surface-3: #eceef1;
+  --nx-line: rgb(15 20 30 / 0.08);
+  --nx-line-strong: rgb(15 20 30 / 0.14);
+  --nx-highlight: rgb(255 255 255 / 0.9);
+  --nx-text: #15181d;
+  --nx-text-2: #545b66;
+  --nx-text-3: #8a909a;
+  --nx-accent: #13875f;
+  --nx-accent-soft: rgb(19 135 95 / 0.1);
+  --nx-accent-ink: #ffffff;
+  --nx-coin: #9a6a0c;
+  --nx-miss: #c2483d;
+  --nx-miss-soft: rgb(194 72 61 / 0.08);
+  --nx-shadow: 0 1px 0 rgb(15 20 30 / 0.04), 0 24px 48px -28px rgb(15 20 30 / 0.18);
+  color-scheme: light;
+  background:
+    radial-gradient(1200px 600px at 12% -10%, rgb(19 135 95 / 0.06), transparent 60%),
+    var(--nx-bg);
+}
+
+html.nx-root body {
+  background: var(--nx-page, #0b0c0e);
+  image-rendering: auto;
+}
+html.nx-root[data-theme='light'] body {
+  --nx-page: #f3f4f6;
+}
+
+.nx,
+.nx *,
+.nx *::before,
+.nx *::after {
+  border-radius: revert-layer;
+  letter-spacing: revert-layer;
+  transition: revert-layer;
+}
+
+.nx :is(h1, h2, h3, h4, th, .tabular, .font-mono, .font-pixel) {
+  font-family: inherit;
+  text-shadow: none;
+  -webkit-font-smoothing: antialiased;
+  letter-spacing: revert-layer;
+}
+
+.nx :is(input, select, textarea, button) {
+  all: revert-layer;
+  font: inherit;
+  color: inherit;
+}
+
+.nx a {
+  color: inherit;
+}
+
+.nx :focus-visible {
+  outline: 2px solid var(--nx-accent);
+  outline-offset: 2px;
+  border-radius: 8px;
+}
+
+.nx ::selection {
+  background: var(--nx-accent-soft);
+  color: var(--nx-text);
+}
+
+.nx button:active:not(:disabled) {
+  transform: none;
+}
+
+/* ------------------------------------------------------------------ text */
+
+.nx-num {
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: 'tnum';
+}
+
+.nx-eyebrow {
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--nx-text-3);
+}
+
+.nx-h1 {
+  font-size: clamp(28px, 4vw, 40px);
+  font-weight: 600;
+  line-height: 1.05;
+  letter-spacing: -0.025em;
+}
+
+.nx-h2 {
+  font-size: 18px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  line-height: 1.3;
+}
+
+.nx-muted {
+  color: var(--nx-text-2);
+}
+.nx-faint {
+  color: var(--nx-text-3);
+}
+.nx-coin {
+  color: var(--nx-coin);
+}
+.nx-gain {
+  color: var(--nx-accent);
+}
+
+/* ------------------------------------------------------------------ surfaces */
+
+/* Outer shell + inner core: a thin tray with the card sitting in it. */
+.nx-shell {
+  background: var(--nx-shell);
+  box-shadow: inset 0 0 0 1px var(--nx-shell-ring);
+  border-radius: var(--nx-r-lg);
+  padding: 5px;
+}
+
+.nx-core {
+  background: var(--nx-surface);
+  border-radius: calc(var(--nx-r-lg) - 5px);
+  box-shadow:
+    inset 0 1px 0 var(--nx-highlight),
+    var(--nx-shadow);
+}
+
+.nx-inset {
+  background: var(--nx-surface-2);
+  border-radius: var(--nx-r-md);
+}
+
+.nx-divide > * + * {
+  border-top: 1px solid var(--nx-line);
+}
+
+/* ------------------------------------------------------------------ top bar */
+
+.nx-topbar {
+  position: sticky;
+  top: 12px;
+  z-index: 30;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 12px auto 0;
+  width: min(1240px, calc(100% - 24px));
+  padding: 6px 6px 6px 10px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--nx-surface) 78%, transparent);
+  backdrop-filter: blur(16px) saturate(1.2);
+  -webkit-backdrop-filter: blur(16px) saturate(1.2);
+  box-shadow:
+    inset 0 0 0 1px var(--nx-line-strong),
+    0 12px 32px -16px rgb(0 0 0 / 0.5);
+}
+
+.nx .nx-brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.nx-brand-mark {
+  display: grid;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  border-radius: 8px;
+  background: var(--nx-accent);
+  color: var(--nx-accent-ink);
+}
+
+.nx-search {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: 1;
+  min-width: 0;
+  max-width: 340px;
+  margin-left: auto;
+  height: 38px;
+  padding: 0 14px;
+  border-radius: 999px;
+  background: var(--nx-surface-2);
+  box-shadow: inset 0 0 0 1px var(--nx-line);
+  color: var(--nx-text-3);
+  transition: box-shadow 250ms var(--nx-ease);
+}
+.nx-search:focus-within {
+  box-shadow: inset 0 0 0 1px var(--nx-accent);
+}
+.nx .nx-search input {
+  flex: 1;
+  min-width: 0;
+  background: transparent;
+  border: 0;
+  outline: none;
+  color: var(--nx-text);
+  font-size: 14px;
+}
+.nx .nx-search input::placeholder {
+  color: var(--nx-text-3);
+}
+
+/* ------------------------------------------------------------------ buttons */
+
+.nx .nx-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  height: 38px;
+  padding: 0 16px;
+  border-radius: 999px;
+  font-size: 14px;
+  font-weight: 500;
+  white-space: nowrap;
+  cursor: pointer;
+  color: var(--nx-text);
+  background: var(--nx-surface-2);
+  box-shadow: inset 0 0 0 1px var(--nx-line);
+  transition:
+    background-color 250ms var(--nx-ease),
+    box-shadow 250ms var(--nx-ease),
+    transform 250ms var(--nx-ease);
+}
+.nx .nx-btn:hover:not(:disabled) {
+  background: var(--nx-surface-3);
+  box-shadow: inset 0 0 0 1px var(--nx-line-strong);
+}
+.nx .nx-btn:active:not(:disabled) {
+  transform: scale(0.97);
+}
+.nx .nx-btn:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
+.nx .nx-btn-primary {
+  background: var(--nx-accent);
+  color: var(--nx-accent-ink);
+  box-shadow: none;
+}
+.nx .nx-btn-primary:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--nx-accent) 88%, #fff);
+  box-shadow: none;
+}
+
+.nx .nx-btn-ghost {
+  background: transparent;
+  box-shadow: none;
+  color: var(--nx-text-2);
+}
+.nx .nx-btn-ghost:hover:not(:disabled) {
+  background: var(--nx-surface-2);
+  color: var(--nx-text);
+  box-shadow: none;
+}
+
+.nx .nx-btn-sm {
+  height: 30px;
+  padding: 0 12px;
+  font-size: 13px;
+}
+
+/* Trailing icon in its own little circle. */
+.nx-btn-icon {
+  display: grid;
+  place-items: center;
+  width: 24px;
+  height: 24px;
+  margin-right: -10px;
+  border-radius: 999px;
+  background: rgb(0 0 0 / 0.12);
+  transition: transform 300ms var(--nx-ease);
+}
+.nx-btn:hover .nx-btn-icon {
+  transform: translateX(2px);
+}
+
+.nx .nx-select {
+  height: 38px;
+  padding: 0 34px 0 14px;
+  border-radius: 999px;
+  font-size: 14px;
+  background: var(--nx-surface-2)
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 256 256'%3E%3Cpath fill='%23888' d='M213.7 101.7l-80 80a8 8 0 0 1-11.4 0l-80-80a8 8 0 0 1 11.4-11.4L128 164.7l74.3-74.4a8 8 0 0 1 11.4 11.4z'/%3E%3C/svg%3E")
+    no-repeat right 14px center;
+  box-shadow: inset 0 0 0 1px var(--nx-line);
+  appearance: none;
+  cursor: pointer;
+  color: var(--nx-text);
+}
+.nx .nx-select:hover {
+  box-shadow: inset 0 0 0 1px var(--nx-line-strong);
+}
+.nx .nx-select option {
+  background: var(--nx-surface);
+  color: var(--nx-text);
+}
+
+/* Segmented control. */
+.nx-seg {
+  display: inline-flex;
+  padding: 3px;
+  gap: 2px;
+  border-radius: 999px;
+  background: var(--nx-surface-2);
+  box-shadow: inset 0 0 0 1px var(--nx-line);
+}
+.nx .nx-seg button {
+  height: 32px;
+  padding: 0 14px;
+  border-radius: 999px;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--nx-text-2);
+  cursor: pointer;
+  transition:
+    background-color 250ms var(--nx-ease),
+    color 250ms var(--nx-ease);
+}
+.nx .nx-seg button:hover {
+  color: var(--nx-text);
+}
+.nx .nx-seg button[aria-pressed='true'] {
+  background: var(--nx-surface);
+  color: var(--nx-text);
+  box-shadow:
+    inset 0 0 0 1px var(--nx-line-strong),
+    0 1px 2px rgb(0 0 0 / 0.25);
+}
+
+/* ------------------------------------------------------------------ section nav */
+
+.nx-tabs {
+  display: flex;
+  gap: 4px;
+  overflow-x: auto;
+  scrollbar-width: none;
+  padding: 4px;
+  margin: 0 -4px;
+  mask-image: linear-gradient(90deg, #000 calc(100% - 40px), transparent);
+}
+.nx-tabs::-webkit-scrollbar {
+  display: none;
+}
+.nx .nx-tab {
+  position: relative;
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  height: 36px;
+  padding: 0 14px;
+  border-radius: 999px;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--nx-text-2);
+  cursor: pointer;
+  white-space: nowrap;
+  transition:
+    background-color 250ms var(--nx-ease),
+    color 250ms var(--nx-ease);
+}
+.nx .nx-tab:hover {
+  color: var(--nx-text);
+  background: var(--nx-surface-2);
+}
+.nx .nx-tab[aria-selected='true'] {
+  color: var(--nx-text);
+  background: var(--nx-surface);
+  box-shadow: inset 0 0 0 1px var(--nx-line-strong);
+}
+.nx-tab-count {
+  min-width: 20px;
+  height: 20px;
+  padding: 0 6px;
+  border-radius: 6px;
+  display: inline-grid;
+  place-items: center;
+  font-size: 12px;
+  background: var(--nx-miss-soft);
+  color: var(--nx-miss);
+}
+
+/* ------------------------------------------------------------------ icons, bars, badges */
+
+.nx-icon {
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  width: var(--size, 40px);
+  height: var(--size, 40px);
+  border-radius: 11px;
+  background: var(--nx-surface-2);
+  box-shadow: inset 0 0 0 1px var(--nx-line);
+}
+.nx-icon img,
+.nx-icon .nx-icon-missing {
+  width: 66%;
+  height: 66%;
+  object-fit: cover;
+  object-position: top;
+  image-rendering: pixelated;
+}
+.nx-icon .nx-icon-missing {
+  border-radius: 4px;
+  background: var(--nx-surface-3);
+}
+
+.nx-bar {
+  position: relative;
+  height: 6px;
+  border-radius: 999px;
+  background: var(--nx-surface-3);
+  overflow: hidden;
+}
+.nx-bar > span {
+  position: absolute;
+  inset: 0 auto 0 0;
+  border-radius: inherit;
+  background: var(--nx-accent);
+  transform-origin: left;
+  animation: nx-grow 900ms var(--nx-ease) both;
+}
+.nx-bar.is-muted > span {
+  background: var(--nx-text-3);
+}
+
+/* Fortune by category, as one stacked bar. */
+.nx-stack {
+  display: flex;
+  height: 12px;
+  gap: 2px;
+  border-radius: 999px;
+  overflow: hidden;
+  background: var(--nx-surface-3);
+}
+.nx-stack > span {
+  height: 100%;
+  transform-origin: left;
+  animation: nx-grow 1000ms var(--nx-ease) both;
+}
+
+.nx-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  height: 22px;
+  padding: 0 8px;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 500;
+  white-space: nowrap;
+  background: var(--nx-surface-2);
+  color: var(--nx-text-2);
+}
+.nx-badge.is-done {
+  background: var(--nx-accent-soft);
+  color: var(--nx-accent);
+}
+.nx-badge.is-missing {
+  background: var(--nx-miss-soft);
+  color: var(--nx-miss);
+}
+
+/* ------------------------------------------------------------------ rows */
+
+.nx-row {
+  display: grid;
+  grid-template-columns: 40px minmax(0, 1fr);
+  gap: 6px 16px;
+  padding: 18px 20px;
+  transition: background-color 250ms var(--nx-ease);
+}
+.nx-row:hover {
+  background: color-mix(in srgb, var(--nx-surface-2) 55%, transparent);
+}
+.nx-row.is-flash {
+  animation: nx-flash 1600ms var(--nx-ease);
+}
+@media (min-width: 900px) {
+  .nx-row {
+    grid-template-columns: 40px minmax(0, 1fr) 168px 150px;
+    align-items: start;
+  }
+}
+
+.nx-row-title {
+  font-size: 15px;
+  font-weight: 560;
+  line-height: 1.35;
+}
+
+.nx-row-detail {
+  max-width: 68ch;
+  margin-top: 3px;
+  font-size: 14px;
+  color: var(--nx-text-2);
+  text-wrap: pretty;
+}
+
+.nx-row-action {
+  display: flex;
+  gap: 8px;
+  max-width: 68ch;
+  margin-top: 8px;
+  font-size: 14px;
+  color: var(--nx-text);
+  text-wrap: pretty;
+}
+
+/* Expanding cost breakdown, animated with grid rows. */
+.nx-expand {
+  display: grid;
+  grid-template-rows: 0fr;
+  transition: grid-template-rows 450ms var(--nx-ease);
+}
+.nx-expand.is-open {
+  grid-template-rows: 1fr;
+}
+.nx-expand > div {
+  overflow: hidden;
+}
+
+/* Sticky category rail. */
+.nx-rail {
+  position: sticky;
+  top: 84px;
+}
+.nx .nx-rail-link {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 2px 10px;
+  width: 100%;
+  padding: 9px 12px;
+  border-radius: 10px;
+  text-align: left;
+  cursor: pointer;
+  color: var(--nx-text-2);
+  transition:
+    background-color 250ms var(--nx-ease),
+    color 250ms var(--nx-ease);
+}
+.nx .nx-rail-link:hover {
+  background: var(--nx-surface-2);
+  color: var(--nx-text);
+}
+.nx .nx-rail-link[aria-current='true'] {
+  background: var(--nx-surface);
+  color: var(--nx-text);
+  box-shadow: inset 0 0 0 1px var(--nx-line);
+}
+
+.nx .nx-pick {
+  display: grid;
+  grid-template-columns: 34px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  padding: 10px 12px;
+  border-radius: 12px;
+  text-align: left;
+  cursor: pointer;
+  transition: background-color 250ms var(--nx-ease);
+}
+.nx .nx-pick:hover {
+  background: var(--nx-surface-2);
+}
+
+.nx-facts {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 0 16px;
+  font-size: 14px;
+}
+.nx-facts > * {
+  padding: 8px 0;
+  border-top: 1px solid var(--nx-line);
+}
+.nx-facts > :nth-child(-n + 2) {
+  border-top: 0;
+}
+.nx-facts dt {
+  color: var(--nx-text-2);
+}
+.nx-facts dd {
+  margin: 0;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+.nx details > summary {
+  list-style: none;
+  cursor: pointer;
+}
+.nx details > summary::-webkit-details-marker {
+  display: none;
+}
+
+.nx-skeleton {
+  background: linear-gradient(90deg, var(--nx-surface-2), var(--nx-surface-3), var(--nx-surface-2));
+  background-size: 200% 100%;
+  border-radius: 12px;
+  animation: nx-shimmer 1.4s var(--nx-ease) infinite;
+}
+
+/* ------------------------------------------------------------------ motion */
+
+.nx-rise {
+  animation: nx-rise 700ms var(--nx-ease) both;
+  animation-delay: calc(var(--i, 0) * 60ms);
+}
+
+@keyframes nx-rise {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+}
+
+@keyframes nx-grow {
+  from {
+    transform: scaleX(0);
+  }
+}
+
+@keyframes nx-flash {
+  0%,
+  40% {
+    background: var(--nx-accent-soft);
+  }
+}
+
+@keyframes nx-shimmer {
+  to {
+    background-position: -200% 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .nx *,
+  .nx *::before,
+  .nx *::after {
+    animation: none !important;
+    transition: none !important;
+  }
+}
