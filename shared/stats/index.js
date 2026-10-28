@@ -6,7 +6,7 @@ import { GARDEN_LEVEL_XP } from '../data/farming.js';
 import { prettyId } from '../analyze/helpers.js';
 import { MINION_MAX_TIER } from './constants.js';
 import { SKILLS, catacombsLevel, hotfLevel, hotmLevel, levelFrom, skillCap, skillTable, slayerLevel, SKILL_MAX } from './levels.js';
-import { computeNetworth, itemValue, itemValueParts } from './networth.js';
+import { computeNetworth, itemStars, itemValue, itemValueParts, starLabel } from './networth.js';
 import { shardStats } from './shards.js';
 
 const RARITY_RANK = { COMMON: 0, UNCOMMON: 1, RARE: 2, EPIC: 3, LEGENDARY: 4, MYTHIC: 5, DIVINE: 6, SPECIAL: 7, VERY_SPECIAL: 8 };
@@ -508,6 +508,12 @@ const INVENTORY_ORDER = ['Armor', 'Equipment', 'Inventory', 'Loadout', 'Wardrobe
 // Menu items and placeholders the game puts in inventories.
 const HIDDEN_ITEMS = new Set(['SKYBLOCK_MENU', 'SKYBLOCK_GUIDE']);
 
+/** "5 dungeon stars, 2 master stars", "8 Kuudra stars", or null. */
+function starText(stars) {
+  if (!stars.essence) return null;
+  return [starLabel(stars), stars.master && `${stars.master} master star${stars.master === 1 ? '' : 's'}`].filter(Boolean).join(', ');
+}
+
 function inventory(items, book) {
   const groups = {};
   for (const item of items) {
@@ -527,11 +533,12 @@ function inventory(items, book) {
       id: item.id,
       uuid: item.uuid,
       name: item.hasDisplayName ? item.name : book.name?.(item.id) ?? item.name,
+      rawName: item.rawName,
       count: item.count,
       rarity: item.rarity,
       reforge: item.reforge && item.reforge !== 'none' ? item.reforge : null,
       recombobulated: item.recombobulated,
-      stars: item.extra?.upgrade_level ?? item.extra?.dungeon_item_level ?? 0,
+      stars: starText(itemStars(item, book)),
       hotPotato: item.hotPotato,
       enchantments: item.enchantments,
       gems: Object.keys(item.gems ?? {}).length,

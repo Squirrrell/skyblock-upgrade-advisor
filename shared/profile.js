@@ -71,6 +71,9 @@ function normalizeItem(raw, location) {
     // Toolkit items carry no display name, so fall back to a readable id.
     name: display ? stripColor(display).trim() : prettyName(extra.id),
     hasDisplayName: Boolean(display),
+    // The name as the game shows it, with § colours (gold dungeon stars, red
+    // master stars, pink upgrade stars) and the pack-font marks.
+    rawName: display ?? null,
     location,
     count: raw.Count ?? 1,
     rarity: itemRarity(lore),

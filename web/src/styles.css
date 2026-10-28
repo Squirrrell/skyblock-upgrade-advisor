@@ -516,6 +516,18 @@ option {
   font-weight: 700;
 }
 
+/* A character drawn by Hypixel's pack font (mc.jsx Glyph), tinted like text. */
+.mc-glyph {
+  display: inline-block;
+  width: 0.85em;
+  height: 0.85em;
+  margin-right: 0.1em;
+  vertical-align: -0.08em;
+  background-color: currentColor;
+  mask-repeat: no-repeat;
+  image-rendering: pixelated;
+}
+
 .mc-tooltip .mc-tt-line {
   color: var(--code-grey);
 }

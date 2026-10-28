@@ -69,6 +69,33 @@ const APPLIED_ITEMS = [
 ];
 
 /**
+ * An item's stars, by kind: { essence, master, kind, costs }. Dungeon items
+ * take 5 essence stars, then up to 5 master stars (the red ➊-➎). Kuudra armor
+ * (crimson essence) and a few other items take 10 essence stars instead,
+ * the last five shown in pink. `kind` is 'dungeon', 'kuudra' or 'essence'.
+ */
+export function itemStars(item, book) {
+  const extra = item.extra ?? {};
+  const level = Number(extra.upgrade_level ?? extra.dungeon_item_level) || 0;
+  const def = book.item?.(item.id);
+  const costs = def?.upgrade_costs ?? [];
+  if (!level) return { essence: 0, master: 0, kind: null, costs };
+  const crimson = costs.some((tier) => tier.some((c) => c.essence_type === 'CRIMSON'));
+  const kind = crimson ? 'kuudra' : costs.length > 5 ? 'essence' : 'dungeon';
+  // Without the item list, a dungeon item past 5 is the only way to have more.
+  const cap = costs.length || 5;
+  const essence = Math.min(level, cap);
+  const master = kind === 'dungeon' ? Math.max(0, Math.min(level, 10) - 5) : 0;
+  return { essence, master, kind, costs };
+}
+
+/** "5 dungeon stars", "8 Kuudra stars" */
+export function starLabel({ essence, kind }) {
+  const what = { dungeon: 'dungeon star', kuudra: 'Kuudra star', essence: 'star' }[kind] ?? 'star';
+  return `${essence} ${what}${essence === 1 ? '' : 's'}`;
+}
+
+/**
  * An item's value, itemised: { total, base, parts: [{ label, value }] }.
  * `base` is the item itself (times its stack size); each part is something
  * applied to it, at its APPLIED_WORTH share, largest first.
@@ -99,21 +126,19 @@ export function itemValueParts(item, book) {
     if (potato > 10) add(`Fuming Potato Book x${potato - 10}`, (potato - 10) * v('FUMING_POTATO_BOOK') * APPLIED_WORTH.fumingPotato);
   }
 
-  // Dungeon stars: the essence (and items) the first five cost, then master stars.
-  const stars = Number(extra.upgrade_level ?? extra.dungeon_item_level) || 0;
-  const costs = book.item?.(item.id)?.upgrade_costs ?? [];
-  if (stars > 0 && costs.length) {
-    const done = Math.min(stars, costs.length);
+  // Stars: the essence (and items) each one cost, then master stars.
+  const stars = itemStars(item, book);
+  if (stars.essence) {
     let cost = 0;
-    for (const tier of costs.slice(0, done)) {
+    for (const tier of stars.costs.slice(0, stars.essence)) {
       for (const c of tier) {
         if (c.type === 'ESSENCE') cost += c.amount * v(`ESSENCE_${c.essence_type}`);
         else if (c.type === 'ITEM') cost += c.amount * v(c.item_id);
       }
     }
-    add(`${done} star${done === 1 ? '' : 's'}`, cost * APPLIED_WORTH.stars);
+    add(starLabel(stars), cost * APPLIED_WORTH.stars);
   }
-  for (let i = 5; i < Math.min(stars, 10); i++) add(`${words(MASTER_STARS[i - 5])} Master Star`, v(`${MASTER_STARS[i - 5]}_MASTER_STAR`) * APPLIED_WORTH.masterStar);
+  for (let i = 0; i < stars.master; i++) add(`${words(MASTER_STARS[i])} Master Star`, v(`${MASTER_STARS[i]}_MASTER_STAR`) * APPLIED_WORTH.masterStar);
 
   const stone = book.reforgeStone?.(item.reforge ?? extra.modifier);
   if (stone) add(`${book.name?.(stone) ?? words(stone)} (reforge)`, v(stone) * APPLIED_WORTH.reforge);
@@ -188,7 +213,7 @@ export function computeNetworth({ items, pets, member, profile, book }) {
     const { total: v, base, parts } = itemValueParts(item, book);
     if (!v) continue;
     add(LOCATION_GROUP[item.location] ?? 'Other', v);
-    top.push({ name: item.name, id: item.id, rarity: item.rarity, value: v, base, parts, location: item.location, count: item.count });
+    top.push({ name: item.name, rawName: item.rawName, id: item.id, rarity: item.rarity, value: v, base, parts, location: item.location, count: item.count });
   }
 
   for (const pet of pets) {

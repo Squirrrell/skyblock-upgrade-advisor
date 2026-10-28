@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react';
 import { coins, valueLines } from '../lib/format.js';
 import { prettyId } from '../../../shared/analyze/helpers.js';
-import { ItemSlot } from '../mc.jsx';
+import { ItemSlot, mcText } from '../mc.jsx';
 import { Chip, Empty, Panel, SearchInput, rarityClass, rarityLabel } from '../ui.jsx';
 
 const ROMAN = ['', 'I', 'II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII', 'IX', 'X'];
@@ -16,7 +16,8 @@ function ItemRow({ item }) {
   const tags = [
     item.reforge && prettyId(item.reforge),
     item.recombobulated && 'Recombobulated',
-    item.stars > 0 && `${item.stars}✪`,
+    // Older reports have a plain star count.
+    typeof item.stars === 'number' ? item.stars > 0 && `${item.stars}✪` : item.stars,
     item.hotPotato > 0 && `${item.hotPotato} potato books`,
     item.gems > 0 && `${item.gems} gems`,
   ].filter(Boolean);
@@ -38,7 +39,7 @@ function ItemRow({ item }) {
           glint={Boolean(enchants)}
           focusable={false}
           tooltip={{
-            name: item.name,
+            name: item.rawName ?? item.name,
             rarity: item.rarity,
             lines: [
               enchants ? { text: enchants, color: 'var(--code-blue)' } : null,
@@ -49,7 +50,7 @@ function ItemRow({ item }) {
           }}
         />
         <span className="min-w-0 flex-1 truncate">
-          <span className={`font-semibold ${rarityClass(item.rarity)}`}>{item.name}</span>
+          <span className={`font-semibold ${rarityClass(item.rarity)}`}>{mcText(item.rawName ?? item.name)}</span>
           {item.count > 1 && <span className="ml-1 text-muted">x{item.count}</span>}
           {tags.length > 0 && <span className="ml-2 hidden text-xs text-muted sm:inline">{tags.slice(0, 2).join(' · ')}</span>}
         </span>

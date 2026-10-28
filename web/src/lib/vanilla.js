@@ -18,11 +18,26 @@ function loadIndex(onReady) {
     .catch(() => ({ map: {}, icons: {} }))
     .then((data) => {
       index = data;
-      onReady?.();
     });
+  // Every caller hears when it is ready, not only the first.
+  if (onReady) loading.then(onReady);
 }
 
 const fileUrl = (hash) => `${BASE}${hash}.png`;
+
+/**
+ * A glyph from Hypixel's pack font for a character ("e068"):
+ * { url, x, y, cols, rows } on its bitmap sheet, null if the pack has none,
+ * or undefined while the index loads (onReady is called after).
+ */
+export function packGlyph(code, onReady) {
+  if (!index) {
+    loadIndex(onReady);
+    return undefined;
+  }
+  const g = index.glyphs?.[code];
+  return g ? { url: fileUrl(g[0]), x: g[1], y: g[2], cols: g[3], rows: g[4] } : null;
+}
 
 /** "R,G,B" from the Hypixel item list as a CSS colour. */
 const rgb = (color) => (color ? `rgb(${color})` : null);

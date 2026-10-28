@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { averageLowest, createPriceBook, reforgeStones, updateHistory } from '../prices.js';
-import { APPLIED_WORTH, itemValueParts } from './networth.js';
+import { APPLIED_WORTH, itemStars, itemValueParts } from './networth.js';
 
 const HOUR = 60 * 60_000;
 
@@ -68,11 +68,20 @@ test('an item is worth its base price plus its applied upgrades', () => {
     'Recombobulator 3000': 10_000_000 * APPLIED_WORTH.recombobulator,
     'Hot Potato Book x10': 1_000_000,
     'Fuming Potato Book x2': 2_000_000 * APPLIED_WORTH.fumingPotato,
-    '5 stars': 500 * 2_000 * APPLIED_WORTH.stars,
+    '5 dungeon stars': 500 * 2_000 * APPLIED_WORTH.stars,
     'First Master Star': 5_000_000,
     'BLESSED_FRUIT (reforge)': 2_000_000,
   };
   assert.equal(base, 20_000_000);
   assert.deepEqual(Object.fromEntries(parts.map((p) => [p.label.replace('Blessed Fruit', 'BLESSED_FRUIT'), p.value])), want);
   assert.equal(total, base + Object.values(want).reduce((a, b) => a + b, 0));
+});
+
+test('dungeon items take master stars, Kuudra armor takes ten essence stars', () => {
+  const dungeon = Array.from({ length: 5 }, () => [{ type: 'ESSENCE', essence_type: 'WITHER', amount: 10 }]);
+  const kuudra = Array.from({ length: 10 }, () => [{ type: 'ESSENCE', essence_type: 'CRIMSON', amount: 10 }]);
+  const book = createPriceBook({ items: new Map([['HYPERION', { upgrade_costs: dungeon }], ['AURORA_CHESTPLATE', { upgrade_costs: kuudra }]]) });
+  const star = (id, upgrade_level) => itemStars({ id, extra: { upgrade_level } }, book);
+  assert.deepEqual({ ...star('HYPERION', 7), costs: undefined }, { essence: 5, master: 2, kind: 'dungeon', costs: undefined });
+  assert.deepEqual({ ...star('AURORA_CHESTPLATE', 8), costs: undefined }, { essence: 8, master: 0, kind: 'kuudra', costs: undefined });
 });

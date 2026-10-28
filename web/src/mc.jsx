@@ -1,7 +1,8 @@
 // Minecraft-style building blocks: item slots and the hover tooltip.
-import { useEffect, useLayoutEffect, useRef, useState, useSyncExternalStore } from 'react';
+import { useEffect, useLayoutEffect, useReducer, useRef, useState, useSyncExternalStore } from 'react';
 import { iconUrls, itemInfo, useIcons } from './lib/icons.js';
 import { loadNeuItem, neuItemNow } from './lib/neu.js';
+import { packGlyph } from './lib/vanilla.js';
 import { RARITY } from './theme.js';
 
 // ------------------------------------------------------------------ tooltip
@@ -93,7 +94,7 @@ export function TooltipLayer() {
               <Icon id={icon} />
             </span>
           )}
-          <span>{name}</span>
+          <span>{mcText(name, { colors: false })}</span>
         </div>
         <div className="mc-tt-body">
           {lore.map((l, i) =>
@@ -115,7 +116,7 @@ export function TooltipLayer() {
   return (
     <div ref={ref} className="mc-tooltip" style={pos} role="tooltip">
       <div className="mc-tt-name" style={{ color }}>
-        {name}
+        {mcText(name)}
       </div>
       {lines.filter(Boolean).map((line, i) =>
         typeof line === 'string' ? (
@@ -160,7 +161,7 @@ const CODE_COLORS = {
   f: 'white',
 };
 
-const stripCodes = (s) => String(s).replace(/§./g, '');
+export const stripCodes = (s) => String(s).replace(/§./g, '');
 
 /**
  * An item's in-game lore from the NEU data repository (lib/neu.js), or
@@ -176,8 +177,45 @@ function neuLore(id, tipWhenAsked) {
   return undefined;
 }
 
-/** A lore line with § codes as styled spans. */
-function mcText(s) {
+/**
+ * One of the pack font's own characters (the fragged-item mark, stat icons),
+ * drawn from its bitmap sheet in the current text colour. Shows the plain
+ * character until the sheet index loads, or if the pack has no such glyph.
+ */
+function Glyph({ ch }) {
+  const [, redraw] = useReducer((n) => n + 1, 0);
+  const g = packGlyph(ch.codePointAt(0).toString(16), redraw);
+  if (!g) return ch;
+  const em = 0.85;
+  return (
+    <span
+      className="mc-glyph"
+      aria-hidden="true"
+      style={{
+        maskImage: `url(${g.url})`,
+        maskSize: `${g.cols * em}em ${g.rows * em}em`,
+        maskPosition: `${-g.x * em}em ${-g.y * em}em`,
+      }}
+    />
+  );
+}
+
+// Private-use (and the odd other) characters the pack font draws itself.
+const PACK_CHARS = /([က-῿-])/;
+
+/** Plain text with the pack font's characters drawn as glyphs. */
+export function withGlyphs(s, key = 'g') {
+  const parts = String(s).split(PACK_CHARS);
+  if (parts.length === 1) return s;
+  return parts.map((p, i) => (i % 2 ? <Glyph key={`${key}${i}`} ch={p} /> : p));
+}
+
+/**
+ * Text with § codes as styled spans, and the pack font's glyphs drawn.
+ * `colors: false` keeps the surrounding colour (for headers on a coloured band).
+ */
+export function mcText(s, { colors = true } = {}) {
+  if (!colors) return withGlyphs(stripCodes(s));
   const out = [];
   let style = {};
   let hidden = false;
@@ -199,7 +237,7 @@ function mcText(s) {
       else if (c === 'k') hidden = true;
       return;
     }
-    if (part && !hidden) out.push(<span key={i} style={style}>{part}</span>);
+    if (part && !hidden) out.push(<span key={i} style={style}>{withGlyphs(part, `${i}-`)}</span>);
   });
   return out;
 }
