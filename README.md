@@ -101,6 +101,8 @@ Setup, once:
 3. In the GitHub repo, add a repository variable `PROXY_URL` set to the Worker URL (Settings, Secrets and variables, Actions, Variables).
 4. Set Settings, Pages, Source to "GitHub Actions", then run the "Deploy to GitHub Pages" workflow.
 
+Each deploy also carries over the previous deploy's scripts and styles (`scripts/keep-assets.mjs`, read from the live site), so a page loaded just before a deploy keeps working. If a script is missing anyway, the page reloads itself once instead of staying blank.
+
 To renew the key later, run `npx wrangler secret put HYPIXEL_API_KEY` again. Nothing on the site changes. Development keys expire, so for a public site apply for a production key on the Hypixel dashboard.
 
 To try the Pages build locally, put `HYPIXEL_API_KEY=...` in `worker/.dev.vars`, run `npx wrangler dev --port 8791` in `worker/`, then:

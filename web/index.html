@@ -16,6 +16,35 @@
       } catch {
         document.documentElement.dataset.theme = 'dark';
       }
+      // A deploy renames the site's scripts. If one this page asks for is gone
+      // (an old cached page, or a tab left open across a deploy), reload once
+      // to get the new page instead of showing a blank one.
+      (function () {
+        function reload() {
+          try {
+            const last = Number(sessionStorage.getItem('assetReload')) || 0;
+            if (Date.now() - last < 30000) return;
+            sessionStorage.setItem('assetReload', String(Date.now()));
+          } catch {
+            return;
+          }
+          location.reload();
+        }
+        addEventListener(
+          'error',
+          function (e) {
+            const el = e.target;
+            const url = el && (el.src || el.href);
+            if (url && /\/assets\/[^/]+\.(js|css)$/.test(url)) reload();
+          },
+          true,
+        );
+        // Vite's event for a lazy chunk that failed to load.
+        addEventListener('vite:preloadError', function (e) {
+          e.preventDefault();
+          reload();
+        });
+      })();
     </script>
   </head>
   <body>
