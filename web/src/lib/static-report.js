@@ -72,6 +72,7 @@ export async function fetchStaticReport(name, wantedProfile, { signal } = {}) {
     bazaarProducts: bz?.products,
     lowest: prices.lowest,
     average: prices.average,
+    last: prices.last,
     reforges: reforges ?? {},
     items: new Map(items.map((i) => [i.id, i])),
     meta: { bazaarUpdatedAt: bz?.lastUpdated ?? null, auctionsUpdatedAt: prices.updatedAt, auctionPages: prices.pages },

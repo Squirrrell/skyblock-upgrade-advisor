@@ -1,13 +1,14 @@
 import { useMemo, useState } from 'react';
 import { coins, valueLines } from '../lib/format.js';
 import { prettyId } from '../../../shared/analyze/helpers.js';
+import { enchantName } from '../../../shared/stats/networth.js';
 import { ItemSlot, mcText } from '../mc.jsx';
 import { Chip, Empty, Panel, SearchInput, rarityClass, rarityLabel } from '../ui.jsx';
 
 const ROMAN = ['', 'I', 'II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII', 'IX', 'X'];
 const enchantText = (e) =>
   Object.entries(e ?? {})
-    .map(([k, v]) => `${prettyId(k.replace(/^ultimate_/, ''))} ${ROMAN[v] ?? v}`)
+    .map(([k, v]) => `${enchantName(k)} ${ROMAN[v] ?? v}`)
     .join(', ');
 
 function ItemRow({ item }) {
@@ -19,7 +20,7 @@ function ItemRow({ item }) {
     // Older reports have a plain star count.
     typeof item.stars === 'number' ? item.stars > 0 && `${item.stars}✪` : item.stars,
     item.hotPotato > 0 && `${item.hotPotato} potato books`,
-    item.gems > 0 && `${item.gems} gems`,
+    item.gems > 0 && `${item.gems} gem${item.gems === 1 ? '' : 's'}`,
   ].filter(Boolean);
   const hasMore = enchants || tags.length;
   return (

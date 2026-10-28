@@ -1,6 +1,7 @@
 // Writes the data files the static (GitHub Pages) build loads:
 //   prices.json            lowest BIN per item from a full auction house scan,
-//                          and its typical value over the last 3 days
+//                          its typical value over the last 3 days, and the last
+//                          price of items not listed now (seen this month)
 //   price-history.json     the lowest BIN samples that average comes from; each
 //                          build reads the previous one back from the live site
 //                          (PAGES_URL) and adds this scan to it
@@ -13,7 +14,7 @@
 import { mkdir, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { buildAccessoryIndex } from '../shared/accessories.js';
-import { averageLowest, reforgeStones, scanAuctionHouse, slimItems, updateHistory } from '../shared/prices.js';
+import { averageLowest, lastSeen, reforgeStones, scanAuctionHouse, slimItems, updateHistory } from '../shared/prices.js';
 
 const out = process.argv[2] ?? 'dist/data';
 const NEU = 'https://raw.githubusercontent.com/NotEnoughUpdates/NotEnoughUpdates-REPO/master/constants';
@@ -46,7 +47,7 @@ const average = averageLowest(history);
 
 await mkdir(out, { recursive: true });
 const files = {
-  'prices.json': { updatedAt: scan.updatedAt, pages: scan.pages, lowest, average },
+  'prices.json': { updatedAt: scan.updatedAt, pages: scan.pages, lowest, average, last: lastSeen(history, lowest) },
   'price-history.json': history,
   'reforges.json': reforgeStones(stones),
   'listings.json': { updatedAt: scan.updatedAt, listings: scan.listings },

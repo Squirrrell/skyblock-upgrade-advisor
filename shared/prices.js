@@ -97,6 +97,14 @@ export async function scanAuctionHouse(fetchPage, { concurrency = 6, listFor = n
 
 export const HISTORY_WINDOW_MS = 3 * 24 * 60 * 60_000;
 export const HISTORY_EVERY_MS = 2 * 60 * 60_000;
+export const LAST_SEEN_MS = 30 * 24 * 60 * 60_000;
+
+/** The last listed price of each key in `history` that has no price in `lowest` now. */
+export function lastSeen(history, lowest = {}) {
+  const out = {};
+  for (const [key, [price]] of Object.entries(history?.last ?? {})) if (lowest[key] === undefined) out[key] = price;
+  return out;
+}
 
 /**
  * Add a scan's lowest BINs to the rolling history, at most one sample every
@@ -105,9 +113,15 @@ export const HISTORY_EVERY_MS = 2 * 60 * 60_000;
  * sample, so every key shares the timestamps.
  */
 export function updateHistory(history, lowest, now = Date.now(), { window = HISTORY_WINDOW_MS, every = HISTORY_EVERY_MS } = {}) {
+  // The last price each key was listed at, kept for a month, for items that
+  // are only listed now and then (nothing on the house this scan).
+  const last = {};
+  for (const [key, entry] of Object.entries(history?.last ?? {})) if (now - entry[1] <= LAST_SEEN_MS) last[key] = entry;
+  for (const [key, price] of Object.entries(lowest)) last[key] = [Math.round(price), now];
+
   const times = [...(history?.times ?? [])];
   const prices = Object.fromEntries(Object.entries(history?.prices ?? {}).map(([k, v]) => [k, [...v]]));
-  if (times.length && now - times[times.length - 1] < every) return { times, prices };
+  if (times.length && now - times[times.length - 1] < every) return { times, prices, last };
   times.push(now);
   for (const list of Object.values(prices)) list.push(null);
   for (const [key, price] of Object.entries(lowest)) {
@@ -117,7 +131,7 @@ export function updateHistory(history, lowest, now = Date.now(), { window = HIST
   // Drop samples older than the window, and keys with nothing left.
   const keep = times.findIndex((t) => now - t <= window);
   const from = keep < 0 ? times.length : keep;
-  const out = { times: times.slice(from), prices: {} };
+  const out = { times: times.slice(from), prices: {}, last };
   for (const [key, list] of Object.entries(prices)) {
     const kept = list.slice(from);
     if (kept.some((p) => p != null)) out.prices[key] = kept;
@@ -161,11 +175,12 @@ export function reforgeStones(constants) {
 
 /**
  * `lowest` is the latest lowest BIN per key, `average` its typical value over
- * the last few days (averageLowest). price() is what buying costs now;
+ * the last few days (averageLowest), `last` the last listed price of items
+ * not on the house now (lastSeen). price() is what buying costs now;
  * value() is what an item is worth, for networth. `reforges` maps a reforge
  * name ("mossy") to its reforge stone id.
  */
-export function createPriceBook({ bazaarProducts = {}, lowest = {}, average = {}, reforges = {}, items = new Map(), meta = {} }) {
+export function createPriceBook({ bazaarProducts = {}, lowest = {}, average = {}, last = {}, reforges = {}, items = new Map(), meta = {} }) {
   function price(id) {
     if (!id) return null;
     const product = bazaarProducts[id];
@@ -191,15 +206,34 @@ export function createPriceBook({ bazaarProducts = {}, lowest = {}, average = {}
     }
     // The typical lowest BIN of the last few days, else the latest one.
     if (!exact) {
-      const max = average[`${id}@MAX`] ?? lowest[`${id}@MAX`];
+      const max = average[`${id}@MAX`] ?? lowest[`${id}@MAX`] ?? last[`${id}@MAX`];
       if (max !== undefined) return max;
     }
-    return average[id] ?? lowest[id] ?? null;
+    // Not listed now: the last price it was listed at this month (lastSeen).
+    return average[id] ?? lowest[id] ?? last[id] ?? null;
+  }
+
+  /**
+   * What an item is worth for networth. Like value(), but a bazaar item is
+   * the midpoint of instant-sell and instant-buy, or instant-buy when the
+   * sell side is thin (under half the buy price). Instant-sell alone badly
+   * undervalues rarely traded products such as high-level enchanted books,
+   * whose top buy order can be a few percent of what they sell for.
+   */
+  function worth(id, opts) {
+    const qs = id ? bazaarProducts[id]?.quick_status : null;
+    if (qs && (qs.buyPrice || qs.sellPrice)) {
+      const { buyPrice: buy, sellPrice: sell } = qs;
+      if (!buy) return sell;
+      return sell >= buy * 0.5 ? (sell + buy) / 2 : buy;
+    }
+    return value(id, opts);
   }
 
   return {
     price,
     value,
+    worth,
     name: (id) => items.get(id)?.name ?? null,
     item: (id) => items.get(id) ?? null,
     reforgeStone: (name) => (name ? reforges[String(name).toLowerCase()] ?? null : null),

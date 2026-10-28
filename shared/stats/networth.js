@@ -3,8 +3,9 @@
 // BIN of the last few days, see prices.js) plus what has been applied to it:
 // enchantments, recombobulator, potato books, stars, reforge stone, gems and
 // the other upgrades below. Applied upgrades count at a share of their price,
-// since they rarely sell back for full value; the shares are close to the
-// ones community networth tools use.
+// since they rarely sell back for full value. The shares and the enchantment
+// rules follow SkyHelper Networth (github.com/Altpapier/SkyHelper-Networth,
+// MIT), the library SkyCrypt uses, so the two estimates line up.
 
 const GEM_TIERS = ['ROUGH', 'FLAWED', 'FINE', 'FLAWLESS', 'PERFECT'];
 
@@ -39,15 +40,63 @@ export const APPLIED_WORTH = {
   farmingForDummies: 0.5,
   transmissionTuner: 0.7,
   manaDisintegrator: 0.8,
-  polarvoid: 0.8,
+  polarvoid: 1,
   jalapeno: 0.8,
   enrichment: 0.5,
+  enchantmentUpgrade: 0.8,
+  silex: 0.75,
+  gemstoneSlot: 0.6,
+  gemstoneChamber: 0.9,
+  dye: 0.9,
   other: 1,
+};
+
+// Enchantments that sell for far more than they add to an item.
+const ENCHANT_WORTH = { COUNTER_STRIKE: 0.2, BIG_BRAIN: 0.35, ULTIMATE_INFERNO: 0.35, OVERLOAD: 0.35, ULTIMATE_SOUL_EATER: 0.35, ULTIMATE_FATAL_TEMPO: 0.65 };
+
+// Enchantments past their book level take an item: Smite VII a Severed Hand,
+// Ender Slayer VII an Endstone Idol and so on. [item, from level, once per item].
+const TURBO = [['TURBO_GOURD', 6, true], ['ENCHANTED_TURBO_GOURD', 7, true]];
+const ENCHANT_UPGRADES = {
+  SCAVENGER: [['GOLDEN_BOUNTY', 6]],
+  PESTERMINATOR: [['PESTHUNTING_GUIDE', 6]],
+  LUCK_OF_THE_SEA: [['GOLD_BOTTLE_CAP', 7]],
+  PISCARY: [['TROUBLED_BUBBLE', 7]],
+  FRAIL: [['SEVERED_PINCER', 7]],
+  SPIKED_HOOK: [['OCTOPUS_TENDRIL', 7]],
+  CHARM: [['CHAIN_END_TIMES', 6]],
+  SMITE: [['SEVERED_HAND', 7]],
+  ENDER_SLAYER: [['ENDSTONE_IDOL', 7]],
+  BANE_OF_ARTHROPODS: [['ENSNARED_SNAIL', 7]],
+  VENOMOUS: [['FATEFUL_STINGER', 7]],
+  THORNS: [['PRICKLY_CREEPER', 4]],
+  SCUBA: [['VIBRANT_CORAL', 6]],
+  FOREST_PLEDGE: [['WATER_HYACINTH', 6]],
+  KARMA: [['FORESTS_FAVOR', 6]],
+  STEALTH: [['DISTANT_ECHO', 6]],
+  ...Object.fromEntries(['WHEAT', 'CARROT', 'POTATO', 'PUMPKIN', 'MELON', 'MUSHROOMS', 'COCOA', 'CACTI', 'CANE', 'WARTS', 'SUNFLOWER', 'MOONFLOWER', 'ROSE'].map((c) => [`TURBO_${c}`, TURBO])),
+};
+// Enchantments whose level grows with use; only level 1 is ever sold.
+const STACKING = new Set(['EXPERTISE', 'COMPACT', 'ABSORB', 'CULTIVATING', 'CHAMPION', 'HECATOMB', 'TOXOPHILITE']);
+// Comes on the item for free (dungeon drops roll Scavenger V).
+const IGNORED_ENCHANTS = { SCAVENGER: 5 };
+const BLOCKED_ENCHANTS = {
+  BONE_BOOMERANG: ['OVERLOAD', 'POWER', 'ULTIMATE_SOUL_EATER'],
+  DEATH_BOW: ['OVERLOAD', 'POWER', 'ULTIMATE_SOUL_EATER'],
+  GARDENING_AXE: ['REPLENISH'],
+  GARDENING_HOE: ['REPLENISH'],
+  ADVANCED_GARDENING_AXE: ['REPLENISH'],
+  ADVANCED_GARDENING_HOE: ['REPLENISH'],
 };
 
 const MASTER_STARS = ['FIRST', 'SECOND', 'THIRD', 'FOURTH', 'FIFTH'];
 const ROMAN = ['', 'I', 'II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII', 'IX', 'X'];
 const words = (id) => String(id).toLowerCase().replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
+
+// Enchantments the game renamed but still stores under the old key.
+const ENCHANT_NAMES = { DRAGON_HUNTER: 'Gravity', MAGMARIZER: 'Pyroclasm', BANE_OF_ARTHROPODS: 'Bane of Arthropods' };
+/** An enchantment's in-game name: "ultimate_wise" -> "Ultimate Wise", "dragon_hunter" -> "Gravity". */
+export const enchantName = (key) => ENCHANT_NAMES[String(key).toUpperCase()] ?? words(key);
 
 // Upgrades stored as a count on the item: [ExtraAttributes key, item id, label, share].
 const COUNTED = [
@@ -57,6 +106,7 @@ const COUNTED = [
   ['tuned_transmission', 'TRANSMISSION_TUNER', 'Transmission Tuner', 'transmissionTuner'],
   ['mana_disintegrator_count', 'MANA_DISINTEGRATOR', 'Mana Disintegrator', 'manaDisintegrator'],
   ['polarvoid', 'POLARVOID_BOOK', 'Polarvoid Book', 'polarvoid'],
+  ['polarvoid_count', 'POLARVOID_BOOK', 'Polarvoid Book', 'polarvoid'],
   ['jalapeno_count', 'JALAPENO_BOOK', 'Jalapeno Book', 'jalapeno'],
 ];
 // Upgrades stored as the applied item's id: [ExtraAttributes key, label].
@@ -65,7 +115,6 @@ const APPLIED_ITEMS = [
   ['drill_part_fuel_tank', 'Drill fuel tank'],
   ['drill_part_engine', 'Drill engine'],
   ['power_ability_scroll', 'Ability scroll'],
-  ['dye_item', 'Dye'],
 ];
 
 /**
@@ -106,17 +155,31 @@ export function itemValueParts(item, book) {
     return { total, base: total, parts: [] };
   }
   const extra = item.extra ?? {};
-  const v = (id) => (id ? book.value(id) ?? 0 : 0);
+  // Networth worth: bazaar midpoint (see prices.js worth), else average lowest BIN.
+  const v = (id) => (id ? (book.worth ?? book.value)(id) ?? 0 : 0);
   const parts = [];
   const add = (label, value) => {
     if (value > 0) parts.push({ label, value: Math.round(value) });
   };
 
-  // A book is worth its enchantments in full; on gear they count at a share.
+  // A book is worth its enchantments in full; on gear they count at a share,
+  // plus any item that took the enchantment past its book level.
   const book_ = item.id === 'ENCHANTED_BOOK';
-  for (const [name, level] of Object.entries(item.enchantments ?? extra.enchantments ?? {})) {
-    const price = v(`ENCHANTMENT_${name.toUpperCase()}_${level}`);
-    add(`${words(name.replace(/^ultimate_/, ''))} ${ROMAN[level] ?? level}`, price * (book_ ? 1 : APPLIED_WORTH.enchantment));
+  const once = new Set();
+  for (const [key, lvl] of Object.entries(item.enchantments ?? extra.enchantments ?? {})) {
+    const name = key.toUpperCase();
+    if (BLOCKED_ENCHANTS[item.id]?.includes(name) || IGNORED_ENCHANTS[name] === lvl) continue;
+    const level = STACKING.has(name) ? 1 : lvl;
+    const label = `${enchantName(name)} ${ROMAN[lvl] ?? lvl}`;
+    if (!book_) {
+      if (name === 'EFFICIENCY' && lvl > 5) add(`Sil'ex x${lvl - 5}`, (lvl - 5) * v('SIL_EX') * APPLIED_WORTH.silex);
+      for (const [upgrade, from, oncePerItem] of ENCHANT_UPGRADES[name] ?? []) {
+        if (lvl < from || (oncePerItem && once.has(upgrade))) continue;
+        once.add(upgrade);
+        add(`${book.name?.(upgrade) ?? words(upgrade)} (${label})`, v(upgrade) * APPLIED_WORTH.enchantmentUpgrade);
+      }
+    }
+    add(label, v(`ENCHANTMENT_${name}_${level}`) * (book_ ? 1 : ENCHANT_WORTH[name] ?? APPLIED_WORTH.enchantment));
   }
   if (item.recombobulated ?? extra.rarity_upgrades) add('Recombobulator 3000', v('RECOMBOBULATOR_3000') * APPLIED_WORTH.recombobulator);
   const potato = item.hotPotato ?? extra.hot_potato_count ?? 0;
@@ -143,6 +206,21 @@ export function itemValueParts(item, book) {
   const stone = book.reforgeStone?.(item.reforge ?? extra.modifier);
   if (stone) add(`${book.name?.(stone) ?? words(stone)} (reforge)`, v(stone) * APPLIED_WORTH.reforge);
 
+  // Unlocked gem slots count only where they cost a lot: Divan's and Kuudra armor.
+  const divan = /^DIVAN_(HELMET|CHESTPLATE|LEGGINGS|BOOTS|PENDANT)$/.test(item.id);
+  const kuudra = /^((HOT|FIERY|BURNING|INFERNAL)_)?(AURORA|CRIMSON|TERROR|HOLLOW|FERVOR)_(HELMET|CHESTPLATE|LEGGINGS|BOOTS)$/.test(item.id);
+  if ((divan || kuudra) && Array.isArray(extra.gems?.unlocked_slots)) {
+    const slots = [...(book.item?.(item.id)?.gemstone_slots ?? [])];
+    let cost = 0;
+    for (const unlocked of extra.gems.unlocked_slots) {
+      const i = slots.findIndex((sl) => String(unlocked).startsWith(sl.slot_type) && sl.costs);
+      if (i < 0) continue;
+      for (const c of slots[i].costs) cost += c.type === 'COINS' ? c.coins : c.type === 'ITEM' ? c.amount * v(c.item_id) : 0;
+      slots.splice(i, 1);
+    }
+    add('Gemstone slots', cost * (divan ? APPLIED_WORTH.gemstoneChamber : APPLIED_WORTH.gemstoneSlot));
+  }
+
   const gems = gemIds(extra);
   if (gems.length) add(`${gems.length} gemstone${gems.length === 1 ? '' : 's'}`, gems.reduce((n, id) => n + v(id), 0) * APPLIED_WORTH.gemstone);
 
@@ -156,6 +234,7 @@ export function itemValueParts(item, book) {
     const kind = String(extra.talisman_enrichment).toUpperCase();
     add(`${words(kind)} Enrichment`, v(`TALISMAN_ENRICHMENT_${kind}`) * APPLIED_WORTH.enrichment);
   }
+  if (extra.dye_item) add(book.name?.(String(extra.dye_item).toUpperCase()) ?? 'Dye', v(String(extra.dye_item).toUpperCase()) * APPLIED_WORTH.dye);
   for (const [key, label] of APPLIED_ITEMS) {
     if (extra[key]) add(book.name?.(String(extra[key]).toUpperCase()) ?? label, v(String(extra[key]).toUpperCase()) * APPLIED_WORTH.other);
   }
@@ -175,7 +254,7 @@ export function petValue(pet, book, levelInfo) {
   // The plain key holds the cheapest listing at any level, so it is the
   // fair price for a pet that is not maxed yet.
   const base = book.value(key, { exact: !atMax }) ?? 0;
-  const held = pet.heldItem ? book.value(pet.heldItem) ?? 0 : 0;
+  const held = pet.heldItem ? (book.worth ?? book.value)(pet.heldItem) ?? 0 : 0;
   return base + held;
 }
 
@@ -223,14 +302,14 @@ export function computeNetworth({ items, pets, member, profile, book }) {
   }
 
   for (const [id, count] of Object.entries(member.inventory?.sacks_counts ?? {})) {
-    if (count > 0) add('Sacks', (book.value(id) ?? 0) * count);
+    if (count > 0) add('Sacks', ((book.worth ?? book.value)(id) ?? 0) * count);
   }
   // Hunting shards in the Hunting Box, at bazaar instant-sell.
   for (const shard of member.shards?.owned ?? []) {
     if (shard?.type && shard.amount_owned > 0) add('Shards', (book.value(`SHARD_${shard.type}`) ?? 0) * shard.amount_owned);
   }
   for (const [type, data] of Object.entries(member.currencies?.essence ?? {})) {
-    add('Essence', (book.value(`ESSENCE_${type}`) ?? 0) * (data?.current ?? 0));
+    add('Essence', ((book.worth ?? book.value)(`ESSENCE_${type}`) ?? 0) * (data?.current ?? 0));
   }
 
   const purse = member.currencies?.coin_purse ?? 0;

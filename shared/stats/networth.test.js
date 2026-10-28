@@ -85,3 +85,31 @@ test('dungeon items take master stars, Kuudra armor takes ten essence stars', ()
   assert.deepEqual({ ...star('HYPERION', 7), costs: undefined }, { essence: 5, master: 2, kind: 'dungeon', costs: undefined });
   assert.deepEqual({ ...star('AURORA_CHESTPLATE', 8), costs: undefined }, { essence: 8, master: 0, kind: 'kuudra', costs: undefined });
 });
+
+test('enchantments past their book level count the item that upgraded them', () => {
+  const bz = (p) => ({ quick_status: { sellPrice: p, buyPrice: p } });
+  const book = createPriceBook({
+    bazaarProducts: {
+      SEVERED_HAND: bz(9_000_000),
+      ENCHANTMENT_LUCK_6: { quick_status: { sellPrice: 4_000, buyPrice: 100_000 } },
+    },
+  });
+  const { parts } = itemValueParts({ id: 'STARRED_BAT_WAND', enchantments: { smite: 7, luck: 6, scavenger: 5 } }, book);
+  const got = Object.fromEntries(parts.map((p) => [p.label, p.value]));
+  assert.equal(got['Severed Hand (Smite VII)'], 9_000_000 * APPLIED_WORTH.enchantmentUpgrade);
+  // A thin bazaar (top buy order far under the asking price) counts at instant-buy.
+  assert.equal(got['Luck VI'], 100_000 * APPLIED_WORTH.enchantment);
+  assert.equal(got['Scavenger V'], undefined);
+});
+
+test('an item not listed now keeps the last price it was listed at', async () => {
+  const { lastSeen } = await import('../prices.js');
+  let h = updateHistory(null, { DICER: 28_000_000, HOE: 100 }, 0);
+  h = updateHistory(h, { HOE: 120 }, 5 * 24 * HOUR); // the dicer sold out
+  const last = lastSeen(h, { HOE: 120 });
+  assert.deepEqual(last, { DICER: 28_000_000 });
+  assert.equal(createPriceBook({ lowest: { HOE: 120 }, last }).value('DICER'), 28_000_000);
+  // A month without a listing forgets it.
+  h = updateHistory(h, { HOE: 130 }, 40 * 24 * HOUR);
+  assert.deepEqual(lastSeen(h, { HOE: 130 }), {});
+});

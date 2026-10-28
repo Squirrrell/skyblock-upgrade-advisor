@@ -78,8 +78,9 @@ test('collections sum across coop members', () => {
 test('networth counts coins, sacks, essence and pets at the right level', () => {
   const nw = stats.networth;
   const cat = Object.fromEntries(nw.categories.map((c) => [c.name, c.value]));
-  assert.equal(cat.Sacks, 640 * 8);
-  assert.equal(cat.Essence, 8282 * 1000);
+  // Bazaar items count at the midpoint of instant-sell and instant-buy.
+  assert.equal(cat.Sacks, 640 * 9);
+  assert.equal(cat.Essence, 8282 * 1100);
   // Rabbit is not max level without pet constants, so the any-level price is used, plus the bandana.
   assert.equal(cat.Pets, 100_000 + 50_000);
   assert.equal(nw.total, Math.round(nw.items + nw.purse + nw.bank + nw.personalBank));

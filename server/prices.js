@@ -3,7 +3,7 @@
 // also adds to a 3-day lowest BIN history (kept in .cache/), whose typical
 // value is what networth counts items at.
 import { mkdir, readFile, writeFile } from 'node:fs/promises';
-import { averageLowest, createPriceBook, reforgeStones, scanAuctionHouse, slimItems, updateHistory } from '../shared/prices.js';
+import { averageLowest, createPriceBook, lastSeen, reforgeStones, scanAuctionHouse, slimItems, updateHistory } from '../shared/prices.js';
 import { getAuctionPage, getBazaar, getItemsResource } from './hypixel.js';
 import { getAttributeConstants, getReforgeStones } from './repo.js';
 
@@ -99,6 +99,7 @@ export async function getPriceBook() {
     bazaarProducts: bazaar?.products,
     lowest: auctions.lowest,
     average,
+    last: lastSeen(history, auctions.lowest),
     reforges: reforgeStones(stones),
     items,
     meta: {
@@ -114,7 +115,7 @@ export async function getDataFile(name) {
   if (name === 'prices.json') {
     const snap = await auctionsReady();
     await loadHistory();
-    return { updatedAt: snap.updatedAt, pages: snap.pages, lowest: snap.lowest, average };
+    return { updatedAt: snap.updatedAt, pages: snap.pages, lowest: snap.lowest, average, last: lastSeen(history, snap.lowest) };
   }
   if (name === 'listings.json') {
     const snap = await auctionsReady();
