@@ -2,7 +2,7 @@
 // been syphoned into attributes, and what all of it is worth on the bazaar.
 import { useMemo, useState } from 'react';
 import { coins, date, int, num } from '../lib/format.js';
-import { ItemSlot } from '../mc.jsx';
+import { ItemSlot, itemCard } from '../mc.jsx';
 import { Bar, Chip, Empty, Panel, SearchInput, SortTh, Stat, StatGrid, rarityClass, rarityLabel } from '../ui.jsx';
 
 const VIEWS = [
@@ -118,9 +118,11 @@ export default function Shards({ stats }) {
                           id={r.id}
                           rarity={r.rarity ?? undefined}
                           count={r.owned}
-                          tooltip={{
+                          tooltip={itemCard({
+                            id: r.id,
                             name: r.name,
                             rarity: r.rarity ?? undefined,
+                            useNeu: false,
                             lines: [
                               r.attribute ? `Attribute: ${r.attribute}` : null,
                               r.family.length ? `Family: ${r.family.join(', ')}` : null,
@@ -129,7 +131,7 @@ export default function Shards({ stats }) {
                               r.sell != null ? { text: `Sells for ${num(r.sell, 1)} each`, color: 'var(--code-gold)' } : 'No bazaar price',
                             ],
                             label: r.code ? `${rarityLabel(r.rarity).toUpperCase()} · ${r.code}` : undefined,
-                          }}
+                          })}
                         />
                         <span className="min-w-0">
                           <span className={`block font-semibold ${rarityClass(r.rarity)}`}>{r.name}</span>

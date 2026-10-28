@@ -4,7 +4,7 @@ import { prettyId } from '../../../shared/analyze/helpers.js';
 import { ago, coins, int, num } from '../lib/format.js';
 import { invalidate, loadBazaar, loadItems } from '../lib/data.js';
 import { useLoad } from '../lib/useLoad.js';
-import { ItemSlot } from '../mc.jsx';
+import { ItemSlot, itemCard } from '../mc.jsx';
 import { Chip, ErrorNote, Loading, SearchInput, SortTh, rarityClass } from '../ui.jsx';
 
 const ROMAN = ['', 'I', 'II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII', 'IX', 'X'];
@@ -172,7 +172,8 @@ export default function Bazaar() {
                         <span className="flex items-center gap-3">
                           <ItemSlot
                             id={r.id}
-                            tooltip={{
+                            tooltip={itemCard({
+                              id: r.id,
                               name: r.name,
                               rarity: data.items.get(r.id)?.tier,
                               lines: [
@@ -184,8 +185,7 @@ export default function Bazaar() {
                                 },
                                 `Sold per hour: ${int(r.hourly)}`,
                               ],
-                              label: 'BAZAAR',
-                            }}
+                            })}
                           />
                           <span className={`font-semibold ${rarityClass(data.items.get(r.id)?.tier)}`}>{r.name}</span>
                         </span>

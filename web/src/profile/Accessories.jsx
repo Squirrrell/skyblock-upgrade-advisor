@@ -5,7 +5,7 @@ import { useMemo, useState } from 'react';
 import { coins, int } from '../lib/format.js';
 import { load, save } from '../lib/storage.js';
 import ItemDialog from '../components/ItemDialog.jsx';
-import { ItemSlot, tooltipProps } from '../mc.jsx';
+import { ItemSlot, itemCard, tooltipProps } from '../mc.jsx';
 import { Chip, Empty, Panel, SearchInput, SortTh, Stat, StatGrid, rarityClass, rarityLabel } from '../ui.jsx';
 
 const ORDER = ['MYTHIC', 'LEGENDARY', 'EPIC', 'RARE', 'UNCOMMON', 'COMMON', 'SPECIAL', 'VERY_SPECIAL'];
@@ -26,10 +26,7 @@ const matches = (q, ...fields) => !q || fields.some((f) => f?.toLowerCase().incl
 /** Hover card for a missing accessory: its lore (loaded from NEU), then what it would add and cost. */
 function missingDetail(r) {
   return {
-    name: r.name,
-    rarity: r.tier,
-    icon: r.id,
-    loreId: r.id,
+    ...itemCard({ id: r.id, name: r.name, rarity: r.tier }),
     lines: [
       { text: `+${r.mp} magical power${r.upgradeFrom ? ` over your ${r.upgradeFrom}` : ''}`, color: 'var(--code-green)' },
       r.price ? { text: `Price: ${int(r.price)} coins (${coins(r.price)})`, color: 'var(--code-gold)' } : { text: 'Not sold on the bazaar or auction house', color: 'var(--code-grey)' },
@@ -135,26 +132,19 @@ function Missing({ missing, onOpen }) {
   );
 }
 
-/** "Dec 04, 2024, 11:03 PM" */
-const when = (ms) =>
-  new Date(ms).toLocaleString('en-US', { month: 'short', day: '2-digit', year: 'numeric', hour: 'numeric', minute: '2-digit' });
-
-/** The detailed card for an owned accessory: its in-game lore, then when it was obtained and its value. */
-function detail(x) {
-  const base = { name: x.name, rarity: x.rarity, icon: x.id };
-  const extras = [
-    x.recombobulated ? { text: '(Recombobulated)', color: 'var(--code-grey)' } : null,
-    x.obtained ? { text: `Obtained: ${when(x.obtained)}`, color: 'var(--code-red)' } : null,
-    x.value ? { text: `Item value: ${int(x.value)} coins (${coins(x.value)})`, color: 'var(--code-gold)' } : null,
-  ];
-  if (x.lore?.length) return { ...base, lore: x.lore, lines: extras };
-  // Older reports without lore fall back to the short tooltip.
-  return {
-    ...base,
-    lines: [x.recombobulated ? { text: 'Recombobulated', color: 'var(--code-gold)' } : null, x.enrichment ? `Enrichment: ${x.enrichment}` : null, ...extras],
+/** The card for an owned accessory: its in-game lore, then when it was obtained and its value. */
+const detail = (x) =>
+  itemCard({
+    id: x.id,
+    name: x.name,
+    rarity: x.rarity,
+    lore: x.lore,
+    obtained: x.obtained,
+    value: x.value,
+    recombobulated: x.recombobulated,
+    lines: x.lore?.length ? [] : [x.enrichment ? `Enrichment: ${x.enrichment}` : null],
     label: `${rarityLabel(x.rarity).toUpperCase()} ACCESSORY`,
-  };
-}
+  });
 
 function Owned({ a, onOpen }) {
   const [q, setQ] = useState('');

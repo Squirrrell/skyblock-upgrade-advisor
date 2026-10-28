@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { coins, int } from '../lib/format.js';
 import { prettyId } from '../../../shared/analyze/helpers.js';
-import { ItemSlot } from '../mc.jsx';
+import { ItemSlot, itemCard } from '../mc.jsx';
 import { Bar, Chip, Empty, Stat, StatGrid, rarityClass, rarityLabel } from '../ui.jsx';
 
 export default function Pets({ stats }) {
@@ -32,9 +32,11 @@ export default function Pets({ stats }) {
               <ItemSlot
                 id={`PET_${pet.type}_${pet.tier}`}
                 rarity={pet.tier}
-                tooltip={{
+                tooltip={itemCard({
+                  id: `PET_${pet.type}_${pet.tier}`,
                   name: `[Lvl ${pet.level ?? '?'}] ${pet.name}`,
                   rarity: pet.tier,
+                  useNeu: false,
                   lines: [
                     `${int(pet.exp)} XP`,
                     pet.heldItem ? `Held item: ${prettyId(pet.heldItem.replace(/^PET_ITEM_/, ''))}` : null,
@@ -42,7 +44,7 @@ export default function Pets({ stats }) {
                     pet.active ? { text: 'Active pet', color: 'var(--code-green)' } : null,
                   ],
                   label: `${rarityLabel(pet.tier).toUpperCase()} PET`,
-                }}
+                })}
               />
               <div className="min-w-0 flex-1">
                 <div className="flex items-baseline justify-between gap-2">

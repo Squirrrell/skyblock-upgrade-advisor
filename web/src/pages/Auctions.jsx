@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react';
 import { prettyId } from '../../../shared/analyze/helpers.js';
 import { ago, coins } from '../lib/format.js';
 import { loadAuctions, loadItems } from '../lib/data.js';
-import { ItemSlot } from '../mc.jsx';
+import { ItemSlot, itemCard } from '../mc.jsx';
 import { useLoad } from '../lib/useLoad.js';
 import { Chip, ErrorNote, Loading, SearchInput, rarityClass, rarityLabel } from '../ui.jsx';
 
@@ -78,12 +78,14 @@ export default function Auctions() {
                 <ItemSlot
                   id={r.key.replace(/@MAX$/, '')}
                   rarity={r.rarity ?? undefined}
-                  tooltip={{
+                  tooltip={itemCard({
+                    id: r.key.replace(/@MAX$/, ''),
                     name: r.name,
                     rarity: r.rarity ?? undefined,
                     lines: [{ text: `Lowest BIN: ${coins(r.price)}`, color: 'var(--code-gold)' }],
                     label: r.pet ? `${rarityLabel(r.rarity).toUpperCase()} PET` : undefined,
-                  }}
+                    useNeu: !r.pet,
+                  })}
                 />
                 <span className="min-w-0 flex-1 truncate">
                   <span className={`font-semibold ${r.rarity ? rarityClass(r.rarity) : ''}`}>{r.name}</span>

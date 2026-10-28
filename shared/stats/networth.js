@@ -275,10 +275,24 @@ const LOCATION_GROUP = {
   'Hunting toolkit': 'Toolkits',
 };
 
+/**
+ * Whether an item is soulbound: it can't be traded, so it can't be sold. The
+ * lore says "* Soulbound *" or "* Co-op Soulbound *"; items given back from
+ * the museum carry donated_museum.
+ */
+export function isSoulbound(item) {
+  if (item.extra?.donated_museum) return true;
+  return (item.lore ?? []).some((l) => /\* (Co-op )?Soulbound \*/.test(String(l).replace(/§./g, '')));
+}
+
 export function computeNetworth({ items, pets, member, profile, book }) {
   const categories = {};
-  const add = (cat, v) => {
-    if (v > 0) categories[cat] = (categories[cat] ?? 0) + v;
+  // The soulbound part of each category: counted in networth, but unsellable.
+  const bound = {};
+  const add = (cat, v, soulbound = false) => {
+    if (!(v > 0)) return;
+    categories[cat] = (categories[cat] ?? 0) + v;
+    if (soulbound) bound[cat] = (bound[cat] ?? 0) + v;
   };
   const top = [];
 
@@ -291,8 +305,9 @@ export function computeNetworth({ items, pets, member, profile, book }) {
     }
     const { total: v, base, parts } = itemValueParts(item, book);
     if (!v) continue;
-    add(LOCATION_GROUP[item.location] ?? 'Other', v);
-    top.push({ name: item.name, rawName: item.rawName, id: item.id, rarity: item.rarity, value: v, base, parts, location: item.location, count: item.count });
+    const soulbound = isSoulbound(item);
+    add(LOCATION_GROUP[item.location] ?? 'Other', v, soulbound);
+    top.push({ name: item.name, rawName: item.rawName, id: item.id, rarity: item.rarity, value: v, base, parts, soulbound, lore: item.lore, obtained: item.obtained, location: item.location, count: item.count });
   }
 
   for (const pet of pets) {
@@ -316,15 +331,20 @@ export function computeNetworth({ items, pets, member, profile, book }) {
   const bank = profile.banking?.balance ?? 0;
   const personalBank = member.profile?.bank_account ?? 0;
   const itemsTotal = Object.values(categories).reduce((a, b) => a + b, 0);
+  const soulbound = Object.values(bound).reduce((a, b) => a + b, 0);
+  const total = Math.round(itemsTotal + purse + bank + personalBank);
 
   return {
-    total: Math.round(itemsTotal + purse + bank + personalBank),
+    total,
+    // What could actually be sold: everything but soulbound items.
+    unsoulbound: Math.round(total - soulbound),
+    soulbound: Math.round(soulbound),
     items: Math.round(itemsTotal),
     purse,
     bank,
     personalBank,
     categories: Object.entries(categories)
-      .map(([name, value]) => ({ name, value: Math.round(value) }))
+      .map(([name, value]) => ({ name, value: Math.round(value), soulbound: Math.round(bound[name] ?? 0) }))
       .sort((a, b) => b.value - a.value),
     top: top.sort((a, b) => b.value - a.value).slice(0, 15),
     inventoryOff: !member.inventory,

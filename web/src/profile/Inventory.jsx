@@ -1,8 +1,8 @@
 import { useMemo, useState } from 'react';
-import { coins, valueLines } from '../lib/format.js';
+import { coins } from '../lib/format.js';
 import { prettyId } from '../../../shared/analyze/helpers.js';
 import { enchantName } from '../../../shared/stats/networth.js';
-import { ItemSlot, mcText } from '../mc.jsx';
+import { ItemSlot, itemCard, mcText } from '../mc.jsx';
 import { Chip, Empty, Panel, SearchInput, rarityClass, rarityLabel } from '../ui.jsx';
 
 const ROMAN = ['', 'I', 'II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII', 'IX', 'X'];
@@ -17,6 +17,7 @@ function ItemRow({ item }) {
   const tags = [
     item.reforge && prettyId(item.reforge),
     item.recombobulated && 'Recombobulated',
+    item.soulbound && 'Soulbound',
     // Older reports have a plain star count.
     typeof item.stars === 'number' ? item.stars > 0 && `${item.stars}✪` : item.stars,
     item.hotPotato > 0 && `${item.hotPotato} potato books`,
@@ -39,16 +40,19 @@ function ItemRow({ item }) {
           count={item.count}
           glint={Boolean(enchants)}
           focusable={false}
-          tooltip={{
+          tooltip={itemCard({
+            id: item.id,
             name: item.rawName ?? item.name,
             rarity: item.rarity,
-            lines: [
-              enchants ? { text: enchants, color: 'var(--code-blue)' } : null,
-              ...tags,
-              ...valueLines(item),
-            ],
+            lore: item.lore,
+            obtained: item.obtained,
+            value: item.value,
+            soulbound: item.soulbound,
+            // Older reports have no lore: the enchantments and upgrades stand in for it.
+            lines: item.lore?.length ? [] : [enchants ? { text: enchants, color: 'var(--code-blue)' } : null, ...tags],
             label: item.rarity ? rarityLabel(item.rarity).toUpperCase() : undefined,
-          }}
+            useNeu: !item.pet,
+          })}
         />
         <span className="min-w-0 flex-1 truncate">
           <span className={`font-semibold ${rarityClass(item.rarity)}`}>{mcText(item.rawName ?? item.name)}</span>

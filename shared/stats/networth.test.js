@@ -113,3 +113,11 @@ test('an item not listed now keeps the last price it was listed at', async () =>
   h = updateHistory(h, { HOE: 130 }, 40 * 24 * HOUR);
   assert.deepEqual(lastSeen(h, { HOE: 130 }), {});
 });
+
+test('soulbound items are told apart', async () => {
+  const { isSoulbound } = await import('./networth.js');
+  assert.equal(isSoulbound({ lore: ['§7Stuff', '§8§l* §8Co-op Soulbound §8§l*'] }), true);
+  assert.equal(isSoulbound({ lore: ['§8§l* Soulbound §8§l*'] }), true);
+  assert.equal(isSoulbound({ lore: ['§7Stuff'], extra: { donated_museum: 1 } }), true);
+  assert.equal(isSoulbound({ lore: ['§7Stuff', '§6§lLEGENDARY'] }), false);
+});

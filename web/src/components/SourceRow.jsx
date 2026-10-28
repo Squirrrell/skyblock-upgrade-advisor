@@ -2,7 +2,7 @@ import { ArrowRightIcon, CaretDownIcon, CheckIcon, CircleHalfIcon, InfoIcon, Lig
 import { useState } from 'react';
 import { coins, num } from '../lib/format.js';
 import { itemInfo } from '../lib/icons.js';
-import { ItemSlot } from '../mc.jsx';
+import { ItemSlot, itemCard } from '../mc.jsx';
 import { Bar } from '../ui.jsx';
 
 const STATUS = {
@@ -42,7 +42,8 @@ export function rowIcon(item, sectionId) {
 
 function lineTooltip(line) {
   const tier = itemInfo(line.id).tier;
-  return {
+  return itemCard({
+    id: line.id,
     name: line.name,
     rarity: tier ?? undefined,
     lines: [
@@ -51,7 +52,7 @@ function lineTooltip(line) {
       line.qty > 1 && line.total ? { text: `Total: ${coins(line.total)}`, color: 'var(--code-gold)' } : null,
       line.source ? `${SOURCE_LABEL[line.source]}${line.note ? `, ${line.note}` : ''}` : null,
     ],
-  };
+  });
 }
 
 /** Purchase shown like a crafting recipe: inputs, arrow, the upgrade. */
@@ -69,14 +70,16 @@ function Recipe({ item, cost, icon }) {
         <ItemSlot
           id={icon}
           glint
-          tooltip={{
+          tooltip={itemCard({
+            id: icon,
             name: item.name,
+            rarity: itemInfo(icon).tier ?? undefined,
             lines: [
               gain > 0 ? { text: `+${num(gain)} ${item.unit}`, color: 'var(--code-green)' } : null,
               cost.total ? { text: `Cost: ${coins(cost.total)}`, color: 'var(--code-gold)' } : null,
             ],
             label: 'UPGRADE',
-          }}
+          })}
         />
         {gain > 0 && <span className="text-accent tabular">+{num(gain)}</span>}
       </div>

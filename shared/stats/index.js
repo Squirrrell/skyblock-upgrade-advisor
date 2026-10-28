@@ -6,7 +6,7 @@ import { GARDEN_LEVEL_XP } from '../data/farming.js';
 import { prettyId } from '../analyze/helpers.js';
 import { MINION_MAX_TIER } from './constants.js';
 import { SKILLS, catacombsLevel, hotfLevel, hotmLevel, levelFrom, skillCap, skillTable, slayerLevel, SKILL_MAX } from './levels.js';
-import { computeNetworth, itemStars, itemValue, itemValueParts, starLabel } from './networth.js';
+import { computeNetworth, isSoulbound, itemStars, itemValue, itemValueParts, starLabel } from './networth.js';
 import { shardStats } from './shards.js';
 
 const RARITY_RANK = { COMMON: 0, UNCOMMON: 1, RARE: 2, EPIC: 3, LEGENDARY: 4, MYTHIC: 5, DIVINE: 6, SPECIAL: 7, VERY_SPECIAL: 8 };
@@ -534,6 +534,10 @@ function inventory(items, book) {
       uuid: item.uuid,
       name: item.hasDisplayName ? item.name : book.name?.(item.id) ?? item.name,
       rawName: item.rawName,
+      soulbound: isSoulbound(item),
+      // For the hover card: the in-game lore and when it was obtained.
+      lore: item.lore,
+      obtained: item.obtained,
       count: item.count,
       rarity: item.rarity,
       reforge: item.reforge && item.reforge !== 'none' ? item.reforge : null,

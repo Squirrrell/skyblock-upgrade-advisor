@@ -1,6 +1,6 @@
 import { ArrowRightIcon } from '@phosphor-icons/react';
-import { coins, date, int, num, valueLines } from '../lib/format.js';
-import { ItemSlot, mcText } from '../mc.jsx';
+import { coins, date, int, num } from '../lib/format.js';
+import { ItemSlot, itemCard, mcText } from '../mc.jsx';
 import { SKILL_ICONS } from '../theme.js';
 import { Bar, Facts, Panel, Stat, StatGrid, rarityClass, rarityLabel } from '../ui.jsx';
 
@@ -95,7 +95,12 @@ export default function Overview({ stats, onTab }) {
     <div className="fade-in flex flex-col gap-6">
       <StatGrid cols="sm:grid-cols-3 lg:grid-cols-6">
         <Stat label="SkyBlock level" value={o.sbLevel} sub={`${Math.round(o.sbProgress * 100)}/100 XP`} accent />
-        <Stat label="Networth (est.)" tone="gold" value={coins(o.networth)} sub={nw.inventoryOff ? 'Inventory API off' : `${coins(nw.items)} in items`} />
+        <Stat
+          label="Networth (est.)"
+          tone="gold"
+          value={coins(o.networth)}
+          sub={nw.inventoryOff ? 'Inventory API off' : nw.unsoulbound != null ? `${coins(nw.unsoulbound)} unsoulbound` : `${coins(nw.items)} in items`}
+        />
         {jump('skills', <Stat label="Skill average" value={num(o.skillAverage, 2)} sub="Without cosmetic skills" />)}
         {jump(
           'dungeons',
@@ -114,8 +119,20 @@ export default function Overview({ stats, onTab }) {
       <div className="grid gap-6 lg:grid-cols-[1.3fr_1fr]">
         <Panel
           title="Networth breakdown"
-          subtitle="What everything would sell for now. Base items, pets, sacks and essence; enchantments and reforges are not counted."
+          subtitle="Items count with their enchantments, stars and other upgrades. Soulbound items can't be traded, so the unsoulbound total is what could actually be sold."
         >
+          {nw.unsoulbound != null && (
+            <dl className="mc-well mb-4 grid grid-cols-2 gap-3 px-3 py-2.5 text-sm">
+              <div>
+                <dt className="text-muted">Unsoulbound</dt>
+                <dd className="font-semibold text-warn tabular">{coins(nw.unsoulbound)}</dd>
+              </div>
+              <div>
+                <dt className="text-muted">Soulbound</dt>
+                <dd className="font-semibold tabular">{coins(nw.soulbound)}</dd>
+              </div>
+            </dl>
+          )}
           <ul className="flex flex-col gap-3">
             {[['Purse', nw.purse], ['Bank (coop)', nw.bank], ...(nw.personalBank ? [['Personal bank', nw.personalBank]] : [])].map(([name, value]) => (
               <li key={name} className="flex justify-between text-sm">
@@ -125,9 +142,12 @@ export default function Overview({ stats, onTab }) {
             ))}
             {nw.categories.map((c) => (
               <li key={c.name}>
-                <div className="flex justify-between text-sm">
+                <div className="flex justify-between gap-3 text-sm">
                   <span>{c.name}</span>
-                  <span className="text-warn tabular">{coins(c.value)}</span>
+                  <span className="text-right tabular">
+                    <span className="text-warn">{coins(c.value)}</span>
+                    {c.soulbound > 0 && <span className="ml-2 text-xs text-muted">{coins(c.soulbound)} soulbound</span>}
+                  </span>
                 </div>
                 <Bar value={c.value / maxCat} className="mt-1.5" />
               </li>
@@ -144,16 +164,24 @@ export default function Overview({ stats, onTab }) {
                     id={t.id}
                     rarity={t.rarity}
                     count={t.count}
-                    tooltip={{
+                    tooltip={itemCard({
+                      id: t.id,
                       name: t.rawName ?? t.name,
                       rarity: t.rarity,
-                      lines: [t.location, ...valueLines(t)],
-                      label: t.rarity ? rarityLabel(t.rarity).toUpperCase() : undefined,
-                    }}
+                      lore: t.lore,
+                      obtained: t.obtained,
+                      value: t.value,
+                      soulbound: t.soulbound,
+                      label: t.rarity ? rarityLabel(t.rarity).toUpperCase() + (t.location === 'Pets' ? ' PET' : '') : undefined,
+                      useNeu: t.location !== 'Pets',
+                    })}
                   />
                   <span className="min-w-0 flex-1 truncate">
                     <span className={`font-semibold ${rarityClass(t.rarity)}`}>{mcText(t.rawName ?? t.name)}</span>
-                    <span className="ml-2 text-sm text-muted">{t.location}</span>
+                    <span className="ml-2 text-sm text-muted">
+                      {t.location}
+                      {t.soulbound && ' · Soulbound'}
+                    </span>
                   </span>
                   <span className="shrink-0 text-warn tabular">{coins(t.value)}</span>
                 </li>

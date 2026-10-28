@@ -25,7 +25,10 @@ const useTip = () =>
 
 /**
  * Props that make any element show a Minecraft tooltip on hover or focus.
- * `content`: { name, rarity, lines: [string | { text, color }], label }
+ * `content`: { name, rarity, lines: [string | { text, color }], label }.
+ * Items show as a card (rarity header with the icon, then the lore) when the
+ * content has `lore`, `loreId` (lore loaded from NEU) or `card: true`;
+ * itemCard() builds that content.
  */
 export function tooltipProps(content) {
   if (!content) return {};
@@ -63,10 +66,10 @@ export function TooltipLayer() {
   }, []);
 
   if (!current) return null;
-  const { name, rarity, lines = [], label, icon, loreId } = current.content;
-  // Items not on the profile (missing accessories) get their lore from the
-  // NEU repo on first hover; the short tooltip shows until it arrives.
-  const lore = current.content.lore ?? (loreId ? neuLore(loreId, current) : null);
+  const { name, rarity, lines = [], label, icon, loreId, card, noFooter } = current.content;
+  // Items without their own lore get it from the NEU repo on first hover;
+  // the card shows its other lines until it arrives.
+  const lore = current.content.lore?.length ? current.content.lore : loreId ? neuLore(loreId, current) : null;
   const color = RARITY[rarity] ?? RARITY.COMMON;
   const line = (l, i) =>
     typeof l === 'string' ? (
@@ -74,13 +77,16 @@ export function TooltipLayer() {
         {l}
       </div>
     ) : (
-      <div key={i} className="mc-tt-line" style={l.color ? { color: l.color } : undefined}>
+      <div key={i} className={`mc-tt-line ${l.bold ? 'mc-tt-rarity' : ''}`} style={l.color ? { color: l.color } : undefined}>
         {l.text}
       </div>
     );
 
   // The detailed card: rarity-coloured header, the item's own lore, then extras.
-  if (lore) {
+  if (lore || loreId || card) {
+    const extra = lines.filter(Boolean);
+    // Without lore there is no rarity line, so the card ends with its own.
+    const footer = !lore && !noFooter && (label ?? rarity) ? label ?? `${rarity.replace('_', ' ')}` : null;
     return (
       <div
         ref={ref}
@@ -97,7 +103,7 @@ export function TooltipLayer() {
           <span>{mcText(name, { colors: false })}</span>
         </div>
         <div className="mc-tt-body">
-          {lore.map((l, i) =>
+          {(lore ?? []).map((l, i) =>
             stripCodes(l).trim() ? (
               <div key={i} className="mc-tt-line mc-tt-lore">
                 {mcText(l)}
@@ -106,8 +112,13 @@ export function TooltipLayer() {
               <div key={i} className="mc-tt-gap" />
             ),
           )}
-          {lines.filter(Boolean).length > 0 && <div className="mc-tt-gap" />}
-          {lines.filter(Boolean).map(line)}
+          {lore && extra.length > 0 && <div className="mc-tt-gap" />}
+          {extra.map(line)}
+          {footer && (
+            <div className="mc-tt-line mc-tt-rarity" style={{ color }}>
+              {footer}
+            </div>
+          )}
         </div>
       </div>
     );
@@ -136,6 +147,50 @@ export function TooltipLayer() {
       )}
     </div>
   );
+}
+
+/** "Mar 03, 2025, 8:15 PM" */
+const obtainedText = (ms) =>
+  new Date(ms).toLocaleString('en-US', { month: 'short', day: '2-digit', year: 'numeric', hour: 'numeric', minute: '2-digit' });
+
+/**
+ * The SkyCrypt-style card for an item: { id, name, rarity, lore?, obtained?,
+ * value?, soulbound?, lines? }. Its own lore when it has one (an item on the
+ * profile), else the NEU lore for its id; then when it was obtained and its
+ * estimated value. `lines` go between the lore and those.
+ */
+export function itemCard({ id, name, rarity, lore, obtained, value, soulbound, recombobulated, lines = [], label, useNeu = true }) {
+  const own = Array.isArray(lore) && lore.length ? lore : null;
+  // With no lore coming at all, the rarity line goes where the game puts it:
+  // after the details, before when it was obtained and what it is worth.
+  const rarityLine = !own && !useNeu && (label ?? rarity) ? { text: label ?? rarity.replace('_', ' '), color: RARITY[rarity] ?? RARITY.COMMON, bold: true } : null;
+  return {
+    name,
+    rarity,
+    icon: id,
+    card: true,
+    lore: own,
+    loreId: own || !useNeu ? undefined : id,
+    label: rarityLine ? null : label,
+    noFooter: Boolean(rarityLine),
+    lines: [
+      ...lines,
+      rarityLine,
+      // Recombobulated items with their own lore already say so in the rarity line.
+      recombobulated && !own ? { text: 'Recombobulated', color: 'var(--code-gold)' } : null,
+      obtained ? { text: `Obtained: ${obtainedText(obtained)}`, color: 'var(--code-red)' } : null,
+      soulbound && !own ? { text: '* Soulbound *', color: 'var(--code-dark-grey)' } : null,
+      value ? { text: `Item Value: ${Math.round(value).toLocaleString('en-US')} Coins (${shortCoins(value)})`, color: 'var(--code-gold)' } : null,
+    ],
+  };
+}
+
+function shortCoins(n) {
+  const t = (v) => Number(v.toFixed(Math.abs(v) >= 100 ? 0 : Math.abs(v) >= 10 ? 1 : 2)).toString();
+  if (n >= 1e9) return `${t(n / 1e9)}B`;
+  if (n >= 1e6) return `${t(n / 1e6)}M`;
+  if (n >= 1e3) return `${t(n / 1e3)}k`;
+  return String(Math.round(n));
 }
 
 // ------------------------------------------------------------------ § text
@@ -273,7 +328,8 @@ export function ItemSlot({ id, rarity, count, glint, tooltip, hint, alt, classNa
   const info = itemInfo(id);
   const tier = rarity ?? info.tier ?? undefined;
   const shine = glint ?? info.glowing;
-  const tipContent = tooltip === false ? null : (tooltip ?? (info.name ? { name: info.name, rarity: tier } : null));
+  // Without a tooltip of its own, an item shows its card with its lore.
+  const tipContent = tooltip === false ? null : (tooltip ?? (info.name ? itemCard({ id, name: info.name, rarity: tier }) : null));
   return (
     <span
       className={`mc-slot ${shine ? 'mc-glint' : ''} ${className}`}

@@ -57,20 +57,3 @@ export function until(ts, now = Date.now()) {
   if (m) return `${m} min`;
   return `${s}s`;
 }
-
-/**
- * Tooltip lines for an item's value and what it is made of (itemValueParts in
- * shared/stats/networth.js): the item itself, then each upgrade on it.
- */
-export function valueLines(x, max = 8) {
-  if (!x?.value) return [];
-  const lines = [{ text: `Value: ${coins(x.value)}`, color: 'var(--code-gold)' }];
-  const parts = x.parts ?? [];
-  if (!parts.length) return lines;
-  const grey = (text) => ({ text, color: 'var(--code-grey)' });
-  lines.push(grey(`  Item: ${coins(x.base ?? 0)}`));
-  for (const p of parts.slice(0, max)) lines.push(grey(`  + ${p.label}: ${coins(p.value)}`));
-  const rest = parts.slice(max);
-  if (rest.length) lines.push(grey(`  + ${rest.length} more: ${coins(rest.reduce((n, p) => n + p.value, 0))}`));
-  return lines;
-}
