@@ -50,6 +50,27 @@ function ingredient(s) {
 }
 
 /**
+ * What crafting an item costs from its first crafting recipe, pricing each
+ * ingredient with `price(id)` ({ unit } | null) or, when it has none, its own
+ * crafting cost, a few levels deep. Resolves to a number, or null when some
+ * ingredient can't be priced either way.
+ */
+export async function craftCost(id, price, depth = 3, seen = new Set()) {
+  if (depth <= 0 || seen.has(id)) return null;
+  const recipe = recipesOf(await loadNeuItem(id)).find((r) => r.type === 'crafting');
+  if (!recipe) return null;
+  const inner = new Set(seen).add(id);
+  let total = 0;
+  for (const c of recipe.grid) {
+    if (!c) continue;
+    const unit = price(c.id)?.unit ?? (await craftCost(c.id, price, depth - 1, inner));
+    if (unit == null) return null;
+    total += unit * c.count;
+  }
+  return total / recipe.count;
+}
+
+/**
  * The item's recipes in one shape: { type: 'crafting', grid: [9 x {id,count}|null], count }
  * or { type: 'forge' | 'npc_shop' | other, inputs: [{id,count}], duration? }.
  */

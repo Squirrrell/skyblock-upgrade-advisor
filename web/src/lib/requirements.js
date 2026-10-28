@@ -72,6 +72,23 @@ export function describe(r, stats, collections) {
   }
 }
 
+/**
+ * The collection tier that unlocks an item's recipe, from Hypixel's own
+ * collections list ("Pressure Artifact Recipe" at Sea Lumies IX), as a
+ * requirement, or null if no collection unlocks it.
+ */
+export function recipeUnlock(itemName, stats, collections) {
+  if (!itemName) return null;
+  const want = `${itemName} Recipe`.toLowerCase();
+  for (const cat of Object.values(collections?.collections ?? {})) {
+    for (const [id, c] of Object.entries(cat.items ?? {})) {
+      const tier = c.tiers?.find((t) => t.unlocks?.some((u) => u.toLowerCase() === want));
+      if (tier) return { text: `${c.name} collection ${toRoman(tier.tier)}`, ...collectionCheck({ id, ...c }, tier.tier, stats) };
+    }
+  }
+  return null;
+}
+
 /** NEU's crafttext, "Requires: Honeycomb V" or "Requires: HotM 2", as a requirement. */
 export function craftRequirement(crafttext, stats, collections) {
   const m = /^Requires:\s*(.+?)\s+([IVXLC]+|\d+)$/.exec(String(crafttext ?? '').trim());

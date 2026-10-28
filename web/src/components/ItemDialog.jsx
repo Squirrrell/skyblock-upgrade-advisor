@@ -7,9 +7,9 @@ import { useEffect, useRef, useState } from 'react';
 import { prettyId } from '../../../shared/analyze/helpers.js';
 import { loadCollections, loadListings, loadPrices } from '../lib/data.js';
 import { ago, coins, int, until } from '../lib/format.js';
-import { itemInfo } from '../lib/icons.js';
-import { loadNeuItem, recipesOf } from '../lib/neu.js';
-import { craftRequirement, describe } from '../lib/requirements.js';
+import { itemInfo, useIcons } from '../lib/icons.js';
+import { craftCost, loadNeuItem, recipesOf } from '../lib/neu.js';
+import { craftRequirement, describe, recipeUnlock } from '../lib/requirements.js';
 import { ItemSlot } from '../mc.jsx';
 import { rarityClass } from '../ui.jsx';
 
@@ -73,9 +73,36 @@ function IngredientName({ id, onOpen }) {
   );
 }
 
+/**
+ * Crafting costs of the ingredients that have no price of their own (nothing
+ * listed, like a Pressure Ring between listings): id -> cost | null, filled
+ * in as they resolve.
+ */
+function useCraftCosts(ids, prices) {
+  const [costs, setCosts] = useState({});
+  const key = ids.join(',');
+  useEffect(() => {
+    if (!prices) return undefined;
+    let alive = true;
+    for (const id of ids) {
+      craftCost(id, prices).then((cost) => alive && setCosts((c) => ({ ...c, [id]: cost })));
+    }
+    return () => {
+      alive = false;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [key, prices]);
+  return costs;
+}
+
 /** Ingredients with their price, the total, and how that compares to buying it. */
 function Breakdown({ inputs, prices, buyPrice, onOpen }) {
-  const rows = inputs.map((c) => ({ ...c, price: prices?.(c.id) ?? null }));
+  const crafted = useCraftCosts(inputs.filter((c) => !prices?.(c.id)).map((c) => c.id), prices);
+  const rows = inputs.map((c) => {
+    const own = prices?.(c.id) ?? null;
+    if (own) return { ...c, price: own };
+    return { ...c, price: crafted[c.id] ? { unit: crafted[c.id], crafted: true } : null };
+  });
   const total = rows.reduce((n, r) => n + (r.price ? r.price.unit * r.count : 0), 0);
   const unpriced = rows.filter((r) => !r.price).length;
   return (
@@ -92,6 +119,9 @@ function Breakdown({ inputs, prices, buyPrice, onOpen }) {
                 <>
                   <span className="text-warn">{coins(r.price.unit * r.count)}</span>
                   {r.count > 1 && <span className="ml-1.5 text-xs text-muted">{coins(r.price.unit)} each</span>}
+                  {(r.price.crafted || r.price.stale) && (
+                    <span className="block text-xs text-muted">{r.price.crafted ? 'none listed, crafting cost' : 'none listed, last price this month'}</span>
+                  )}
                 </>
               ) : (
                 <span className="text-muted">no price</span>
@@ -160,7 +190,8 @@ function Recipe({ recipe, resultId, prices, onOpen }) {
 
 function Requirements({ neu, id, stats }) {
   const collections = useLoad(loadCollections, []);
-  const craft = craftRequirement(neu?.crafttext, stats, collections);
+  // Hypixel's collections list first: the repository has no crafttext for newer items.
+  const craft = recipeUnlock(itemInfo(id).name, stats, collections) ?? craftRequirement(neu?.crafttext, stats, collections);
   const use = itemInfo(id).requirements.map((r) => describe(r, stats, collections));
   if (!craft && !use.length) return null;
   const row = (r, label) => (
@@ -232,6 +263,8 @@ function Listings({ id, name }) {
  * requirements. Opens as a modal; Escape or the backdrop closes it.
  */
 export default function ItemDialog({ item, stats, onClose }) {
+  // Redraw when the item list arrives: names, rarities and accessory links come from it.
+  useIcons();
   const ref = useRef(null);
   const [stack, setStack] = useState([item]);
   const current = stack[stack.length - 1];

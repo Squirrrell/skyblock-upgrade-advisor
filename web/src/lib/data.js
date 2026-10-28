@@ -42,7 +42,8 @@ export const loadListings = () => cached('listings', 5 * 60_000, () => getJson(d
 
 /**
  * What an item costs to buy now: bazaar instant-buy, else the lowest BIN from
- * the last auction scan. Resolves to (id) => { unit, source } | null.
+ * the last auction scan, else (with `stale: true`) the last price it was listed
+ * at this month. Resolves to (id) => { unit, source, stale? } | null.
  */
 export const loadPrices = () =>
   cached('price-lookup', 60_000, async () => {
@@ -51,7 +52,9 @@ export const loadPrices = () =>
       const q = bazaar?.products?.[id]?.quick_status;
       if (q?.buyPrice) return { unit: q.buyPrice, source: 'bazaar' };
       const bin = auctions?.lowest?.[id];
-      return bin ? { unit: bin, source: 'auction' } : null;
+      if (bin) return { unit: bin, source: 'auction' };
+      const last = auctions?.last?.[id];
+      return last ? { unit: last, source: 'auction', stale: true } : null;
     };
   });
 
