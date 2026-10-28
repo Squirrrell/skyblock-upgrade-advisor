@@ -2,6 +2,7 @@
 import { useEffect, useLayoutEffect, useReducer, useRef, useState, useSyncExternalStore } from 'react';
 import { iconUrls, itemInfo, useIcons } from './lib/icons.js';
 import { loadNeuItem, neuItemNow } from './lib/neu.js';
+import { petLore } from './lib/pets.js';
 import { packGlyph } from './lib/vanilla.js';
 import { RARITY } from './theme.js';
 
@@ -44,6 +45,94 @@ export function tooltipProps(content) {
   };
 }
 
+// Lore that loads later (NEU lore, a pet's lore at its level), by key.
+const lateLore = new Map(); // key -> lore | null, once loaded
+const lateLoading = new Set();
+
+/** Lore from `load()` for `key`, or undefined while it loads; `redraw` runs when it arrives. */
+function asyncLore(key, load, redraw) {
+  if (lateLore.has(key)) return lateLore.get(key);
+  if (!lateLoading.has(key)) {
+    lateLoading.add(key);
+    Promise.resolve()
+      .then(load)
+      .catch(() => null)
+      .then((lore) => {
+        lateLore.set(key, Array.isArray(lore) && lore.length ? lore : null);
+        lateLoading.delete(key);
+        redraw();
+      });
+  } else {
+    // Someone else started it; check back shortly.
+    setTimeout(redraw, 300);
+  }
+  return undefined;
+}
+
+/** The lore a card shows: its own, a pet's built from its level, or the NEU lore for its id. */
+function cardLore(content, redraw) {
+  if (content.lore?.length) return content.lore;
+  if (content.loreLoad) return asyncLore(content.loreLoad.key, content.loreLoad.load, redraw);
+  if (content.loreId) return neuLore(content.loreId, redraw);
+  return null;
+}
+
+const tipLine = (l, i) =>
+  typeof l === 'string' ? (
+    <div key={i} className="mc-tt-line">
+      {l}
+    </div>
+  ) : (
+    <div key={i} className={`mc-tt-line ${l.bold ? 'mc-tt-rarity' : ''}`} style={l.color ? { color: l.color } : undefined}>
+      {l.text}
+    </div>
+  );
+
+const cardStyle = (rarity) => ({
+  '--tt-rarity': RARITY[rarity] ?? RARITY.COMMON,
+  '--tt-ink': rarity === 'COMMON' || !RARITY[rarity] ? '#151515' : '#fff',
+});
+
+/** The inside of an item card: rarity header with the icon, the lore, then the extra lines. */
+function CardBody({ content, lore }) {
+  const { name, rarity, lines = [], label, icon, noFooter } = content;
+  const extra = lines.filter(Boolean);
+  // Without lore there is no rarity line, so the card ends with its own.
+  const footer = !lore && !noFooter && (label ?? rarity) ? label ?? `${rarity.replace('_', ' ')}` : null;
+  return (
+    <>
+      <div className="mc-tt-head">
+        {icon && (
+          <span className="mc-tt-icon">
+            <Icon id={icon} />
+          </span>
+        )}
+        <span>{mcText(name, { colors: false })}</span>
+      </div>
+      <div className="mc-tt-body">
+        {(lore ?? []).map((l, i) =>
+          stripCodes(l).trim() ? (
+            <div key={i} className="mc-tt-line mc-tt-lore">
+              {mcText(l)}
+            </div>
+          ) : (
+            <div key={i} className="mc-tt-gap" />
+          ),
+        )}
+        {lore && extra.length > 0 && <div className="mc-tt-gap" />}
+        {extra.map(tipLine)}
+        {footer && (
+          <div className="mc-tt-line mc-tt-rarity" style={{ color: RARITY[rarity] ?? RARITY.COMMON }}>
+            {footer}
+          </div>
+        )}
+      </div>
+    </>
+  );
+}
+
+const isCard = (c) => Boolean(c && (c.card || c.lore?.length || c.loreId || c.loreLoad));
+
 export function TooltipLayer() {
   const current = useTip();
   const ref = useRef(null);
@@ -66,60 +155,18 @@ export function TooltipLayer() {
   }, []);
 
   if (!current) return null;
-  const { name, rarity, lines = [], label, icon, loreId, card, noFooter } = current.content;
-  // Items without their own lore get it from the NEU repo on first hover;
-  // the card shows its other lines until it arrives.
-  const lore = current.content.lore?.length ? current.content.lore : loreId ? neuLore(loreId, current) : null;
+  const { content } = current;
+  const { name, rarity, lines = [], label } = content;
   const color = RARITY[rarity] ?? RARITY.COMMON;
-  const line = (l, i) =>
-    typeof l === 'string' ? (
-      <div key={i} className="mc-tt-line">
-        {l}
-      </div>
-    ) : (
-      <div key={i} className={`mc-tt-line ${l.bold ? 'mc-tt-rarity' : ''}`} style={l.color ? { color: l.color } : undefined}>
-        {l.text}
-      </div>
-    );
 
-  // The detailed card: rarity-coloured header, the item's own lore, then extras.
-  if (lore || loreId || card) {
-    const extra = lines.filter(Boolean);
-    // Without lore there is no rarity line, so the card ends with its own.
-    const footer = !lore && !noFooter && (label ?? rarity) ? label ?? `${rarity.replace('_', ' ')}` : null;
+  // The detailed card for items; late lore redraws it if it is still open.
+  if (isCard(content)) {
+    const asked = current;
+    const lore = cardLore(content, () => tip === asked && setTip({ ...tip }));
     return (
-      <div
-        ref={ref}
-        className="mc-tooltip mc-tt-card"
-        style={{ ...pos, '--tt-rarity': color, '--tt-ink': rarity === 'COMMON' || !RARITY[rarity] ? '#151515' : '#fff' }}
-        role="tooltip"
-      >
-        <div className="mc-tt-head">
-          {icon && (
-            <span className="mc-tt-icon">
-              <Icon id={icon} />
-            </span>
-          )}
-          <span>{mcText(name, { colors: false })}</span>
-        </div>
-        <div className="mc-tt-body">
-          {(lore ?? []).map((l, i) =>
-            stripCodes(l).trim() ? (
-              <div key={i} className="mc-tt-line mc-tt-lore">
-                {mcText(l)}
-              </div>
-            ) : (
-              <div key={i} className="mc-tt-gap" />
-            ),
-          )}
-          {lore && extra.length > 0 && <div className="mc-tt-gap" />}
-          {extra.map(line)}
-          {footer && (
-            <div className="mc-tt-line mc-tt-rarity" style={{ color }}>
-              {footer}
-            </div>
-          )}
-        </div>
+      <div ref={ref} className="mc-tooltip mc-tt-card" style={{ ...pos, ...cardStyle(rarity) }} role="tooltip">
+        <CardBody content={content} lore={lore} />
+        {content.openable && <div className="mc-tt-hint">Click for the full view</div>}
       </div>
     );
   }
@@ -129,22 +176,72 @@ export function TooltipLayer() {
       <div className="mc-tt-name" style={{ color }}>
         {mcText(name)}
       </div>
-      {lines.filter(Boolean).map((line, i) =>
-        typeof line === 'string' ? (
-          <div key={i} className="mc-tt-line">
-            {line}
-          </div>
-        ) : (
-          <div key={i} className="mc-tt-line" style={line.color ? { color: line.color } : undefined}>
-            {line.text}
-          </div>
-        ),
-      )}
+      {lines.filter(Boolean).map(tipLine)}
       {(label ?? rarity) && (
         <div className="mc-tt-rarity" style={{ color }}>
           {label ?? rarity.replace('_', ' ')}
         </div>
       )}
+    </div>
+  );
+}
+
+// ------------------------------------------------------------------ full view
+
+// The item card opened in full, on click: one for the whole page.
+let fullCard = null;
+const fullListeners = new Set();
+/** Open an item card (itemCard() content) in the full view. */
+export function openCard(content) {
+  setTip(null);
+  fullCard = content;
+  for (const l of fullListeners) l();
+}
+const useFullCard = () =>
+  useSyncExternalStore(
+    (fn) => {
+      fullListeners.add(fn);
+      return () => fullListeners.delete(fn);
+    },
+    () => fullCard,
+  );
+
+/** The item card in full, as a modal: easier to read than the hover card, and it stays open. */
+export function CardDialog() {
+  const content = useFullCard();
+  const ref = useRef(null);
+  const [, redraw] = useReducer((n) => n + 1, 0);
+  useEffect(() => {
+    if (content && !ref.current?.open) ref.current?.showModal();
+  }, [content]);
+  if (!content) return null;
+  const lore = cardLore(content, redraw);
+  const close = () => ref.current?.close();
+  return (
+    <dialog
+      ref={ref}
+      className="card-dialog"
+      aria-label={stripCodes(content.name)}
+      onClose={() => openCard(null)}
+      onClick={(e) => e.target === ref.current && close()}
+    >
+      <div className="mc-tooltip mc-tt-card mc-tt-full" style={cardStyle(content.rarity)}>
+        <button type="button" onClick={close} className="card-dialog-close" aria-label="Close">
+          ×
+        </button>
+        <CardBody content={content} lore={lore} />
+      </div>
+    </dialog>
+  );
+}
+
+/** An item card shown in place (in the item popup), at full size. */
+export function ItemCardView({ content }) {
+  const [, redraw] = useReducer((n) => n + 1, 0);
+  const lore = cardLore(content, redraw);
+  return (
+    <div className="mc-tooltip mc-tt-card mc-tt-static" style={cardStyle(content.rarity)}>
+      <CardBody content={content} lore={lore} />
     </div>
   );
 }
@@ -156,25 +253,29 @@ const obtainedText = (ms) =>
 /**
  * The SkyCrypt-style card for an item: { id, name, rarity, lore?, obtained?,
  * value?, soulbound?, lines? }. Its own lore when it has one (an item on the
- * profile), else the NEU lore for its id; then when it was obtained and its
- * estimated value. `lines` go between the lore and those.
+ * profile), a pet's lore at its level (`pet`: { type, tier, level, heldItem,
+ * xpCurrent, xpForNext, exp, ... }), else the NEU lore for its id; then when
+ * it was obtained and its estimated value. `lines` go between the lore and those.
  */
-export function itemCard({ id, name, rarity, lore, obtained, value, soulbound, recombobulated, lines = [], label, useNeu = true }) {
+export function itemCard({ id, name, rarity, lore, obtained, value, soulbound, recombobulated, lines = [], label, useNeu = true, pet = null }) {
   const own = Array.isArray(lore) && lore.length ? lore : null;
+  const petKey = pet && !own ? `pet:${pet.type}:${pet.tier}:${pet.level}:${pet.heldItem}:${pet.skin}:${Math.round(pet.exp ?? 0)}` : null;
   // With no lore coming at all, the rarity line goes where the game puts it:
   // after the details, before when it was obtained and what it is worth.
-  const rarityLine = !own && !useNeu && (label ?? rarity) ? { text: label ?? rarity.replace('_', ' '), color: RARITY[rarity] ?? RARITY.COMMON, bold: true } : null;
+  const rarityLine = !own && !useNeu && !petKey && (label ?? rarity) ? { text: label ?? rarity.replace('_', ' '), color: RARITY[rarity] ?? RARITY.COMMON, bold: true } : null;
   return {
     name,
     rarity,
     icon: id,
     card: true,
     lore: own,
-    loreId: own || !useNeu ? undefined : id,
+    loreId: own || !useNeu || petKey ? undefined : id,
+    loreLoad: petKey ? { key: petKey, load: () => petLore(pet) } : undefined,
     label: rarityLine ? null : label,
     noFooter: Boolean(rarityLine),
     lines: [
-      ...lines,
+      // A pet's lore already lists its level, held item and XP.
+      ...(petKey ? [] : lines),
       rarityLine,
       // Recombobulated items with their own lore already say so in the rarity line.
       recombobulated && !own ? { text: 'Recombobulated', color: 'var(--code-gold)' } : null,
@@ -220,15 +321,12 @@ export const stripCodes = (s) => String(s).replace(/§./g, '');
 
 /**
  * An item's in-game lore from the NEU data repository (lib/neu.js), or
- * undefined while it loads. When it arrives and the same tooltip is still
- * open, the tooltip redraws with it.
+ * undefined while it loads; `redraw` runs when it arrives.
  */
-function neuLore(id, tipWhenAsked) {
+function neuLore(id, redraw) {
   const item = neuItemNow(id);
   if (item !== undefined) return Array.isArray(item?.lore) && item.lore.length ? item.lore : null;
-  loadNeuItem(id).then(() => {
-    if (tip === tipWhenAsked) setTip({ ...tip });
-  });
+  loadNeuItem(id).then(redraw);
   return undefined;
 }
 
@@ -324,18 +422,30 @@ function Icon({ id, hint, alt }) {
  * `tooltip` (see tooltipProps) shows on hover. Pass focusable={false} when the
  * slot sits inside a button or link, which already takes keyboard focus.
  */
-export function ItemSlot({ id, rarity, count, glint, tooltip, hint, alt, className = '', focusable = true }) {
+export function ItemSlot({ id, rarity, count, glint, tooltip, hint, alt, className = '', focusable = true, openable = true }) {
   const info = itemInfo(id);
   const tier = rarity ?? info.tier ?? undefined;
   const shine = glint ?? info.glowing;
   // Without a tooltip of its own, an item shows its card with its lore.
-  const tipContent = tooltip === false ? null : (tooltip ?? (info.name ? itemCard({ id, name: info.name, rarity: tier }) : null));
+  const base = tooltip === false ? null : (tooltip ?? (info.name ? itemCard({ id, name: info.name, rarity: tier }) : null));
+  // An item card opens in full on click, unless the slot sits in a control with its own action.
+  const opens = openable && isCard(base);
+  const tipContent = opens ? { ...base, openable: true } : base;
+  const open = (e) => {
+    e.stopPropagation();
+    e.preventDefault();
+    openCard(base);
+  };
   return (
     <span
-      className={`mc-slot ${shine ? 'mc-glint' : ''} ${className}`}
+      className={`mc-slot ${shine ? 'mc-glint' : ''} ${opens ? 'is-openable' : ''} ${className}`}
       data-rarity={tier && RARITY[tier] ? tier : undefined}
       style={tier && RARITY[tier] ? { '--slot-rarity': RARITY[tier] } : undefined}
       tabIndex={tipContent && focusable ? 0 : undefined}
+      role={opens && focusable ? 'button' : undefined}
+      aria-label={opens && focusable ? `${stripCodes(base.name ?? '')}: full details` : undefined}
+      onClick={opens ? open : undefined}
+      onKeyDown={opens && focusable ? (e) => (e.key === 'Enter' || e.key === ' ') && open(e) : undefined}
       {...tooltipProps(tipContent)}
     >
       <Icon id={id} hint={hint} alt={alt ?? info.name ?? undefined} />

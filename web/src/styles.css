@@ -596,6 +596,79 @@ option {
   color: var(--text);
 }
 
+/* An item card shown in place rather than following the pointer: in the item
+   popup, and in the full view a click opens (mc.jsx CardDialog). */
+.mc-tooltip.mc-tt-static {
+  position: static;
+  max-width: none;
+  width: 100%;
+  pointer-events: auto;
+}
+
+.mc-tt-card .mc-tt-hint {
+  padding: 0 calc(var(--px) * 5) calc(var(--px) * 3);
+  font-size: 12px;
+  color: var(--code-dark-grey);
+}
+
+.mc-slot.is-openable {
+  cursor: pointer;
+}
+
+.card-dialog {
+  margin: auto;
+  padding: 0;
+  width: min(30rem, calc(100vw - 24px));
+  max-height: calc(100dvh - 48px);
+  overflow: auto;
+  background: transparent;
+  border: 0;
+}
+
+.card-dialog::backdrop {
+  background: rgb(0 0 0 / 0.55);
+}
+
+.card-dialog .mc-tooltip.mc-tt-full {
+  position: relative;
+  width: 100%;
+  max-width: none;
+  pointer-events: auto;
+}
+
+/* Larger text than the hover card: this view is for reading. */
+.card-dialog .mc-tt-full .mc-tt-head {
+  padding-right: 3rem;
+  font-size: 17px;
+}
+
+.card-dialog .mc-tt-full .mc-tt-body {
+  font-size: 15px;
+  line-height: 1.55;
+}
+
+/* Scoped under .card-dialog to win over the new design's button reset. */
+.card-dialog .card-dialog-close {
+  position: absolute;
+  z-index: 1;
+  top: 10px;
+  right: 10px;
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  border-radius: 999px;
+  font-size: 20px;
+  line-height: 1;
+  color: var(--tt-ink);
+  background: rgb(0 0 0 / 0.18);
+  cursor: pointer;
+}
+
+.card-dialog .card-dialog-close:hover {
+  background: rgb(0 0 0 / 0.32);
+}
+
 /* Accessories in a recipe open their own popup: marked so they stand out. */
 .item-dialog .recipe-link {
   position: relative;

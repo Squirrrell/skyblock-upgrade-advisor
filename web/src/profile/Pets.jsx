@@ -37,6 +37,7 @@ export default function Pets({ stats }) {
                   name: `[Lvl ${pet.level ?? '?'}] ${pet.name}`,
                   rarity: pet.tier,
                   useNeu: false,
+                  pet,
                   lines: [
                     `${int(pet.exp)} XP`,
                     pet.heldItem ? `Held item: ${prettyId(pet.heldItem.replace(/^PET_ITEM_/, ''))}` : null,

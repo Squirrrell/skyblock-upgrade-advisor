@@ -10,7 +10,7 @@ import { ago, coins, int, until } from '../lib/format.js';
 import { itemInfo, useIcons } from '../lib/icons.js';
 import { craftCost, loadNeuItem, recipesOf } from '../lib/neu.js';
 import { craftRequirement, describe, recipeUnlock } from '../lib/requirements.js';
-import { ItemSlot } from '../mc.jsx';
+import { ItemCardView, ItemSlot, itemCard } from '../mc.jsx';
 import { rarityClass } from '../ui.jsx';
 
 function CopyButton({ text, label = 'Copy' }) {
@@ -58,7 +58,7 @@ function Ingredient({ c, onOpen }) {
   if (!itemInfo(c.id).accessory) return <ItemSlot id={c.id} count={c.count} />;
   return (
     <button type="button" className="recipe-link block" onClick={() => onOpen(c.id)} aria-label={`Open ${nameOf(c.id)}`}>
-      <ItemSlot id={c.id} count={c.count} rarity={tierOf(c.id)} focusable={false} />
+      <ItemSlot id={c.id} count={c.count} rarity={tierOf(c.id)} focusable={false} openable={false} />
     </button>
   );
 }
@@ -310,6 +310,9 @@ export default function ItemDialog({ item, stats, onClose }) {
         </button>
       </div>
       <div className="flex flex-col gap-6 px-5 py-5">
+        <section aria-label="Item details">
+          <ItemCardView key={current.id} content={current.card ?? itemCard({ id: current.id, name: current.name, rarity: current.tier })} />
+        </section>
         <section aria-labelledby="item-dialog-recipe">
           <h3 id="item-dialog-recipe" className="mb-3 text-sm font-semibold">
             Recipe

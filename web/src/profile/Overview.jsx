@@ -81,6 +81,17 @@ function SkillsPanel({ skills, onTab }) {
   );
 }
 
+/** Where the networth is: each place money or items can be, with its amount. */
+function networthTip(nw) {
+  const places = [['Purse', nw.purse], ['Bank (coop)', nw.bank], ['Personal bank', nw.personalBank], ...nw.categories.map((c) => [c.name, c.value])];
+  return {
+    name: 'Networth',
+    rarity: 'LEGENDARY',
+    lines: places.filter(([, v]) => v > 0).map(([name, v]) => ({ text: `${name}: ${coins(v)}`, color: 'var(--code-gold)' })),
+    label: `TOTAL ${coins(nw.total)}`,
+  };
+}
+
 export default function Overview({ stats, onTab }) {
   const o = stats.overview;
   const nw = stats.networth;
@@ -100,6 +111,7 @@ export default function Overview({ stats, onTab }) {
           tone="gold"
           value={coins(o.networth)}
           sub={nw.inventoryOff ? 'Inventory API off' : nw.unsoulbound != null ? `${coins(nw.unsoulbound)} unsoulbound` : `${coins(nw.items)} in items`}
+          tooltip={networthTip(nw)}
         />
         {jump('skills', <Stat label="Skill average" value={num(o.skillAverage, 2)} sub="Without cosmetic skills" />)}
         {jump(
@@ -174,6 +186,7 @@ export default function Overview({ stats, onTab }) {
                       soulbound: t.soulbound,
                       label: t.rarity ? rarityLabel(t.rarity).toUpperCase() + (t.location === 'Pets' ? ' PET' : '') : undefined,
                       useNeu: t.location !== 'Pets',
+                      pet: t.pet,
                     })}
                   />
                   <span className="min-w-0 flex-1 truncate">

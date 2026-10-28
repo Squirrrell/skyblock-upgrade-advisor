@@ -100,12 +100,12 @@ function Missing({ missing, onOpen }) {
             </thead>
             <tbody>
               {rows.slice(0, limit).map((r) => (
-                <tr key={r.id} {...tooltipProps(missingDetail(r))} onClick={() => onOpen(r)} className="cursor-pointer">
+                <tr key={r.id} {...tooltipProps(missingDetail(r))} onClick={() => onOpen(r, missingDetail(r))} className="cursor-pointer">
                   <td className="px-2 py-1">
                     <span className="flex items-center gap-3">
-                      <ItemSlot id={r.id} rarity={r.tier} tooltip={missingDetail(r)} />
+                      <ItemSlot id={r.id} rarity={r.tier} tooltip={missingDetail(r)} openable={false} />
                       <span className="min-w-0">
-                        <button type="button" className={`text-left font-semibold hover:underline ${rarityClass(r.tier)}`} onClick={(e) => (e.stopPropagation(), onOpen(r))}>
+                        <button type="button" className={`text-left font-semibold hover:underline ${rarityClass(r.tier)}`} onClick={(e) => (e.stopPropagation(), onOpen(r, missingDetail(r)))}>
                           {r.name}
                         </button>
                         {r.upgradeFrom && <span className="ml-2 text-sm text-muted">from {r.upgradeFrom}</span>}
@@ -182,8 +182,8 @@ function Owned({ a, onOpen }) {
         <ul className="acc-grid flex flex-wrap gap-2">
           {list.map((x, i) => (
             <li key={`${x.id}-${i}`}>
-              <button type="button" className="block cursor-pointer" onClick={() => onOpen({ id: x.id, name: x.name, tier: x.rarity })} aria-label={`${x.name}: recipe and auctions`}>
-                <ItemSlot id={x.id} rarity={x.rarity} glint={x.recombobulated} alt={x.name} tooltip={detail(x)} focusable={false} />
+              <button type="button" className="block cursor-pointer" onClick={() => onOpen({ id: x.id, name: x.name, tier: x.rarity }, detail(x))} aria-label={`${x.name}: recipe and auctions`}>
+                <ItemSlot id={x.id} rarity={x.rarity} glint={x.recombobulated} alt={x.name} tooltip={detail(x)} focusable={false} openable={false} />
               </button>
             </li>
           ))}
@@ -198,7 +198,7 @@ export default function Accessories({ stats }) {
   const [view, setView] = useState(() => (load('accView', 'missing') === 'owned' ? 'owned' : 'missing'));
   // The accessory whose recipe and auctions popup is open.
   const [open, setOpen] = useState(null);
-  const openItem = (x) => setOpen({ id: x.id, name: x.name, tier: x.tier ?? x.rarity });
+  const openItem = (x, card) => setOpen({ id: x.id, name: x.name, tier: x.tier ?? x.rarity, card });
   if (a.apiOff) return <Empty>The inventory API is off for this profile, so accessories can't be read.</Empty>;
   const recombs = a.owned.filter((x) => x.recombobulated).length;
   const enriched = a.owned.filter((x) => x.enrichment).length;

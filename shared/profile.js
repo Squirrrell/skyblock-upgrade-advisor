@@ -196,7 +196,10 @@ export function petLevel(pet, petConstants) {
     xp -= need;
     level++;
   }
-  return { level, maxLevel };
+  // XP into the current level and what the next one takes (null at max), and the total max level takes.
+  const next = level < maxLevel ? curve[level - 1] ?? null : null;
+  const xpMax = curve.slice(0, maxLevel - 1).reduce((a, b) => a + b, 0);
+  return { level, maxLevel, xpCurrent: Math.round(xp), xpForNext: next, xpMax };
 }
 
 export function collectPets(member, petConstants) {

@@ -22,6 +22,7 @@ export default function BestValue({ sectionId, picks, onJump }) {
             >
               <span className="text-muted tabular">{i + 1}</span>
               <ItemSlot
+                openable={false}
                 id={p.icon}
                 tooltip={{
                   name: p.name,

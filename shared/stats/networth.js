@@ -313,7 +313,11 @@ export function computeNetworth({ items, pets, member, profile, book }) {
   for (const pet of pets) {
     const v = petValue(pet, book, pet);
     add('Pets', v);
-    if (v) top.push({ name: `${pet.name} (Lvl ${pet.level ?? '?'})`, id: `PET_${pet.type}_${pet.tier}`, rarity: pet.tier, value: v, location: 'Pets', count: 1 });
+    if (v) {
+      // For the pet's card: what its lore at its level is built from.
+      const card = { type: pet.type, tier: pet.tier, level: pet.level, heldItem: pet.heldItem, skin: pet.skin, candyUsed: pet.candyUsed, exp: pet.exp, xpCurrent: pet.xpCurrent, xpForNext: pet.xpForNext, xpMax: pet.xpMax };
+      top.push({ name: `${pet.name} (Lvl ${pet.level ?? '?'})`, id: `PET_${pet.type}_${pet.tier}`, rarity: pet.tier, value: v, location: 'Pets', count: 1, pet: card });
+    }
   }
 
   for (const [id, count] of Object.entries(member.inventory?.sacks_counts ?? {})) {

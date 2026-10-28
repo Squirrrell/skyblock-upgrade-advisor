@@ -1,5 +1,6 @@
 // Small building blocks shared by the profile tabs and tool pages.
 import { int, num } from './lib/format.js';
+import { tooltipProps } from './mc.jsx';
 
 export function Panel({ title, subtitle, actions, children, className = '', pad = true }) {
   return (
@@ -21,10 +22,11 @@ export function Panel({ title, subtitle, actions, children, className = '', pad 
 const TONES = { green: 'text-accent', gold: 'text-warn', red: 'text-danger' };
 
 /** A labelled number in a black readout. `accent` = green; or pass tone. */
-export function Stat({ label, value, sub, accent, tone, icon }) {
+/** A headline number. `tooltip` (tooltipProps content) shows on hover or focus. */
+export function Stat({ label, value, sub, accent, tone, icon, tooltip }) {
   const color = TONES[tone ?? (accent ? 'green' : '')] ?? 'text-text';
   return (
-    <div className="min-w-0 border border-line bg-surface p-3 shadow-panel">
+    <div className="min-w-0 border border-line bg-surface p-3 shadow-panel" tabIndex={tooltip ? 0 : undefined} {...tooltipProps(tooltip)}>
       <div className="flex items-center gap-2 truncate text-sm text-muted">
         {icon}
         {label}
