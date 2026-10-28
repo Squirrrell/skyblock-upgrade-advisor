@@ -6,7 +6,7 @@ import { GARDEN_LEVEL_XP } from '../data/farming.js';
 import { prettyId } from '../analyze/helpers.js';
 import { MINION_MAX_TIER } from './constants.js';
 import { SKILLS, catacombsLevel, hotfLevel, hotmLevel, levelFrom, skillCap, skillTable, slayerLevel, SKILL_MAX } from './levels.js';
-import { computeNetworth, itemValue } from './networth.js';
+import { computeNetworth, itemValue, itemValueParts } from './networth.js';
 import { shardStats } from './shards.js';
 
 const RARITY_RANK = { COMMON: 0, UNCOMMON: 1, RARE: 2, EPIC: 3, LEGENDARY: 4, MYTHIC: 5, DIVINE: 6, SPECIAL: 7, VERY_SPECIAL: 8 };
@@ -521,6 +521,7 @@ function inventory(items, book) {
       same.value += itemValue(item, book);
       continue;
     }
+    const worth = itemValueParts(item, book);
     list.push({
       plain,
       id: item.id,
@@ -535,7 +536,10 @@ function inventory(items, book) {
       enchantments: item.enchantments,
       gems: Object.keys(item.gems ?? {}).length,
       pet: item.petInfo ? { type: item.petInfo.type, tier: item.petInfo.tier } : null,
-      value: itemValue(item, book),
+      value: worth.total,
+      // What the value is made of: the item itself and each upgrade on it.
+      base: worth.base,
+      parts: worth.parts,
       // For the icon: 1.8 item id, player-head skin, leather dye.
       mat: item.mat,
       skull: item.skull,

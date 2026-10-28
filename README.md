@@ -20,7 +20,7 @@ One lookup loads every tab; each tab's code is fetched the first time you open i
 - **Crimson & Rift**: faction reputation, Kuudra tiers, dojo grades and belt, trophy fish, and Rift progress.
 - **Events & Misc**: Chocolate Factory, fairy souls, bestiary, essence, experiments, auction stats, kills, deaths and races.
 
-Networth is an estimate: what base items, pets, sacks, essence and hunting shards would sell for now, plus recombobulators, potato books, gems and pet items. Enchantments, reforges and stars are not added.
+Networth is an estimate. Items are counted at their typical lowest BIN over the last 3 days (a trimmed average of a sample every 2 hours, so one underpriced or inflated listing barely moves it) or bazaar instant-sell, plus what has been applied to them: enchantments (85% of their price), recombobulator (80%), hot potato books (100%), fuming potato books (60%), dungeon stars (75% of the essence), master stars, reforge stones, gems, Art of War, Wood Singularity, Farming for Dummies, transmission tuners, drill parts and more. Hover an item in Overview or Inventory to see its breakdown. Pets, sacks, essence and hunting shards are added on top.
 
 ## Tools that need no username
 
@@ -167,7 +167,7 @@ Monocraft is by Idrees Hassan under the SIL Open Font License; the license is in
 ## How it works
 
 - `server/hypixel.js` talks to the Hypixel and Mojang APIs and caches responses for a couple of minutes.
-- `server/prices.js` (with `shared/prices.js`) reads bazaar instant-buy prices and scans every auction page for the lowest BIN, refreshing every 10 minutes. Pets are priced by type and rarity, preferring level 100 listings.
+- `server/prices.js` (with `shared/prices.js`) reads bazaar instant-buy prices and scans every auction page for the lowest BIN, refreshing every 10 minutes. Pets are priced by type and rarity, preferring level 100 listings. Each scan also adds to a 3-day lowest BIN history (`.cache/price-history.json` locally; on Pages each build reads `data/price-history.json` back from the live site), which networth uses.
 - `shared/profile.js` decodes the NBT inventory blobs (armor, wardrobe, ender chest, backpacks, accessory bag, loadouts and the farming toolkit) into a flat item list, and works out pet levels.
 - `shared/stats/` computes everything else on the profile (skills, slayers, dungeons, networth and the rest), with leveling tables from the NotEnoughUpdates repo in `shared/stats/constants.js`. `shared/accessories.js` builds the missing-accessory list and `shared/calendar.js` the SkyBlock calendar.
 - `shared/analyze/` turns that into report rows. The fortune values live in `shared/data/` so they can be updated after a game patch without touching the logic. Everything in `shared/` runs in both Node and the browser.

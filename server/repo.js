@@ -32,6 +32,15 @@ export async function getAttributeConstants() {
   }
 }
 
+export async function getReforgeStones() {
+  try {
+    return await fetchConstant('reforgestones');
+  } catch (err) {
+    console.warn(`[repo] reforgestones.json unavailable: ${err.message}`);
+    return null;
+  }
+}
+
 export async function getMiscConstants() {
   try {
     return await fetchConstant('misc');

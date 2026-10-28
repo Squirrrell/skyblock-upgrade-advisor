@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { coins } from '../lib/format.js';
+import { coins, valueLines } from '../lib/format.js';
 import { prettyId } from '../../../shared/analyze/helpers.js';
 import { ItemSlot } from '../mc.jsx';
 import { Chip, Empty, Panel, SearchInput, rarityClass, rarityLabel } from '../ui.jsx';
@@ -43,7 +43,7 @@ function ItemRow({ item }) {
             lines: [
               enchants ? { text: enchants, color: 'var(--code-blue)' } : null,
               ...tags,
-              item.value ? { text: `Value: ${coins(item.value)}`, color: 'var(--code-gold)' } : null,
+              ...valueLines(item),
             ],
             label: item.rarity ? rarityLabel(item.rarity).toUpperCase() : undefined,
           }}

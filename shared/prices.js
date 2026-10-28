@@ -93,7 +93,79 @@ export async function scanAuctionHouse(fetchPage, { concurrency = 6, listFor = n
  * - lowest: { [auctionKey]: price } from scanAuctionHouse
  * - items: Map of item id -> Hypixel item resource entry
  */
-export function createPriceBook({ bazaarProducts = {}, lowest = {}, items = new Map(), meta = {} }) {
+// ------------------------------------------------------------------ lowest BIN history
+
+export const HISTORY_WINDOW_MS = 3 * 24 * 60 * 60_000;
+export const HISTORY_EVERY_MS = 2 * 60 * 60_000;
+
+/**
+ * Add a scan's lowest BINs to the rolling history, at most one sample every
+ * `every` ms, keeping `window` ms of them. History is
+ * { times: [t...], prices: { key: [price | null, ...] } } with one column per
+ * sample, so every key shares the timestamps.
+ */
+export function updateHistory(history, lowest, now = Date.now(), { window = HISTORY_WINDOW_MS, every = HISTORY_EVERY_MS } = {}) {
+  const times = [...(history?.times ?? [])];
+  const prices = Object.fromEntries(Object.entries(history?.prices ?? {}).map(([k, v]) => [k, [...v]]));
+  if (times.length && now - times[times.length - 1] < every) return { times, prices };
+  times.push(now);
+  for (const list of Object.values(prices)) list.push(null);
+  for (const [key, price] of Object.entries(lowest)) {
+    const list = (prices[key] ??= Array(times.length).fill(null));
+    list[times.length - 1] = Math.round(price);
+  }
+  // Drop samples older than the window, and keys with nothing left.
+  const keep = times.findIndex((t) => now - t <= window);
+  const from = keep < 0 ? times.length : keep;
+  const out = { times: times.slice(from), prices: {} };
+  for (const [key, list] of Object.entries(prices)) {
+    const kept = list.slice(from);
+    if (kept.some((p) => p != null)) out.prices[key] = kept;
+  }
+  return out;
+}
+
+/**
+ * Typical lowest BIN per key over the history: the mean of the samples with
+ * the top and bottom 20% dropped, so one fake-low or inflated listing can't
+ * swing it. Keys with fewer than `min` samples are left out.
+ */
+export function averageLowest(history, { min = 3 } = {}) {
+  const out = {};
+  for (const [key, list] of Object.entries(history?.prices ?? {})) {
+    const vals = list.filter((p) => p != null).sort((a, b) => a - b);
+    if (vals.length < min) continue;
+    const cut = Math.floor(vals.length * 0.2);
+    const mid = vals.slice(cut, vals.length - cut);
+    out[key] = Math.round(mid.reduce((n, v) => n + v, 0) / mid.length);
+  }
+  return out;
+}
+
+/**
+ * Reforge name -> reforge stone id, from NEU's constants/reforgestones.json.
+ * Items store the reforge as a lowercase name ("mossy"), so that is the key.
+ */
+export function reforgeStones(constants) {
+  const out = {};
+  for (const [id, stone] of Object.entries(constants ?? {})) {
+    if (!stone?.reforgeName) continue;
+    const name = stone.reforgeName.toLowerCase();
+    out[name] = id;
+    out[name.replace(/[\s-]+/g, '_')] = id;
+  }
+  return out;
+}
+
+// ------------------------------------------------------------------ price book
+
+/**
+ * `lowest` is the latest lowest BIN per key, `average` its typical value over
+ * the last few days (averageLowest). price() is what buying costs now;
+ * value() is what an item is worth, for networth. `reforges` maps a reforge
+ * name ("mossy") to its reforge stone id.
+ */
+export function createPriceBook({ bazaarProducts = {}, lowest = {}, average = {}, reforges = {}, items = new Map(), meta = {} }) {
   function price(id) {
     if (!id) return null;
     const product = bazaarProducts[id];
@@ -117,8 +189,12 @@ export function createPriceBook({ bazaarProducts = {}, lowest = {}, items = new 
       const unit = product.quick_status?.sellPrice || product.sell_summary?.[0]?.pricePerUnit;
       if (unit) return unit;
     }
-    if (!exact && lowest[`${id}@MAX`] !== undefined) return lowest[`${id}@MAX`];
-    return lowest[id] ?? null;
+    // The typical lowest BIN of the last few days, else the latest one.
+    if (!exact) {
+      const max = average[`${id}@MAX`] ?? lowest[`${id}@MAX`];
+      if (max !== undefined) return max;
+    }
+    return average[id] ?? lowest[id] ?? null;
   }
 
   return {
@@ -126,6 +202,7 @@ export function createPriceBook({ bazaarProducts = {}, lowest = {}, items = new 
     value,
     name: (id) => items.get(id)?.name ?? null,
     item: (id) => items.get(id) ?? null,
+    reforgeStone: (name) => (name ? reforges[String(name).toLowerCase()] ?? null : null),
     meta,
   };
 }
@@ -152,6 +229,8 @@ export function slimItems(items) {
     // For the item popup: accessories can be opened from a recipe, and what it takes to use it.
     if (item.category === 'ACCESSORY') out.acc = true;
     if (item.requirements?.length) out.req = item.requirements;
+    // Essence and items each dungeon star costs, for valuing starred gear.
+    if (item.upgrade_costs?.length) out.upgrade_costs = item.upgrade_costs;
     return out;
   });
 }

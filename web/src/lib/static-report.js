@@ -26,10 +26,10 @@ async function getJson(url, { signal, label }) {
 let staticData = null;
 function loadStatic(signal) {
   staticData ??= Promise.all(
-    ['prices', 'items', 'pets', 'attribute_shards', 'accessories'].map((name) =>
+    ['prices', 'items', 'pets', 'attribute_shards', 'accessories', 'reforges'].map((name) =>
       getJson(`${DATA}/${name}.json`, { signal, label: 'the price snapshot' }).catch((err) => {
-        // Older deploys have no accessory index; the rest of the report still works.
-        if (name === 'accessories' && err.name !== 'AbortError') return null;
+        // Older deploys lack these two; the rest of the report still works.
+        if ((name === 'accessories' || name === 'reforges') && err.name !== 'AbortError') return null;
         throw err;
       }),
     ),
@@ -60,7 +60,7 @@ export async function fetchStaticReport(name, wantedProfile, { signal } = {}) {
   if (!profiles?.length) throw new ReportError(`${player.name} has never played SkyBlock.`, { code: 'NO_PROFILES' });
 
   const profile = pickProfile(profiles, wantedProfile);
-  const [gardenRes, [[prices, items, pets, attributes, accessories], bz]] = await Promise.all([
+  const [gardenRes, [[prices, items, pets, attributes, accessories, reforges], bz]] = await Promise.all([
     getJson(`${PROXY}/garden/${profile.profile_id}`, { signal, label: 'the lookup proxy' }).catch((err) => {
       if (err.name === 'AbortError') throw err;
       return null;
@@ -71,6 +71,8 @@ export async function fetchStaticReport(name, wantedProfile, { signal } = {}) {
   const book = createPriceBook({
     bazaarProducts: bz?.products,
     lowest: prices.lowest,
+    average: prices.average,
+    reforges: reforges ?? {},
     items: new Map(items.map((i) => [i.id, i])),
     meta: { bazaarUpdatedAt: bz?.lastUpdated ?? null, auctionsUpdatedAt: prices.updatedAt, auctionPages: prices.pages },
   });

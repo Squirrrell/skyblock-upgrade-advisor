@@ -56,6 +56,8 @@ jobs:
         env:
           VITE_BASE: /${{ github.event.repository.name }}/
           VITE_PROXY_URL: ${{ vars.PROXY_URL }}
+          # The live site, where the previous price history is read back from.
+          PAGES_URL: https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}
 
       - uses: actions/configure-pages@v5
 

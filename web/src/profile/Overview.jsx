@@ -1,5 +1,5 @@
 import { ArrowRightIcon } from '@phosphor-icons/react';
-import { coins, date, int, num } from '../lib/format.js';
+import { coins, date, int, num, valueLines } from '../lib/format.js';
 import { ItemSlot } from '../mc.jsx';
 import { SKILL_ICONS } from '../theme.js';
 import { Bar, Facts, Panel, Stat, StatGrid, rarityClass, rarityLabel } from '../ui.jsx';
@@ -147,7 +147,7 @@ export default function Overview({ stats, onTab }) {
                     tooltip={{
                       name: t.name,
                       rarity: t.rarity,
-                      lines: [t.location, { text: `Value: ${coins(t.value)}`, color: 'var(--code-gold)' }],
+                      lines: [t.location, ...valueLines(t)],
                       label: t.rarity ? rarityLabel(t.rarity).toUpperCase() : undefined,
                     }}
                   />

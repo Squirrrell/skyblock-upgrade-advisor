@@ -1,8 +1,10 @@
-// Rough networth: what the profile's items, pets, sacks and essence would
-// sell for right now, plus coins. Item value is the base item price plus
-// the upgrades that are easy to price (recombobulator, potato books,
-// gemstones, pet items). Enchantments, reforges and stars are not added, so
-// heavily upgraded gear is undervalued.
+// Networth estimate: what the profile's items, pets, sacks, essence and
+// shards are worth, plus coins. An item is its base price (the typical lowest
+// BIN of the last few days, see prices.js) plus what has been applied to it:
+// enchantments, recombobulator, potato books, stars, reforge stone, gems and
+// the other upgrades below. Applied upgrades count at a share of their price,
+// since they rarely sell back for full value; the shares are close to the
+// ones community networth tools use.
 
 const GEM_TIERS = ['ROUGH', 'FLAWED', 'FINE', 'FLAWLESS', 'PERFECT'];
 
@@ -21,21 +23,125 @@ function gemIds(extra) {
   return out;
 }
 
-export function itemValue(item, book) {
+/** Share of an applied upgrade's price that counts toward the item. */
+export const APPLIED_WORTH = {
+  enchantment: 0.85,
+  recombobulator: 0.8,
+  hotPotato: 1,
+  fumingPotato: 0.6,
+  stars: 0.75,
+  masterStar: 1,
+  reforge: 1,
+  gemstone: 1,
+  artOfWar: 0.6,
+  artOfPeace: 0.8,
+  woodSingularity: 0.5,
+  farmingForDummies: 0.5,
+  transmissionTuner: 0.7,
+  manaDisintegrator: 0.8,
+  polarvoid: 0.8,
+  jalapeno: 0.8,
+  enrichment: 0.5,
+  other: 1,
+};
+
+const MASTER_STARS = ['FIRST', 'SECOND', 'THIRD', 'FOURTH', 'FIFTH'];
+const ROMAN = ['', 'I', 'II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII', 'IX', 'X'];
+const words = (id) => String(id).toLowerCase().replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
+
+// Upgrades stored as a count on the item: [ExtraAttributes key, item id, label, share].
+const COUNTED = [
+  ['art_of_war_count', 'THE_ART_OF_WAR', 'The Art of War', 'artOfWar'],
+  ['wood_singularity_count', 'WOOD_SINGULARITY', 'Wood Singularity', 'woodSingularity'],
+  ['farming_for_dummies_count', 'FARMING_FOR_DUMMIES', 'Farming for Dummies', 'farmingForDummies'],
+  ['tuned_transmission', 'TRANSMISSION_TUNER', 'Transmission Tuner', 'transmissionTuner'],
+  ['mana_disintegrator_count', 'MANA_DISINTEGRATOR', 'Mana Disintegrator', 'manaDisintegrator'],
+  ['polarvoid', 'POLARVOID_BOOK', 'Polarvoid Book', 'polarvoid'],
+  ['jalapeno_count', 'JALAPENO_BOOK', 'Jalapeno Book', 'jalapeno'],
+];
+// Upgrades stored as the applied item's id: [ExtraAttributes key, label].
+const APPLIED_ITEMS = [
+  ['drill_part_upgrade_module', 'Drill module'],
+  ['drill_part_fuel_tank', 'Drill fuel tank'],
+  ['drill_part_engine', 'Drill engine'],
+  ['power_ability_scroll', 'Ability scroll'],
+  ['dye_item', 'Dye'],
+];
+
+/**
+ * An item's value, itemised: { total, base, parts: [{ label, value }] }.
+ * `base` is the item itself (times its stack size); each part is something
+ * applied to it, at its APPLIED_WORTH share, largest first.
+ */
+export function itemValueParts(item, book) {
   if (item.id === 'PET' && item.petInfo) {
-    return petValue({ type: item.petInfo.type, tier: item.petInfo.tier, heldItem: item.petInfo.heldItem }, book, null);
+    const total = petValue({ type: item.petInfo.type, tier: item.petInfo.tier, heldItem: item.petInfo.heldItem }, book, null);
+    return { total, base: total, parts: [] };
   }
-  const unit = book.value(item.id) ?? 0;
-  let extras = 0;
-  if (item.recombobulated) extras += book.value('RECOMBOBULATOR_3000') ?? 0;
-  const potato = item.hotPotato ?? 0;
+  const extra = item.extra ?? {};
+  const v = (id) => (id ? book.value(id) ?? 0 : 0);
+  const parts = [];
+  const add = (label, value) => {
+    if (value > 0) parts.push({ label, value: Math.round(value) });
+  };
+
+  // A book is worth its enchantments in full; on gear they count at a share.
+  const book_ = item.id === 'ENCHANTED_BOOK';
+  for (const [name, level] of Object.entries(item.enchantments ?? extra.enchantments ?? {})) {
+    const price = v(`ENCHANTMENT_${name.toUpperCase()}_${level}`);
+    add(`${words(name.replace(/^ultimate_/, ''))} ${ROMAN[level] ?? level}`, price * (book_ ? 1 : APPLIED_WORTH.enchantment));
+  }
+  if (item.recombobulated ?? extra.rarity_upgrades) add('Recombobulator 3000', v('RECOMBOBULATOR_3000') * APPLIED_WORTH.recombobulator);
+  const potato = item.hotPotato ?? extra.hot_potato_count ?? 0;
   if (potato > 0) {
-    extras += Math.min(10, potato) * (book.value('HOT_POTATO_BOOK') ?? 0);
-    if (potato > 10) extras += (potato - 10) * (book.value('FUMING_POTATO_BOOK') ?? 0);
+    const hot = Math.min(10, potato);
+    add(`Hot Potato Book x${hot}`, hot * v('HOT_POTATO_BOOK') * APPLIED_WORTH.hotPotato);
+    if (potato > 10) add(`Fuming Potato Book x${potato - 10}`, (potato - 10) * v('FUMING_POTATO_BOOK') * APPLIED_WORTH.fumingPotato);
   }
-  for (const id of gemIds(item.extra)) extras += book.value(id) ?? 0;
-  if (!unit && !extras) return 0;
-  return unit * (item.count || 1) + extras;
+
+  // Dungeon stars: the essence (and items) the first five cost, then master stars.
+  const stars = Number(extra.upgrade_level ?? extra.dungeon_item_level) || 0;
+  const costs = book.item?.(item.id)?.upgrade_costs ?? [];
+  if (stars > 0 && costs.length) {
+    const done = Math.min(stars, costs.length);
+    let cost = 0;
+    for (const tier of costs.slice(0, done)) {
+      for (const c of tier) {
+        if (c.type === 'ESSENCE') cost += c.amount * v(`ESSENCE_${c.essence_type}`);
+        else if (c.type === 'ITEM') cost += c.amount * v(c.item_id);
+      }
+    }
+    add(`${done} star${done === 1 ? '' : 's'}`, cost * APPLIED_WORTH.stars);
+  }
+  for (let i = 5; i < Math.min(stars, 10); i++) add(`${words(MASTER_STARS[i - 5])} Master Star`, v(`${MASTER_STARS[i - 5]}_MASTER_STAR`) * APPLIED_WORTH.masterStar);
+
+  const stone = book.reforgeStone?.(item.reforge ?? extra.modifier);
+  if (stone) add(`${book.name?.(stone) ?? words(stone)} (reforge)`, v(stone) * APPLIED_WORTH.reforge);
+
+  const gems = gemIds(extra);
+  if (gems.length) add(`${gems.length} gemstone${gems.length === 1 ? '' : 's'}`, gems.reduce((n, id) => n + v(id), 0) * APPLIED_WORTH.gemstone);
+
+  for (const [key, id, label, share] of COUNTED) {
+    const n = Number(extra[key]) || 0;
+    if (n > 0) add(n > 1 ? `${label} x${n}` : label, n * v(id) * APPLIED_WORTH[share]);
+  }
+  if (extra.artOfPeaceApplied) add('The Art of Peace', v('THE_ART_OF_PEACE') * APPLIED_WORTH.artOfPeace);
+  if (extra.ethermerge) add('Etherwarp Conduit', v('ETHERWARP_CONDUIT') * APPLIED_WORTH.other);
+  if (extra.talisman_enrichment) {
+    const kind = String(extra.talisman_enrichment).toUpperCase();
+    add(`${words(kind)} Enrichment`, v(`TALISMAN_ENRICHMENT_${kind}`) * APPLIED_WORTH.enrichment);
+  }
+  for (const [key, label] of APPLIED_ITEMS) {
+    if (extra[key]) add(book.name?.(String(extra[key]).toUpperCase()) ?? label, v(String(extra[key]).toUpperCase()) * APPLIED_WORTH.other);
+  }
+
+  const base = Math.round(v(item.id) * (item.count || 1));
+  parts.sort((a, b) => b.value - a.value);
+  return { total: base + parts.reduce((n, p) => n + p.value, 0), base, parts };
+}
+
+export function itemValue(item, book) {
+  return itemValueParts(item, book).total;
 }
 
 export function petValue(pet, book, levelInfo) {
@@ -79,10 +185,10 @@ export function computeNetworth({ items, pets, member, profile, book }) {
       if (seen.has(item.uuid)) continue;
       seen.add(item.uuid);
     }
-    const v = itemValue(item, book);
+    const { total: v, base, parts } = itemValueParts(item, book);
     if (!v) continue;
     add(LOCATION_GROUP[item.location] ?? 'Other', v);
-    top.push({ name: item.name, id: item.id, rarity: item.rarity, value: v, location: item.location, count: item.count });
+    top.push({ name: item.name, id: item.id, rarity: item.rarity, value: v, base, parts, location: item.location, count: item.count });
   }
 
   for (const pet of pets) {
