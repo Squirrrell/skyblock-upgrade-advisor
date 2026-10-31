@@ -170,6 +170,9 @@ const EQUIPMENT_SLOTS = [
   ['GLOVES', 'Gloves or bracelet'],
 ];
 
+// Where a piece is, when it isn't being worn.
+const WHERE = { Armor: 'Worn', Equipment: 'Worn', Inventory: 'In your inventory', Wardrobe: 'In your wardrobe', Loadout: 'In a loadout', 'Ender chest': 'In your ender chest', Backpack: 'In a backpack', 'Personal vault': 'In your vault' };
+
 /** One slot of the loadout: the item (or an empty slot) and what it adds. */
 function GearSlot({ piece, empty, extra }) {
   if (!piece) {
@@ -182,9 +185,25 @@ function GearSlot({ piece, empty, extra }) {
   }
   return (
     <li className="forage-slot">
-      {extra?.icon ?? <ItemSlot id={piece.id} rarity={piece.rarity} tooltip={itemCard({ id: piece.id, name: piece.rawName ?? piece.name, rarity: piece.rarity, lore: piece.lore })} />}
+      {extra?.icon ?? (
+        <ItemSlot
+          id={piece.id}
+          rarity={piece.rarity}
+          // The same card as everywhere else: lore, when it was obtained and its value.
+          tooltip={itemCard({
+            id: piece.id,
+            name: piece.rawName ?? piece.name,
+            rarity: piece.rarity,
+            lore: piece.lore,
+            obtained: piece.obtained,
+            value: piece.value,
+            soulbound: piece.soulbound,
+          })}
+        />
+      )}
       <span className="forage-slot-text">
         <span className="block truncate text-sm font-medium">{mcText(piece.rawName ?? piece.name)}</span>
+        {piece.location && !extra && <span className="block truncate text-xs forage-muted">{WHERE[piece.location] ?? piece.location}</span>}
         <span className="forage-slot-stats tabular">
           {piece.fortune ? <span className="forage-gold">{plus(piece.fortune, 2)} Fortune</span> : null}
           {piece.sweep ? <span className="forage-green">{plus(piece.sweep, 2)} Sweep</span> : null}
@@ -240,7 +259,7 @@ function Loadout({ f, totals, pet }) {
               }}
             />
           </ul>
-          {g.axe && <p className="forage-note mt-2">The best axe on the profile; the one you hold isn't in the API.</p>}
+          
         </div>
         <div className="forage-totals">
           <div>
@@ -284,7 +303,7 @@ function Loadout({ f, totals, pet }) {
         </div>
       </div>
       <p className="forage-note">
-        Gear stats are read from your items. Pet abilities, attribute shards and perks that only work some of the time (Early Bird, Half Full, the daily effect)
+        The best foraging piece you own for each slot, wherever it is, so your set shows up even while you wear something else. Gear stats are read from your items. Pet abilities, attribute shards and perks that only work some of the time (Early Bird, Half Full, the daily effect)
         aren't counted.
       </p>
     </Section>

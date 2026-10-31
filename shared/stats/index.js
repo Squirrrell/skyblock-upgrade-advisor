@@ -571,7 +571,7 @@ export function buildStats(ctx) {
   const sl = slayers(member);
   const dg = dungeons(member);
   const mn = mining(member);
-  const fg = foragingStats(member, items, { hotfLevel, countNodes });
+  const fg = foragingStats(member, items, { hotfLevel, countNodes, book });
   const pt = pets(member, ctx.pets);
   const acc = accessories(member, items, book);
   const nw = computeNetworth({ items, pets: pt.list, member, profile, book });

@@ -4,6 +4,7 @@
 // items' own lore ("Foraging Fortune: +88 (+6) (+20)"; the first number is the
 // item's total).
 import { prettyId } from '../analyze/helpers.js';
+import { isSoulbound, itemValue } from './networth.js';
 
 const strip = (s) => String(s).replace(/§./g, '');
 
@@ -26,7 +27,8 @@ function itemType(lore) {
   return '';
 }
 
-const piece = (item) => ({
+/** One piece of gear, with what its card shows (value, when it was obtained, soulbound). */
+const piece = (item, book) => ({
   id: item.id,
   name: item.name,
   rawName: item.rawName,
@@ -34,25 +36,47 @@ const piece = (item) => ({
   reforge: item.reforge ?? null,
   location: item.location,
   lore: item.lore,
+  obtained: item.obtained ?? null,
+  soulbound: isSoulbound(item),
+  value: book ? itemValue(item, book) : null,
   type: itemType(item.lore),
   fortune: loreStat(item.lore, 'Foraging Fortune'),
   sweep: loreStat(item.lore, 'Sweep'),
 });
 
+const ARMOR = ['HELMET', 'CHESTPLATE', 'LEGGINGS', 'BOOTS'];
+// Gloves and bracelets share one equipment slot.
+const EQUIPMENT = [['NECKLACE'], ['CLOAK'], ['BELT'], ['GLOVES', 'BRACELET']];
+const WORN = new Set(['Armor', 'Equipment']);
+
 /**
- * The gear that gives Foraging Fortune or Sweep: the armor and equipment worn,
- * accessories in the bag, and the best axe anywhere on the profile (most
- * Sweep, then most Fortune), since the held item isn't in the API.
+ * The best foraging gear the player has for each slot, wherever it is: worn,
+ * in the wardrobe, a loadout, the ender chest or a backpack. Someone farming
+ * right now still has their foraging set stored, and the held item isn't in
+ * the API, so the axe is the best one anywhere too. Best means most Fortune
+ * plus Sweep; on a tie the piece being worn wins.
  */
-export function foragingGear(items) {
-  const has = (p) => p.fortune > 0 || p.sweep > 0;
-  const worn = (loc) => items.filter((i) => i.location === loc).map(piece).filter(has);
-  const axes = items.filter((i) => /\bAXE\b/.test(itemType(i.lore))).map(piece).filter(has);
-  axes.sort((a, b) => b.sweep - a.sweep || b.fortune - a.fortune);
+export function foragingGear(items, book) {
+  const seen = new Set();
+  const pieces = [];
+  for (const item of items) {
+    // Loadouts repeat what is worn; count each item once.
+    if (item.uuid) {
+      if (seen.has(item.uuid)) continue;
+      seen.add(item.uuid);
+    }
+    const p = piece(item, book);
+    if (p.fortune > 0 || p.sweep > 0) pieces.push(p);
+  }
+  const best = (types) =>
+    pieces
+      .filter((p) => types.includes(p.type))
+      .sort((a, b) => b.fortune + b.sweep - (a.fortune + a.sweep) || WORN.has(b.location) - WORN.has(a.location))[0] ?? null;
+  const axes = pieces.filter((p) => /\bAXE\b/.test(p.type)).sort((a, b) => b.fortune + b.sweep - (a.fortune + a.sweep));
   return {
-    armor: worn('Armor'),
-    equipment: worn('Equipment'),
-    accessories: worn('Accessory bag'),
+    armor: ARMOR.map((t) => best([t])).filter(Boolean),
+    equipment: EQUIPMENT.map((types) => best(types)).filter(Boolean),
+    accessories: pieces.filter((p) => p.location === 'Accessory bag'),
     axe: axes[0] ?? null,
     otherAxes: axes.slice(1, 4),
   };
@@ -75,7 +99,7 @@ function whispers(core) {
 // "CATCH_HIDEONLEAF_5" -> 5, "COLLECT_50_BERRIES" -> 50: the target when the task names it.
 const taskTarget = (id) => Number(/_(\d+)(?:_|$)/.exec(id)?.[1]) || null;
 
-export function foragingStats(member, items, { hotfLevel, countNodes }) {
+export function foragingStats(member, items, { hotfLevel, countNodes, book }) {
   const tree = member.skill_tree ?? {};
   const f = member.foraging ?? {};
   const core = member.foraging_core ?? {};
@@ -115,6 +139,6 @@ export function foragingStats(member, items, { hotfLevel, countNodes }) {
     hives: Object.entries(f.honey?.refill_times ?? {})
       .map(([id, at]) => ({ id: Number(id.replace(/\D/g, '')) || id, readyAt: at, ready: at <= now }))
       .sort((a, b) => a.readyAt - b.readyAt),
-    gear: foragingGear(items),
+    gear: foragingGear(items, book),
   };
 }
