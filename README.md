@@ -25,6 +25,7 @@ Networth is an estimate that follows the rules of [SkyHelper Networth](https://g
 ## Tools that need no username
 
 - **Bazaar**: every product live, sortable by spread, margin after tax, hourly volume and margin times volume.
+- **Foraging helper** (`?page=foraging&player=...`): a Galatea page with the player's skin in 3D. Shows their foraging loadout (armor, equipment, axe and pet) with Foraging Fortune and Sweep, the Heart of the Forest tree, a Fortune and Sweep optimiser ranked by coins per point, the foraging attribute shards with the cost of their next level, and tier 8 Heart of the Forest builds by goal. Gear, shard, reforge and pet data come from the NEU repository (`scripts/build-foraging.mjs`, `npm run foraging-data` for the local server).
 - **Auction prices**: lowest BIN for any item or pet from the latest full scan.
 - **Mayor & events**: current mayor and minister perks, election results or live votes, the SkyBlock date, and countdowns to Jacob's contests, the Dark Auction, Spooky Festival, Season of Jerry and more.
 - **Calculators & links**: XP to any level for skills, catacombs, HOTM and HOTF, slayer XP with boss counts, and a list of the best community sites.

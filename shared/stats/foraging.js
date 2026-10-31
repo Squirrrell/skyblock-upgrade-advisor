@@ -31,8 +31,10 @@ const piece = (item) => ({
   name: item.name,
   rawName: item.rawName,
   rarity: item.rarity,
+  reforge: item.reforge ?? null,
   location: item.location,
   lore: item.lore,
+  type: itemType(item.lore),
   fortune: loreStat(item.lore, 'Foraging Fortune'),
   sweep: loreStat(item.lore, 'Sweep'),
 });

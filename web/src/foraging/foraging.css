@@ -477,21 +477,6 @@ body.forage-bg {
   text-align: center;
 }
 
-.forage-nameplate {
-  margin-top: 0.75rem;
-  padding: 0.6rem 1rem;
-  border-radius: 14px;
-  background: var(--glass);
-  border: 1px solid var(--glass-line);
-  backdrop-filter: blur(14px);
-  -webkit-backdrop-filter: blur(14px);
-}
-
-.forage-name {
-  font-size: 1.15rem;
-  font-weight: 700;
-}
-
 .forage-player-empty {
   display: none;
 }
@@ -610,4 +595,312 @@ body.forage-bg {
   to {
     transform: rotateX(7deg);
   }
+}
+
+/* ------------------------------------------------------------ v2: sections */
+
+/* A bigger figure now that the name sits in the card. */
+.forage .skin-stage {
+  --u: 7px;
+  width: calc(28 * var(--u));
+}
+
+@media (min-width: 900px) {
+  .forage .skin-stage {
+    --u: 11px;
+  }
+  .forage-layout {
+    grid-template-columns: minmax(260px, 320px) minmax(0, 1fr);
+  }
+}
+
+.forage-section-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin-bottom: 0.9rem;
+}
+
+.forage-section-head .forage-h2 {
+  margin-bottom: 0;
+}
+
+.forage-tabs {
+  display: flex;
+  gap: 0.25rem;
+  margin-bottom: 1.5rem;
+  padding: 0.25rem;
+  border-radius: 999px;
+  background: var(--well);
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.forage .forage-tabs button,
+.forage .forage-chipset button {
+  flex: none;
+  padding: 0.4rem 0.9rem;
+  border-radius: 999px;
+  font-size: 0.85rem;
+  font-weight: 550;
+  color: var(--ink-2);
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.forage .forage-tabs button[aria-selected='true'],
+.forage .forage-chipset button[aria-pressed='true'] {
+  background: var(--ink);
+  color: var(--glass);
+}
+
+:root[data-theme='dark'] .forage .forage-tabs button[aria-selected='true'],
+:root[data-theme='dark'] .forage .forage-chipset button[aria-pressed='true'] {
+  color: #11151a;
+}
+
+.forage-chipset {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.3rem;
+}
+
+.forage .forage-chipset button {
+  border: 1px solid var(--glass-line);
+}
+
+/* The loadout: armor, equipment, and axe and pet columns, totals beside them. */
+.forage-loadout {
+  display: grid;
+  gap: 1.25rem;
+}
+
+@media (min-width: 720px) {
+  .forage-loadout {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+@media (min-width: 1240px) {
+  .forage-loadout {
+    grid-template-columns: repeat(3, minmax(0, 1fr)) minmax(0, 0.9fr);
+  }
+}
+
+.forage-loadout-col ul {
+  display: grid;
+  gap: 0.4rem;
+}
+
+.forage-slot {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  min-width: 0;
+  padding: 0.35rem;
+  border-radius: 12px;
+  background: var(--well);
+}
+
+.forage-slot.is-empty .mc-slot {
+  opacity: 0.35;
+}
+
+.forage-slot-text {
+  min-width: 0;
+  flex: 1;
+}
+
+.forage-slot-stats {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0 0.6rem;
+  font-size: 0.75rem;
+}
+
+.forage-totals {
+  display: grid;
+  gap: 0.75rem;
+  align-content: start;
+  padding: 0.9rem 1rem;
+  border-radius: 14px;
+  background: var(--well);
+}
+
+@media (min-width: 720px) and (max-width: 1239px) {
+  .forage-totals {
+    grid-column: 1 / -1;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    align-items: start;
+  }
+}
+
+.forage-total {
+  font-size: 1.9rem;
+  font-weight: 750;
+  line-height: 1.1;
+}
+
+.forage-pairs > div {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.forage-pairs dt {
+  color: var(--ink-2);
+}
+
+/* Optimiser rows: rank, icon, what, gain, cost. */
+.forage-upgrades {
+  display: grid;
+  gap: 0.4rem;
+}
+
+.forage-upgrades li {
+  display: grid;
+  grid-template-columns: 1.5rem auto minmax(0, 1fr) auto;
+  grid-template-areas: 'rank icon what gain' 'rank icon what cost';
+  align-items: center;
+  gap: 0 0.75rem;
+  padding: 0.45rem 0.6rem;
+  border-radius: 12px;
+  background: var(--well);
+}
+
+.forage-upgrades li > :nth-child(1) {
+  grid-area: rank;
+}
+.forage-upgrades li > :nth-child(2) {
+  grid-area: icon;
+}
+.forage-upgrades li > :nth-child(3) {
+  grid-area: what;
+}
+
+.forage-rank {
+  font-size: 0.8rem;
+  color: var(--ink-2);
+  text-align: center;
+}
+
+.forage-gain {
+  grid-area: gain;
+  font-weight: 700;
+  text-align: right;
+}
+
+.forage-cost {
+  grid-area: cost;
+  text-align: right;
+  font-size: 0.85rem;
+}
+
+@media (min-width: 640px) {
+  .forage-upgrades li {
+    grid-template-columns: 1.5rem auto minmax(0, 1fr) 4.5rem 8rem;
+    grid-template-areas: 'rank icon what gain cost';
+  }
+}
+
+.forage .forage-more {
+  margin-top: 0.75rem;
+  padding: 0.4rem 1rem;
+  border-radius: 999px;
+  border: 1px solid var(--glass-line);
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--ink);
+  cursor: pointer;
+}
+
+/* Shards */
+.forage-shards {
+  display: grid;
+  gap: 0.4rem;
+}
+
+.forage-shards li {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.5rem 0.6rem;
+  border-radius: 12px;
+  background: var(--well);
+}
+
+/* The card's dark text on light glass needs the lore colours toned down a little. */
+:root[data-theme='light'] .forage-shards .mc-tt-lore,
+:root[data-theme='light'] .forage-shards li span span {
+  text-shadow: none;
+}
+
+.forage-shard-level {
+  min-width: 5.5rem;
+}
+
+/* HOTF builds */
+.forage-build {
+  display: grid;
+  gap: 1.5rem;
+  align-items: start;
+}
+
+@media (min-width: 1100px) {
+  .forage-build {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1.3fr);
+  }
+}
+
+.forage-build-list {
+  display: grid;
+  gap: 0.3rem;
+  margin-top: 1rem;
+  counter-reset: perk;
+}
+
+.forage-build-list li {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.4rem 0.7rem;
+  border-radius: 10px;
+  background: var(--well);
+  font-size: 0.9rem;
+}
+
+.forage-build-list li::before {
+  counter-increment: perk;
+  content: counter(perk);
+  width: 1.25rem;
+  color: var(--ink-2);
+  font-size: 0.8rem;
+}
+
+.forage-build-list li > span:first-child {
+  flex: 1;
+}
+
+.forage-build-list li.is-done {
+  color: var(--green);
+}
+
+.forage-perk.is-dim .mc-slot {
+  opacity: 0.25;
+}
+
+.forage-perk.is-target .mc-slot {
+  box-shadow: 0 0 0 2px var(--gold);
+}
+
+.forage-perk.is-met .mc-slot {
+  box-shadow: 0 0 0 2px var(--green);
+}
+
+.forage-perk.is-target .forage-perk-level {
+  color: var(--ink);
+  font-weight: 650;
 }

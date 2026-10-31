@@ -126,6 +126,14 @@ export async function getDataFile(name) {
   if (name === 'attribute_shards.json') return getAttributeConstants();
   if (name === 'reforges.json') return reforgeStones(await getReforgeStones());
   if (name === 'price-history.json') return loadHistory();
+  // Built by scripts/build-foraging.mjs (npm run foraging-data).
+  if (name === 'foraging.json') {
+    try {
+      return JSON.parse(await readFile(new URL('../.cache/foraging.json', import.meta.url), 'utf8'));
+    } catch {
+      return null;
+    }
+  }
   return null;
 }
 

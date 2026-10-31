@@ -58,6 +58,9 @@ export const loadPrices = () =>
     };
   });
 
+/** Foraging gear, shards, reforges and pets (scripts/build-foraging.mjs). */
+export const loadForaging = () => cached('foraging', Infinity, () => getJson(dataUrl('foraging.json'), 'the foraging data'));
+
 export const loadBazaar = () => cached('bazaar', 60_000, () => getJson(`${HYPIXEL}/skyblock/bazaar`, 'the Hypixel bazaar'));
 
 export const loadElection = () => cached('election', 5 * 60_000, () => getJson(`${HYPIXEL}/resources/skyblock/election`, 'the Hypixel election'));
