@@ -83,17 +83,15 @@ export function upgrades({ gear, perks, disabled, pets, db, price, metric, hotf 
     });
   }
 
-  // Pets: the best foraging pet owned, and any better one at level 100.
-  const ownedBest = Math.max(
-    0,
-    ...pets.map((p) => {
-      const def = db.pets.find((d) => d.type === p.type && d.tier === p.tier);
-      return def ? statOf(petStats(def, p.level), metric) : 0;
-    }),
-  );
+  // Pets: only the summoned pet's stats count, so a pet is an upgrade only if
+  // it beats the active one on both Fortune and Sweep; a swap that trades one
+  // for the other isn't suggested.
+  const active = pets.find((p) => p.active);
+  const activeDef = active && db.pets.find((d) => d.type === active.type && d.tier === active.tier);
+  const now = activeDef ? petStats(activeDef, active.level) : { fortune: 0, sweep: 0 };
   for (const def of db.pets) {
-    const gain = statOf(def.hi, metric) - ownedBest;
-    if (gain <= 0) continue;
+    const gain = statOf(def.hi, metric) - statOf(now, metric);
+    if (gain <= 0 || def.hi.fortune < now.fortune || def.hi.sweep < now.sweep) continue;
     const id = `PET_${def.type}_${def.tier}`;
     // Only a level 100 listing prices it fairly; a low-level one is far cheaper.
     const cost = price(`${id}@MAX`)?.unit ?? null;
@@ -105,6 +103,7 @@ export function upgrades({ gear, perks, disabled, pets, db, price, metric, hotf 
       id,
       name: `${words(def.tier)} ${words(def.type)}, level 100`,
       tier: def.tier,
+      from: active ? `your ${words(active.type)}` : null,
       gain,
       cost,
       note: cost == null ? 'No level 100 listing right now' : null,
