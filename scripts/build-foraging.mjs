@@ -80,13 +80,25 @@ for (const [path, data] of Object.entries(files)) {
 }
 items.sort((a, b) => a.type.localeCompare(b.type) || b.fortune + b.sweep - (a.fortune + a.sweep));
 
-const FORAGING = /forag|sweep|\blogs?\b|\btrees?\b|\baxe\b|galatea|timber|fig |mangrove|helix/i;
+// Only shards about foraging itself: cutting trees and what they give. Stats
+// that merely apply on the foraging islands (fishing, hunting, honey, Magic
+// Find, Strength, Speed) don't count.
+const FORAGING = /Sweep|Foraging Fortune|Fig Fortune|Mangrove Fortune|Helix Fortune|Foraging Wisdom|Heart of the Forest|Timber|\bChop\b|Toughness|\bAxe\b|Tree Gifts/;
+const NOT_FORAGING = /Honeycomb|monsters|Fishing|Hook|Magic Find|Tracking|Strength while|Speed while|beacons/i;
+/** The shard's effect: its lore after the name, up to the first blank line. */
+const effectOf = (lore) => {
+  const out = [];
+  for (const l of lore.slice(1)) {
+    if (!strip(l).trim()) break;
+    out.push(strip(l).trim());
+  }
+  return out.join(' ');
+};
 const shards = [];
 for (const s of Object.values(json('attribute_shards.json').attributes ?? {})) {
   const lore = shardLore.get(s.internalName) ?? [];
-  // The shard's own effect: the lines after its name, up to the first blank line.
-  const text = lore.map(strip).join(' ');
-  if (!FORAGING.test(`${s.abilityName} ${text}`)) continue;
+  const effect = effectOf(lore);
+  if (!FORAGING.test(effect) || NOT_FORAGING.test(effect)) continue;
   shards.push({
     id: s.bazaarName,
     name: s.displayName,

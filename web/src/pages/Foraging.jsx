@@ -7,7 +7,7 @@ import { ArrowRightIcon, MagnifyingGlassIcon } from '@phosphor-icons/react';
 import { useEffect, useMemo, useState } from 'react';
 import { fetchReport } from '../lib/api.js';
 import { loadForaging, loadPrices } from '../lib/data.js';
-import { coins, int, num, until } from '../lib/format.js';
+import { coins, int, num } from '../lib/format.js';
 import { BUILDS, buildProgress } from '../foraging/builds.js';
 import { loadHotf, perkCurrency, perkLore, perkValue } from '../foraging/hotf.js';
 import { petStats, upgrades } from '../foraging/optimizer.js';
@@ -341,28 +341,11 @@ function PerkTree({ f, hotf, targets }) {
   );
 }
 
-function Hives({ hives }) {
-  const ready = hives.filter((h) => h.ready).length;
-  const next = hives.find((h) => !h.ready);
-  return (
-    <div className="forage-box">
-      <h3 className="forage-h3">Honey hives</h3>
-      {hives.length === 0 ? (
-        <p className="forage-muted">No hives tapped yet.</p>
-      ) : (
-        <>
-          <p className="forage-big tabular">
-            {ready}
-            <span className="forage-muted text-base font-normal"> / {hives.length} ready</span>
-          </p>
-          <p className="forage-muted text-sm">{next ? `Next refills in ${until(next.readyAt)}` : 'All refilled'}</p>
-        </>
-      )}
-    </div>
-  );
-}
+// Hina's tasks about foraging; her others are about hunting, fishing and shards.
+const FORAGING_TASK = /GIFTS|SWEEP|_LOGS?|LOG_|TREE|AGATHA|FORAGING|AXE|HOTF|FIG|MANGROVE|HELIX|STARLYN|TIMBER/;
 
 function Overview({ report, f, hotf, totals, pet }) {
+  const hina = f.hina.tasks.filter((t) => FORAGING_TASK.test(t.id));
   return (
     <>
       <Headline report={report} f={f} totals={totals} />
@@ -406,18 +389,17 @@ function Overview({ report, f, hotf, totals, pet }) {
             {!f.starlynBests.length && <li className="forage-muted">No contests yet</li>}
           </ul>
         </div>
-        <Hives hives={f.hives} />
       </div>
 
       <Section title="Hina's tasks">
         <p className="forage-muted mb-3 text-sm">
-          {f.hina.completed} done, tier {f.hinaTier} claimed. Still open:
+          Tier {f.hinaTier} claimed. Her foraging tasks still open:
         </p>
-        {f.hina.tasks.length === 0 ? (
+        {hina.length === 0 ? (
           <p className="forage-muted">Nothing open right now.</p>
         ) : (
           <ul className="forage-tasks">
-            {f.hina.tasks.map((t) => {
+            {hina.map((t) => {
               const done = t.target && t.progress >= t.target;
               return (
                 <li key={t.id} className={done ? 'is-done' : ''}>
@@ -433,14 +415,6 @@ function Overview({ report, f, hotf, totals, pet }) {
         )}
       </Section>
 
-      <Section title="Fish family">
-        <p className="forage-muted mb-3 text-sm">{f.fishFamily} found.</p>
-        <ul className="forage-chips">
-          {f.fish.map((n) => (
-            <li key={n}>{n}</li>
-          ))}
-        </ul>
-      </Section>
     </>
   );
 }
@@ -574,7 +548,7 @@ function Shards({ db, prices, report }) {
         />
       }
     >
-      <p className="forage-muted mb-4 text-sm">Attribute shards whose effect is about foraging or the foraging islands, cheapest next level first.</p>
+      <p className="forage-muted mb-4 text-sm">Attribute shards that help you cut trees: Sweep, Fortune, Timber, axe throws and tree gifts. Cheapest next level first.</p>
       <ul className="forage-shards">
         {shown.map((s) => (
           <li key={s.id}>
@@ -697,7 +671,7 @@ export default function Foraging({ route, onRoute }) {
               ) : (
                 <>
                   <h1 className="forage-title">Foraging helper</h1>
-                  <p className="forage-muted text-sm">Your Galatea setup, Fortune upgrades, shards and Heart of the Forest builds.</p>
+                  <p className="forage-muted text-sm">Your foraging setup, Fortune upgrades, shards and Heart of the Forest builds.</p>
                 </>
               )}
             </div>
