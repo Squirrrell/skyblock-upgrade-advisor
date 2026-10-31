@@ -1,58 +1,41 @@
-// Heart of the Forest builds for tier 8, one per goal. These are worked out
-// from what each perk does (NEU's perk data), not copied from a community
-// guide: no current guide could be found once the official wiki closed.
-// Each lists its perks in the order to level them; 'max' is the perk's max.
+// Tier 8 Heart of the Forest trees that players use, read off in-game
+// screenshots of the perk menu. Both unlock the same 18 perks bar four:
+// Half Full and Lottery in one, Half Empty and Speed Boost in the other.
+// Half Full and Half Empty pair up: each gives Fortune and Sweep for every
+// player on the island who runs the other, so a group splits between them.
+// Perks are listed in the order to level them; abilities are left to taste.
+
+const SHARED = [
+  ['sweep', 50],
+  ['foraging_fortune', 50],
+  ['foraging_madness', 1],
+  ['center_of_the_forest', 5],
+  ['forest_strength', 50],
+  ['forest_speed', 50],
+  ['two_for_one', 100],
+  ['timber', 10],
+  ['starlyn_supreme', 100],
+  ['efficient_forager', 100],
+  ['luck_of_the_forest', 40],
+  ['250_gifts', 40],
+  ['essence_fortune', 50],
+  ['ricochet', 10],
+  ['hunters_luck', 50],
+  ['iron_lungs', 50],
+];
 
 export const BUILDS = [
   {
-    id: 'logs',
-    name: 'Log farming',
-    goal: 'The most Foraging Fortune and Sweep, for cutting logs and filling collections.',
-    perks: [
-      ['sweep', 'max'],
-      ['foraging_fortune', 'max'],
-      ['foraging_madness', 'max'],
-      ['early_bird', 'max'],
-      ['center_of_the_forest', 'max'],
-      ['forest_strength', 'max'],
-      ['forest_speed', 'max'],
-      ['timber', 'max'],
-      ['two_for_one', 'max'],
-      ['precision_cutting', 'max'],
-      ['efficient_forager', 'max'],
-      ['collector', 'max'],
-    ],
+    id: 'half-full',
+    name: 'Half Full',
+    goal: 'Gains +50 Fortune and +25 Sweep for each player near you running Half Empty (up to 5). Takes Lottery for its daily random buff.',
+    perks: [['half_full', 25], ...SHARED.slice(0, 4), ['lottery', 1], ...SHARED.slice(4)],
   },
   {
-    id: 'contests',
-    name: 'Starlyn and Agatha contests',
-    goal: 'More contest points per tree, plus the Fortune and Sweep to cut fast.',
-    perks: [
-      ['starlyn_supreme', 'max'],
-      ['sweep', 'max'],
-      ['foraging_fortune', 'max'],
-      ['two_for_one', 'max'],
-      ['timber', 'max'],
-      ['foraging_madness', 'max'],
-      ['early_bird', 'max'],
-      ['center_of_the_forest', 'max'],
-      ['precision_cutting', 'max'],
-      ['forest_strength', 'max'],
-    ],
-  },
-  {
-    id: 'gifts',
-    name: 'Tree gifts and whispers',
-    goal: 'Better gift loot and more whispers, to level the rest of the tree faster.',
-    perks: [
-      ['luck_of_the_forest', 'max'],
-      ['250_gifts', 'max'],
-      ['tree_whisperer', 'max'],
-      ['daily_wishes', 'max'],
-      ['center_of_the_forest', 'max'],
-      ['lottery', 'max'],
-      ['essence_fortune', 'max'],
-    ],
+    id: 'half-empty',
+    name: 'Half Empty',
+    goal: 'Gains +50 Fortune and +25 Sweep for each player near you running Half Full (up to 5). Takes Speed Boost, which Forest Speed turns into more Fortune and Sweep.',
+    perks: [['half_empty', 25], ...SHARED.slice(0, 4), ['speed_boost', 50], ...SHARED.slice(4)],
   },
 ];
 

@@ -583,10 +583,11 @@ function Trees({ f, hotf }) {
   const build = BUILDS.find((b) => b.id === pick);
   const progress = useMemo(() => (hotf ? buildProgress(build, f.perks, hotf) : null), [build, f, hotf]);
   return (
-    <Section title="Tier 8 Heart of the Forest builds">
+    <Section title="Tier 8 Heart of the Forest trees">
       <p className="forage-muted mb-4 max-w-[65ch] text-sm">
-        One build per goal, worked out from what each perk does. No community guide was available to copy from, so treat these as a starting point. Perks are
-        listed in the order to level them.
+        Two trees players use at tier 8. They share 16 perks and differ in four. Half Full and Half Empty pair up: each gives Fortune and Sweep for every
+        player on your island running the other, so pick the one your group is short of. Perks are listed in the order to level them; the axe abilities are up
+        to you.
       </p>
       <Chips label="Build" value={pick} onChange={setPick} options={BUILDS.map((b) => [b.id, b.name])} />
       <div className="forage-build">
@@ -624,7 +625,7 @@ const TABS = [
   ['overview', 'Overview'],
   ['optimiser', 'Fortune optimiser'],
   ['shards', 'Shards'],
-  ['trees', 'HOTF builds'],
+  ['trees', 'HOTF trees'],
 ];
 
 export default function Foraging({ route, onRoute }) {
