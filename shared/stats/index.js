@@ -6,6 +6,7 @@ import { GARDEN_LEVEL_XP } from '../data/farming.js';
 import { prettyId } from '../analyze/helpers.js';
 import { MINION_MAX_TIER } from './constants.js';
 import { SKILLS, catacombsLevel, hotfLevel, hotmLevel, levelFrom, skillCap, skillTable, slayerLevel, SKILL_MAX } from './levels.js';
+import { foragingStats } from './foraging.js';
 import { computeNetworth, isSoulbound, itemStars, itemValue, itemValueParts, starLabel } from './networth.js';
 import { shardStats } from './shards.js';
 
@@ -142,23 +143,6 @@ function mining(member) {
     crystals,
     corpses: glacite?.corpses_looted ? Object.entries(glacite.corpses_looted).map(([id, n]) => ({ id, name: prettyId(id), count: n })) : [],
     fossils: glacite?.fossils_donated?.length ?? null,
-  };
-}
-
-function foraging(member) {
-  const tree = member.skill_tree ?? {};
-  const f = member.foraging ?? {};
-  const gifts = Object.entries(f.tree_gifts ?? {})
-    .filter(([k, v]) => typeof v === 'number')
-    .map(([id, count]) => ({ id, name: prettyId(id), count, milestone: f.tree_gifts?.milestone_tier_claimed?.[id] ?? 0 }));
-  return {
-    hotf: hotfLevel(tree.experience?.foraging ?? 0),
-    tokensSpent: sum(Object.entries(tree.tokens_spent ?? {}).filter(([k]) => k.startsWith('forest')).map(([, v]) => v)),
-    nodes: countNodes(tree.nodes?.foraging),
-    gifts,
-    hinaTier: f.hina?.tasks?.tier_claimed ?? 0,
-    fishFamily: f.fish_family?.length ?? 0,
-    starlynBests: Object.entries(f.starlyn?.personal_bests ?? {}).map(([id, v]) => ({ id, name: prettyId(id), value: v })),
   };
 }
 
@@ -587,7 +571,7 @@ export function buildStats(ctx) {
   const sl = slayers(member);
   const dg = dungeons(member);
   const mn = mining(member);
-  const fg = foraging(member);
+  const fg = foragingStats(member, items, { hotfLevel, countNodes });
   const pt = pets(member, ctx.pets);
   const acc = accessories(member, items, book);
   const nw = computeNetworth({ items, pets: pt.list, member, profile, book });

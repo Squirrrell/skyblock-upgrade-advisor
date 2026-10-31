@@ -1,0 +1,613 @@
+/* The foraging page: a Galatea screenshot behind everything (day in light
+   mode, night in dark mode), the player's skin on the left and the page on a
+   frosted card. Scoped to this page; body.forage-bg is set while it is open.
+   Frosted glass here is plain backdrop-filter, with a solid fallback. */
+
+body.forage-bg::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background:
+    linear-gradient(180deg, rgb(20 8 6 / 0.15), rgb(20 8 6 / 0.45)),
+    url('/foraging/day.webp') center / cover no-repeat;
+}
+
+/* Night: the night shot on top; if it is missing, the day shot still shows. */
+:root[data-theme='dark'] body.forage-bg::before {
+  background:
+    linear-gradient(180deg, rgb(6 10 16 / 0.2), rgb(6 10 16 / 0.55)),
+    url('/foraging/night.webp') center / cover no-repeat,
+    url('/foraging/day.webp') center / cover no-repeat;
+}
+
+body.forage-bg {
+  background: transparent;
+}
+
+.forage {
+  --glass: rgb(250 246 244 / 0.62);
+  --glass-line: rgb(255 255 255 / 0.55);
+  --glass-inner: rgb(255 255 255 / 0.5);
+  --ink: #17191c;
+  --ink-2: #4a4f57;
+  --gold: #a35d00;
+  --green: #1d7a43;
+  --well: rgb(255 255 255 / 0.45);
+  padding-top: 2rem;
+  padding-bottom: 4rem;
+  color: var(--ink);
+}
+
+:root[data-theme='dark'] .forage {
+  --glass: rgb(13 17 22 / 0.56);
+  --glass-line: rgb(255 255 255 / 0.12);
+  --glass-inner: rgb(255 255 255 / 0.08);
+  --ink: #eef1f4;
+  --ink-2: #a9b1bb;
+  --gold: #f2b54b;
+  --green: #5fd48d;
+  --well: rgb(255 255 255 / 0.05);
+}
+
+.forage-layout {
+  display: grid;
+  gap: 1.5rem;
+  align-items: start;
+}
+
+@media (min-width: 900px) {
+  .forage-layout {
+    grid-template-columns: minmax(220px, 280px) minmax(0, 1fr);
+  }
+  .forage-player {
+    position: sticky;
+    top: 6rem;
+  }
+}
+
+/* ------------------------------------------------------------ the card */
+
+.forage-card {
+  min-width: 0;
+  border-radius: 20px;
+  padding: 1.25rem;
+  background: var(--glass);
+  border: 1px solid var(--glass-line);
+  box-shadow:
+    inset 0 1px 0 var(--glass-inner),
+    0 24px 60px -24px rgb(0 0 0 / 0.5);
+  backdrop-filter: blur(18px) saturate(1.25);
+  -webkit-backdrop-filter: blur(18px) saturate(1.25);
+}
+
+@media (min-width: 640px) {
+  .forage-card {
+    padding: 1.75rem;
+  }
+}
+
+/* With reduced transparency (a Windows and macOS setting) the card stays see-through,
+   as the page is meant to be, but more opaque so text never fights the picture. */
+@media (prefers-reduced-transparency: reduce) {
+  :root .forage {
+    --glass: rgb(250 246 244 / 0.82);
+  }
+  :root[data-theme='dark'] .forage {
+    --glass: rgb(13 17 22 / 0.8);
+  }
+}
+
+.forage-head {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  align-items: flex-end;
+  justify-content: space-between;
+  margin-bottom: 1.5rem;
+}
+
+.forage-title {
+  font-size: clamp(1.5rem, 2.4vw, 2rem);
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  line-height: 1.15;
+}
+
+.forage-muted {
+  color: var(--ink-2);
+}
+
+.forage-gold {
+  color: var(--gold);
+}
+
+.forage-green {
+  color: var(--green);
+}
+
+.forage-search {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  height: 2.5rem;
+  padding: 0 0.25rem 0 0.75rem;
+  border-radius: 999px;
+  background: var(--well);
+  border: 1px solid var(--glass-line);
+  color: var(--ink-2);
+}
+
+.forage-search input {
+  width: 11rem;
+  min-width: 0;
+  background: transparent;
+  color: var(--ink);
+  outline: none;
+  font-size: 0.9rem;
+}
+
+.forage-search input::placeholder {
+  color: var(--ink-2);
+}
+
+.forage-search:focus-within {
+  border-color: var(--green);
+}
+
+.forage .forage-search button {
+  height: 2rem;
+  padding: 0 0.9rem;
+  border-radius: 999px;
+  background: var(--ink);
+  color: var(--glass) !important;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+:root[data-theme='dark'] .forage .forage-search button {
+  color: #11151a !important;
+}
+
+.forage .forage-search button:active {
+  transform: translateY(1px);
+}
+
+.forage-empty {
+  padding: 3rem 0;
+  color: var(--ink-2);
+}
+
+.forage-skeleton {
+  border-radius: 14px;
+  background: linear-gradient(90deg, var(--well), color-mix(in srgb, var(--well) 40%, transparent), var(--well));
+  background-size: 200% 100%;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .forage-skeleton {
+    animation: forage-shimmer 1.4s ease-in-out infinite;
+  }
+}
+
+@keyframes forage-shimmer {
+  to {
+    background-position: -200% 0;
+  }
+}
+
+/* ------------------------------------------------------------ sections */
+
+.forage-tiles {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.75rem;
+  margin-bottom: 1.75rem;
+}
+
+@media (min-width: 640px) {
+  .forage-tiles {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+@media (min-width: 1200px) {
+  .forage-tiles {
+    grid-template-columns: repeat(6, minmax(0, 1fr));
+  }
+}
+
+.forage-tile {
+  min-width: 0;
+  padding: 0.75rem 0.9rem;
+  border-radius: 14px;
+  background: var(--well);
+}
+
+.forage-tile dt {
+  font-size: 0.78rem;
+  color: var(--ink-2);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.forage-tile-value {
+  margin-top: 0.3rem;
+  font-size: 1.35rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.forage-tile-value.is-gold {
+  color: var(--gold);
+}
+
+.forage-tile-value.is-green {
+  color: var(--green);
+}
+
+.forage-tile-sub {
+  margin-top: 0.15rem;
+  font-size: 0.75rem;
+  color: var(--ink-2);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.forage-section {
+  padding-top: 1.5rem;
+  margin-top: 1.5rem;
+  border-top: 1px solid var(--glass-line);
+}
+
+.forage-split > .forage-section:first-child,
+.forage-tiles + .forage-split > .forage-section {
+  border-top: 0;
+  margin-top: 0;
+  padding-top: 0;
+}
+
+.forage-split {
+  display: grid;
+  gap: 1.5rem;
+}
+
+@media (min-width: 1100px) {
+  .forage-split {
+    grid-template-columns: minmax(0, 1.6fr) minmax(0, 1fr);
+    gap: 2rem;
+  }
+}
+
+.forage-h2 {
+  font-size: 1.05rem;
+  font-weight: 650;
+  margin-bottom: 0.9rem;
+}
+
+.forage-h3 {
+  font-size: 0.82rem;
+  color: var(--ink-2);
+  margin-bottom: 0.4rem;
+}
+
+.forage-big {
+  font-size: 1.3rem;
+  font-weight: 700;
+}
+
+.forage-note {
+  margin-top: 0.75rem;
+  font-size: 0.78rem;
+  color: var(--ink-2);
+  max-width: 65ch;
+}
+
+.forage-table-wrap {
+  overflow-x: auto;
+}
+
+.forage-table {
+  width: 100%;
+  font-size: 0.9rem;
+  border-collapse: collapse;
+}
+
+.forage-table th {
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: var(--ink-2);
+  text-align: left;
+  padding: 0 0.5rem 0.5rem;
+}
+
+.forage-table td {
+  padding: 0.35rem 0.5rem;
+}
+
+.forage-table tbody tr + tr td {
+  border-top: 1px solid color-mix(in srgb, var(--glass-line) 60%, transparent);
+}
+
+.forage-table tfoot th,
+.forage-table tfoot td {
+  padding-top: 0.6rem;
+  font-weight: 700;
+  font-size: 0.95rem;
+  color: var(--ink);
+}
+
+.forage-table tfoot td.forage-gold {
+  color: var(--gold);
+}
+
+.forage-table tfoot td.forage-green {
+  color: var(--green);
+}
+
+.forage-steps {
+  display: grid;
+  gap: 0.6rem;
+}
+
+.forage-steps li {
+  padding: 0.65rem 0.8rem;
+  border-radius: 12px;
+  background: var(--well);
+}
+
+.forage-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  margin-top: 0.6rem;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--ink);
+  cursor: pointer;
+}
+
+.forage-link:hover {
+  text-decoration: underline;
+}
+
+/* Heart of the Forest, laid out like the in-game menu. */
+.forage-tree {
+  display: grid;
+  gap: 0.5rem 0.35rem;
+  max-width: 34rem;
+  margin: 0 auto;
+}
+
+.forage-perk {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.15rem;
+}
+
+.forage-perk.is-locked .mc-slot {
+  opacity: 0.45;
+}
+
+.forage-perk.is-maxed .mc-slot {
+  box-shadow: 0 0 0 2px var(--gold);
+}
+
+.forage-perk.is-off .mc-slot {
+  filter: grayscale(1);
+}
+
+.forage-perk-level {
+  min-height: 1rem;
+  font-size: 0.68rem;
+  color: var(--ink-2);
+}
+
+.forage-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(13rem, 1fr));
+  gap: 0.75rem;
+  margin-top: 1.5rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid var(--glass-line);
+}
+
+.forage-box {
+  padding: 0.9rem 1rem;
+  border-radius: 14px;
+  background: var(--well);
+}
+
+.forage-pairs {
+  display: grid;
+  gap: 0.3rem;
+  font-size: 0.9rem;
+}
+
+.forage-pairs li {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.forage-tasks {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(15rem, 1fr));
+  gap: 0.4rem 1.25rem;
+  font-size: 0.9rem;
+}
+
+.forage-tasks li {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 0.3rem 0;
+}
+
+.forage-tasks li.is-done {
+  color: var(--green);
+}
+
+.forage-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+}
+
+.forage-chips li {
+  padding: 0.2rem 0.65rem;
+  border-radius: 999px;
+  font-size: 0.82rem;
+  background: var(--well);
+  border: 1px solid var(--glass-line);
+}
+
+/* ------------------------------------------------------------ player */
+
+.forage-player {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+
+.forage-nameplate {
+  margin-top: 0.75rem;
+  padding: 0.6rem 1rem;
+  border-radius: 14px;
+  background: var(--glass);
+  border: 1px solid var(--glass-line);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+}
+
+.forage-name {
+  font-size: 1.15rem;
+  font-weight: 700;
+}
+
+.forage-player-empty {
+  display: none;
+}
+
+@media (min-width: 900px) {
+  .forage-player-empty {
+    display: block;
+    height: 20rem;
+  }
+}
+
+/* The 3D figure: CSS boxes in one preserved 3D space. */
+@property --ry {
+  syntax: '<angle>';
+  inherits: true;
+  initial-value: -24deg;
+}
+
+.skin-stage {
+  --u: 6px;
+  --ry: -24deg;
+  position: relative;
+  width: calc(36 * var(--u));
+  height: calc(40 * var(--u));
+  display: grid;
+  place-items: center;
+  perspective: calc(160 * var(--u));
+  cursor: grab;
+  touch-action: pan-y;
+  user-select: none;
+  outline-offset: 4px;
+  border-radius: 12px;
+}
+
+@media (min-width: 900px) {
+  .skin-stage {
+    --u: 8px;
+  }
+}
+
+.skin-stage.is-dragging {
+  cursor: grabbing;
+}
+
+/* A soft shadow under the feet. */
+.skin-stage::after {
+  content: '';
+  position: absolute;
+  bottom: calc(2.5 * var(--u));
+  width: calc(14 * var(--u));
+  height: calc(2.5 * var(--u));
+  border-radius: 50%;
+  background: radial-gradient(rgb(0 0 0 / 0.45), transparent 70%);
+}
+
+.skin-figure {
+  position: relative;
+  width: calc(16 * var(--u));
+  height: calc(32 * var(--u));
+  transform-style: preserve-3d;
+  transform: rotateX(-10deg) rotateY(var(--ry));
+}
+
+.skin-part,
+.skin-box {
+  position: absolute;
+  transform-style: preserve-3d;
+}
+
+.skin-box {
+  left: 0;
+  top: 0;
+}
+
+.skin-face {
+  position: absolute;
+  left: 0;
+  top: 0;
+  image-rendering: pixelated;
+  backface-visibility: hidden;
+  background-repeat: no-repeat;
+}
+
+.skin-arm,
+.skin-leg {
+  transform-origin: 50% calc(2 * var(--u));
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .skin-stage:not(.is-dragging) .skin-figure {
+    animation: skin-turn 9s ease-in-out infinite alternate;
+  }
+  .skin-arm-r,
+  .skin-leg-l {
+    animation: skin-swing 3.2s ease-in-out infinite alternate;
+  }
+  .skin-arm-l,
+  .skin-leg-r {
+    animation: skin-swing 3.2s ease-in-out infinite alternate-reverse;
+  }
+}
+
+@keyframes skin-turn {
+  from {
+    --ry: -32deg;
+  }
+  to {
+    --ry: 28deg;
+  }
+}
+
+@keyframes skin-swing {
+  from {
+    transform: rotateX(-7deg);
+  }
+  to {
+    transform: rotateX(7deg);
+  }
+}

@@ -9,6 +9,7 @@ const NAV = [
   { id: 'profile', label: 'Profile' },
   { id: 'bazaar', label: 'Bazaar' },
   { id: 'auctions', label: 'Auctions' },
+  { id: 'foraging', label: 'Foraging' },
   { id: 'calendar', label: 'Mayor & events' },
   { id: 'tools', label: 'Tools' },
 ];
