@@ -15,20 +15,50 @@ const CACHE = new URL('../.cache/', import.meta.url);
 const REPO = 'NotEnoughUpdates/NotEnoughUpdates-REPO';
 const UA = { 'User-Agent': 'skyblock-upgrade-advisor' };
 
-async function fetchOk(url) {
-  const res = await fetch(url, { headers: UA });
+async function fetchOk(url, headers = {}) {
+  const res = await fetch(url, { headers: { ...UA, ...headers } });
   if (!res.ok) throw new Error(`${url} returned HTTP ${res.status}`);
   return res;
 }
 
-mkdirSync(CACHE, { recursive: true });
-const sha = (await (await fetchOk(`https://api.github.com/repos/${REPO}/commits/master`)).json()).sha;
-const zipFile = new URL(`neu-${sha.slice(0, 12)}.zip`, CACHE);
-if (!existsSync(zipFile)) {
-  console.log(`foraging: downloading the NEU repository (${sha.slice(0, 8)})`);
-  writeFileSync(zipFile, Buffer.from(await (await fetchOk(`https://codeload.github.com/${REPO}/zip/${sha}`)).arrayBuffer()));
+/**
+ * The repository's zip, cached per commit. The commit comes from GitHub's
+ * API (with GITHUB_TOKEN when set: build machines share an IP, and the
+ * unauthenticated limit is easily used up); if that fails, the latest zip is
+ * downloaded without a commit to cache it by.
+ */
+async function repoZip() {
+  const auth = process.env.GITHUB_TOKEN ? { Authorization: `Bearer ${process.env.GITHUB_TOKEN}` } : {};
+  let sha = null;
+  try {
+    sha = (await (await fetchOk(`https://api.github.com/repos/${REPO}/commits/master`, auth)).json()).sha;
+  } catch (err) {
+    console.warn(`foraging: commit lookup failed (${err.message}), downloading the latest files instead`);
+  }
+  const zipFile = sha ? new URL(`neu-${sha.slice(0, 12)}.zip`, CACHE) : null;
+  if (zipFile && existsSync(zipFile)) return { sha, zip: readFileSync(zipFile) };
+  console.log(`foraging: downloading the NEU repository (${sha ? sha.slice(0, 8) : 'latest'})`);
+  const zip = Buffer.from(await (await fetchOk(`https://codeload.github.com/${REPO}/zip/${sha ?? 'refs/heads/master'}`)).arrayBuffer());
+  if (zipFile) writeFileSync(zipFile, zip);
+  return { sha, zip };
 }
-const files = unzipSync(new Uint8Array(readFileSync(zipFile)), {
+
+mkdirSync(CACHE, { recursive: true });
+let repo;
+try {
+  repo = await repoZip();
+} catch (err) {
+  // Without the repository, keep the data the live site already has rather than failing the deploy.
+  const site = process.env.PAGES_URL?.replace(/\/$/, '');
+  const previous = site ? await fetch(`${site}/data/foraging.json`).then((r) => (r.ok ? r.text() : null)).catch(() => null) : null;
+  if (!previous) throw err;
+  mkdirSync(out, { recursive: true });
+  writeFileSync(join(out, 'foraging.json'), previous);
+  console.warn(`foraging: NEU repository unavailable (${err.message}); kept the live site's foraging.json`);
+  process.exit(0);
+}
+const sha = repo.sha ?? 'latest';
+const files = unzipSync(new Uint8Array(repo.zip), {
   filter: (f) => /\/items\/[^/]+\.json$/.test(f.name) || /\/constants\/(reforgestones|reforges|petnums|attribute_shards)\.json$/.test(f.name),
 });
 const json = (name) => {
