@@ -275,7 +275,14 @@ export function skullHash(value) {
   try {
     // Read the URL rather than parsing: some skins (in NEU's data) are written
     // with unquoted keys, {textures:{SKIN:{url:"..."}}}, which isn't JSON.
-    return /textures\.minecraft\.net\/texture\/([0-9a-f]+)/i.exec(atob(value))?.[1] ?? null;
+    // Some skins (in NEU's data) drop the base64 "=" padding, carry line breaks,
+    // have one stray character too many, or hold two values joined by '", "',
+    // all of which atob rejects; lenient decoders cope, so do the same and
+    // decode the first value.
+    let b64 = String(value).replace(/\s+/g, '').split(/[^A-Za-z0-9+/=]/)[0].replace(/=+$/, '');
+    if (b64.length % 4 === 1) b64 = b64.slice(0, -1);
+    const padded = b64 + '='.repeat((4 - (b64.length % 4)) % 4);
+    return /textures\.minecraft\.net\/texture\/([0-9a-f]+)/i.exec(atob(padded))?.[1] ?? null;
   } catch {
     return null;
   }

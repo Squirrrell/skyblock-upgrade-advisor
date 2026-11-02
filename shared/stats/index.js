@@ -606,5 +606,11 @@ export function buildStats(ctx) {
     accessories: acc,
     inventory: inventory(items, book),
     networth: nw,
+    // Kills and deaths per mob id; the Bestiary tab works out tiers from NEU's bestiary table.
+    bestiary: {
+      milestone: member.bestiary?.milestone?.last_claimed_milestone ?? 0,
+      kills: Object.fromEntries(Object.entries(member.bestiary?.kills ?? {}).filter(([, v]) => typeof v === 'number')),
+      deaths: Object.fromEntries(Object.entries(member.bestiary?.deaths ?? {}).filter(([, v]) => typeof v === 'number')),
+    },
   };
 }

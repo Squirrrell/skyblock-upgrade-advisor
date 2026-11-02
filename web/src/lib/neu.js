@@ -86,3 +86,18 @@ export function recipesOf(item) {
     return { type, inputs: (r.inputs ?? r.cost ?? []).map(ingredient).filter(Boolean), duration: r.duration ?? null };
   });
 }
+
+const constants = new Map(); // name -> Promise<object | null>
+
+/** A file from the repository's constants/ folder ("bestiary"), or null. Cached. */
+export function loadNeuConstant(name) {
+  if (!constants.has(name)) {
+    constants.set(
+      name,
+      fetch(`${BASE.replace(/items\/$/, 'constants/')}${name}.json`)
+        .then((r) => (r.ok ? r.json() : null))
+        .catch(() => null),
+    );
+  }
+  return constants.get(name);
+}

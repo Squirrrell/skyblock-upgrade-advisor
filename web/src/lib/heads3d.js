@@ -9,6 +9,36 @@ const cache = new Map(); // skin url -> data URL | null (failed) | Promise
 /** Skin URL for a textures.minecraft.net hash. */
 export const skinUrl = (hash) => `https://textures.minecraft.net/texture/${hash}`;
 
+// A page like the bestiary asks for hundreds of skins at once, and Mojang's
+// texture server drops some of a burst like that. So skins load a few at a
+// time, and a failed one is retried before it counts as missing.
+const PARALLEL = 6;
+const RETRIES = 2;
+let running = 0;
+const waiting = [];
+
+function nextLoad() {
+  while (running < PARALLEL && waiting.length) {
+    const job = waiting.shift();
+    running++;
+    job().finally(() => {
+      running--;
+      nextLoad();
+    });
+  }
+}
+
+function queuedLoad(url) {
+  return new Promise((resolve, reject) => {
+    const attempt = (left) =>
+      loadImage(url).then(resolve, (err) =>
+        left > 0 ? new Promise((r) => setTimeout(r, 400 * (RETRIES - left + 1))).then(() => attempt(left - 1)) : reject(err),
+      );
+    waiting.push(() => attempt(RETRIES));
+    nextLoad();
+  });
+}
+
 /**
  * The 3D head for a skin (a texture hash or a full URL), or undefined while
  * it is being drawn (onReady is called once it is), or null if the skin
@@ -22,7 +52,7 @@ export function renderedHead(skin, onReady) {
   if (!hit) {
     cache.set(
       url,
-      loadImage(url)
+      queuedLoad(url)
         .then((img) => cache.set(url, drawHead(img)))
         .catch(() => cache.set(url, null))
         .finally(() => onReady?.()),
