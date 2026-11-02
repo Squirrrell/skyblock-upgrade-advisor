@@ -91,6 +91,22 @@ export function getGarden(profileId) {
   });
 }
 
+/**
+ * Online status and last login/logout for a player: { session, lastLogin,
+ * lastLogout }. The player endpoint is only asked when they are offline,
+ * since the session already says where an online player is.
+ */
+export function getPresence(uuid) {
+  return cache.get(`presence:${uuid}`, 60_000, async () => {
+    const headers = { 'API-Key': apiKey() };
+    const status = await getJson(`${API}/status?uuid=${uuid}`, { headers, label: 'Hypixel status' });
+    const session = status?.session ?? null;
+    if (session?.online) return { session, lastLogin: null, lastLogout: null };
+    const { player } = (await getJson(`${API}/player?uuid=${uuid}`, { headers, label: 'Hypixel player' })) ?? {};
+    return { session, lastLogin: player?.lastLogin ?? null, lastLogout: player?.lastLogout ?? null };
+  });
+}
+
 export function getBazaar() {
   return cache.get('bazaar', 60_000, async () => {
     const data = await getJson(`${API}/skyblock/bazaar`, { label: 'Hypixel bazaar' });

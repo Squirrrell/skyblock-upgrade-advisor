@@ -8,6 +8,7 @@
 //   GET /player/:nameOrUuid   -> { uuid, name } via Mojang
 //   GET /profiles/:uuid       -> Hypixel /v2/skyblock/profiles
 //   GET /garden/:profileId    -> Hypixel /v2/skyblock/garden
+//   GET /presence/:uuid       -> { session, lastLogin, lastLogout } from /v2/status and /v2/player
 
 const HYPIXEL = 'https://api.hypixel.net/v2/skyblock';
 const UUID = /^[0-9a-f]{32}$/i;
@@ -133,6 +134,23 @@ async function hypixel(path, env, origin, ctx) {
   return new Response(res.body, { status: 200, headers });
 }
 
+/**
+ * Online status and last login/logout. Only these fields are passed on; the
+ * player endpoint is asked only when the player is offline.
+ */
+async function presence(uuid, env, origin, ctx) {
+  if (!env.HYPIXEL_API_KEY) return fail(503, 'The proxy has no Hypixel API key set.', 'NO_API_KEY', origin);
+  const init = { headers: { 'API-Key': env.HYPIXEL_API_KEY.trim(), 'User-Agent': UA } };
+  const status = await cachedFetch(`https://api.hypixel.net/v2/status?uuid=${uuid}`, init, 60, ctx);
+  if (!status.ok) return await hypixelError(status, origin);
+  const session = (await status.json().catch(() => null))?.session ?? null;
+  if (session?.online) return json({ session, lastLogin: null, lastLogout: null }, 200, origin);
+  const res = await cachedFetch(`https://api.hypixel.net/v2/player?uuid=${uuid}`, init, 300, ctx);
+  if (!res.ok) return await hypixelError(res, origin);
+  const player = (await res.json().catch(() => null))?.player ?? null;
+  return json({ session, lastLogin: player?.lastLogin ?? null, lastLogout: player?.lastLogout ?? null }, 200, origin);
+}
+
 export default {
   async fetch(request, env, ctx) {
     const url = new URL(request.url);
@@ -165,6 +183,9 @@ export default {
       case 'garden':
         if (!PROFILE_ID.test(value)) return fail(400, 'Bad profile id', null, origin);
         return hypixel(`garden?profile=${value}`, env, origin, ctx);
+      case 'presence':
+        if (!UUID.test(value.replace(/-/g, ''))) return fail(400, 'Bad UUID', null, origin);
+        return presence(value.replace(/-/g, ''), env, origin, ctx);
       default:
         return fail(404, 'Not found', null, origin);
     }

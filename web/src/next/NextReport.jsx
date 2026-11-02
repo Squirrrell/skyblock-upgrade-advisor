@@ -4,6 +4,7 @@
 import { ArrowClockwiseIcon, ArrowUpRightIcon, WarningIcon } from '@phosphor-icons/react';
 import { lazy, Suspense, useEffect, useRef } from 'react';
 import CoopMembers from '../components/CoopMembers.jsx';
+import Presence from '../components/Presence.jsx';
 import { openCount, TABS } from '../components/Report.jsx';
 import { ago } from '../lib/format.js';
 import { load, save } from '../lib/storage.js';
@@ -34,7 +35,8 @@ function ProfileHeader({ report, refreshing, onRefresh, onPickProfile }) {
             {report.stats ? ` · SkyBlock level ${report.stats.overview.sbLevel}` : ''}
           </div>
           <h1 className="nx-h1 mt-1.5 truncate">{player.name}</h1>
-          <p className="nx-faint mt-2 text-[13px]">
+          <Presence uuid={player.uuid} className="mt-2 text-sm" />
+          <p className="nx-faint mt-1 text-[13px]">
             Prices from the bazaar {ago(prices.bazaarUpdatedAt)} and the auction house {ago(prices.auctionsUpdatedAt)}
           </p>
         </div>

@@ -3,7 +3,7 @@ import { existsSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { ApiError } from '../shared/errors.js';
-import { resolvePlayer } from './hypixel.js';
+import { getPresence, resolvePlayer } from './hypixel.js';
 import { analyzePlayer } from './report.js';
 import { registerPackRoutes } from './packs.js';
 import { getDataFile, getPriceBook, startAuctionPolling } from './prices.js';
@@ -22,6 +22,16 @@ app.get('/api/player/:name', async (req, res) => {
   try {
     const report = await analyzePlayer(req.params.name, req.query.profile);
     res.set('Cache-Control', 'no-store').json(report);
+  } catch (err) {
+    sendError(res, err);
+  }
+});
+
+// Whether a player is online and where, or when they were last seen.
+app.get('/api/presence/:uuid', async (req, res) => {
+  try {
+    if (!/^[0-9a-f]{32}$/i.test(req.params.uuid)) return res.status(400).json({ error: 'Bad UUID' });
+    res.set('Cache-Control', 'no-store').json(await getPresence(req.params.uuid));
   } catch (err) {
     sendError(res, err);
   }

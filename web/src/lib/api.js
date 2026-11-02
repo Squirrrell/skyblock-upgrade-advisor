@@ -67,3 +67,17 @@ export function playerName(uuid) {
   }
   return nameLookups.get(uuid);
 }
+
+/**
+ * { session, lastLogin, lastLogout } for a player, through the local server
+ * or the Pages proxy; null when it can't be read (an older proxy without the
+ * route, or an error).
+ */
+export async function fetchPresence(uuid) {
+  try {
+    const res = await fetch(STATIC_MODE ? `${PROXY}/presence/${uuid}` : `/api/presence/${uuid}`);
+    return res.ok ? await res.json() : null;
+  } catch {
+    return null;
+  }
+}

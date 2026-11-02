@@ -1,5 +1,6 @@
 import { ArrowClockwiseIcon } from '@phosphor-icons/react';
 import { ago } from '../lib/format.js';
+import Presence from './Presence.jsx';
 
 const MODE_LABEL = { ironman: 'Ironman', island: 'Stranded', bingo: 'Bingo' };
 
@@ -14,6 +15,7 @@ export default function ProfileBar({ report, refreshing, onRefresh, onPickProfil
         </span>
         <div className="min-w-0">
           <h1 className="truncate text-2xl font-bold text-[var(--code-yellow)]">{player.name}</h1>
+          <Presence uuid={player.uuid} className="mt-0.5 text-sm" />
           <p className="mt-0.5 text-sm text-muted">
             {report.stats && <span className="mc-readout mr-2 text-[var(--code-aqua)] tabular">SB {report.stats.overview.sbLevel}</span>}
             Prices from the bazaar {ago(prices.bazaarUpdatedAt)}, auction house {ago(prices.auctionsUpdatedAt)}
