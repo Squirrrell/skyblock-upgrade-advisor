@@ -29,14 +29,12 @@ function readUrl() {
     profile: params.get('profile') || '',
     tab: params.get('tab') || '',
     page: params.get('page') || '',
-    // A layout on trial (&test=dungeons), kept while moving around the site.
-    test: params.get('test') || '',
   };
 }
 
 function writeUrl(route, replace = false) {
   const params = new URLSearchParams();
-  for (const key of ['page', 'player', 'profile', 'tab', 'test']) if (route[key]) params.set(key, route[key]);
+  for (const key of ['page', 'player', 'profile', 'tab']) if (route[key]) params.set(key, route[key]);
   const url = params.toString() ? `?${params}` : window.location.pathname;
   window.history[replace ? 'replaceState' : 'pushState'](null, '', url);
 }
@@ -115,7 +113,7 @@ export default function App() {
     else if (state.report && lookup) document.title = `${state.report.player.name} on ${state.report.profile.name} | ${SITE}`;
   }, [route.page, state.report, lookup]);
 
-  const search = useCallback((player) => player.trim() && go({ player: player.trim(), tab: route.tab, test: route.test }), [go, route.tab, route.test]);
+  const search = useCallback((player) => player.trim() && go({ player: player.trim(), tab: route.tab }), [go, route.tab]);
   const pickProfile = useCallback((profile) => go({ ...route, profile }), [go, route]);
   const pickTab = useCallback((tab) => go({ ...route, tab }, true), [go, route]);
   const openPage = useCallback(
@@ -125,7 +123,7 @@ export default function App() {
   const openProfile = useCallback(() => state.report && go({ player: state.report.player.name }), [go, state.report]);
   // Another member of the same coop: same profile (by id, since a member can
   // have another profile with the same name), same tab.
-  const viewMember = useCallback((player) => go({ player, profile: state.report?.profile.id, tab: route.tab, test: route.test }), [go, state.report, route.tab, route.test]);
+  const viewMember = useCallback((player) => go({ player, profile: state.report?.profile.id, tab: route.tab }), [go, state.report, route.tab]);
   const retry = () => setReloadKey((k) => k + 1);
 
   const Page = PAGES[route.page];
