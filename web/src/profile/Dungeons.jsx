@@ -1,4 +1,5 @@
 import { duration, int, num } from '../lib/format.js';
+import DungeonsCompact from './DungeonsCompact.jsx';
 import { ItemSlot } from '../mc.jsx';
 import { CLASS_ICONS, FLOOR_BOSSES } from '../theme.js';
 import { Empty, LevelRow, Panel, Stat, StatGrid } from '../ui.jsx';
@@ -54,6 +55,8 @@ function FloorTable({ rows, title }) {
 }
 
 export default function Dungeons({ stats }) {
+  // The compact layout is on trial: only with &test=dungeons in the link.
+  if (new URLSearchParams(window.location.search).get('test') === 'dungeons') return <DungeonsCompact stats={stats} />;
   const d = stats.dungeons;
   if (!d.played) return <Empty>This player has not entered the Catacombs on this profile.</Empty>;
   return (
