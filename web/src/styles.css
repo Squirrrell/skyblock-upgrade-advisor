@@ -951,9 +951,11 @@ p {
   background: color-mix(in srgb, var(--text) 6%, transparent);
 }
 
-.bs-island[aria-current='true'] {
-  background: color-mix(in srgb, var(--color-accent) 16%, transparent);
-  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--color-accent) 55%, transparent);
+/* The picked island: a thin neutral outline, no fill, so the green stays on the bars. */
+.bs-island[aria-current='true'],
+.bs-island[aria-current='true']:hover {
+  background: none;
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--text) 28%, transparent);
 }
 
 @media (min-width: 640px) {
