@@ -5,9 +5,9 @@
 // optimiser, the foraging shards, and tier 8 Heart of the Forest builds.
 import { ArrowRightIcon, MagnifyingGlassIcon } from '@phosphor-icons/react';
 import { useEffect, useMemo, useState } from 'react';
-import { fetchReport } from '../lib/api.js';
 import { loadForaging, loadPrices } from '../lib/data.js';
 import { coins, int, num } from '../lib/format.js';
+import { useReport } from '../lib/useReport.js';
 import { BUILDS, buildProgress } from '../foraging/builds.js';
 import { loadHotf, perkCurrency, perkLore, perkValue } from '../foraging/hotf.js';
 import { petStats, upgrades } from '../foraging/optimizer.js';
@@ -17,23 +17,6 @@ import { ErrorNote } from '../ui.jsx';
 import '../foraging/foraging.css';
 
 // --------------------------------------------------------------- data
-
-function useReport(player, profile, retry) {
-  const [state, setState] = useState({ status: player ? 'loading' : 'idle', report: null, error: null });
-  useEffect(() => {
-    if (!player) {
-      setState({ status: 'idle', report: null, error: null });
-      return undefined;
-    }
-    const ctrl = new AbortController();
-    setState((s) => ({ status: 'loading', report: s.report?.player?.name?.toLowerCase() === player.toLowerCase() ? s.report : null, error: null }));
-    fetchReport(player, profile, { signal: ctrl.signal })
-      .then((report) => setState({ status: 'ready', report, error: null }))
-      .catch((error) => error.name !== 'AbortError' && setState({ status: 'error', report: null, error }));
-    return () => ctrl.abort();
-  }, [player, profile, retry]);
-  return state;
-}
 
 /** Resolves `load()` once; undefined while loading, null if it failed. */
 function useData(load) {

@@ -2,6 +2,7 @@
 // bazaar endpoints need no key and allow browser requests, so they are read
 // directly; item names and the auction snapshot come from the site's own
 // data files (or the local server's /api/data in development).
+import { SKYSHARDS_URL } from '../../../shared/fusions.js';
 import { STATIC_MODE } from './api.js';
 
 const HYPIXEL = 'https://api.hypixel.net/v2';
@@ -59,6 +60,9 @@ export const loadPrices = () =>
   });
 
 /** Foraging gear, shards, reforges and pets (scripts/build-foraging.mjs). */
+/** SkyShards' fusion recipes (MIT), kept up to date with the game in their repository. */
+export const loadFusionData = () => cached('fusions', Infinity, () => getJson(SKYSHARDS_URL, 'the SkyShards fusion data'));
+
 export const loadForaging = () => cached('foraging', Infinity, () => getJson(dataUrl('foraging.json'), 'the foraging data'));
 
 export const loadBazaar = () => cached('bazaar', 60_000, () => getJson(`${HYPIXEL}/skyblock/bazaar`, 'the Hypixel bazaar'));

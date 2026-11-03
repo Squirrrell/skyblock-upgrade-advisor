@@ -24,6 +24,7 @@ const NAV = [
   { id: 'bazaar', label: 'Bazaar' },
   { id: 'auctions', label: 'Auctions' },
   { id: 'foraging', label: 'Foraging' },
+  { id: 'fusions', label: 'Fusions' },
   { id: 'calendar', label: 'Mayor & events' },
   { id: 'tools', label: 'Tools' },
 ];

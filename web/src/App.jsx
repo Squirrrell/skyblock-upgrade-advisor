@@ -18,8 +18,9 @@ const PAGES = {
   calendar: lazy(() => import('./pages/Calendar.jsx')),
   tools: lazy(() => import('./pages/Tools.jsx')),
   foraging: lazy(() => import('./pages/Foraging.jsx')),
+  fusions: lazy(() => import('./pages/Fusions.jsx')),
 };
-const TITLES = { bazaar: 'Bazaar', auctions: 'Auctions', calendar: 'Mayor & calendar', tools: 'Calculators & links', foraging: 'Foraging helper' };
+const TITLES = { bazaar: 'Bazaar', auctions: 'Auctions', calendar: 'Mayor & calendar', tools: 'Calculators & links', foraging: 'Foraging helper', fusions: 'Shard fusions' };
 const SITE = 'SkyBlock Advisor';
 
 function readUrl() {
@@ -117,7 +118,7 @@ export default function App() {
   const pickProfile = useCallback((profile) => go({ ...route, profile }), [go, route]);
   const pickTab = useCallback((tab) => go({ ...route, tab }, true), [go, route]);
   const openPage = useCallback(
-    (page) => go(page === 'foraging' ? { page, player: state.report?.player?.name ?? '' } : page ? { page } : {}),
+    (page) => go(page === 'foraging' || page === 'fusions' ? { page, player: state.report?.player?.name ?? '' } : page ? { page } : {}),
     [go, state.report],
   );
   const openProfile = useCallback(() => state.report && go({ player: state.report.player.name }), [go, state.report]);
@@ -131,7 +132,7 @@ export default function App() {
   const page = route.page || (lookup ? 'profile' : '');
   const pageView = Page && (
     <Suspense fallback={<div className="pt-10"><Loading /></div>}>
-      {/* The foraging page looks up its own player, kept in the URL with the page. */}
+      {/* The foraging and fusion pages look up their own player, kept in the URL with the page. */}
       <Page onSearch={search} route={route} onRoute={(next) => go({ page: route.page, ...next })} />
     </Suspense>
   );
